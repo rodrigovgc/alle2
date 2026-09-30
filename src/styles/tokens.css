@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Alle — design tokens
+   The single source of truth. Every colour, size, radius, space, shadow and
+   motion value in the app reads from here. Change a value once; it propagates.
+   ========================================================================== */
+
+:root {
+  /* ---- Base palette ------------------------------------------------------ */
+  --color-background: #FDFDFC;   /* white, warm tint — cards, sheets        */
+  --color-surface:    #F6F4EC;   /* beige — tray, rating active, inactive    */
+  --color-surface-deep: #E8E5DA; /* beige-200 — rating container            */
+  --color-foreground: #0C0C0C;   /* near-black — primary text               */
+
+  --grey-500: #0C0C0C;
+  --grey-400: #585858;
+  --grey-300: #9F9F9F;
+  --grey-200: #DDDDDD;
+
+  --lime-100: #DCFB42;
+  --lime-200: #C3DF22;
+
+  --color-danger: #E5484D;
+
+  /* ---- Deck palette (rotates) -------------------------------------------- */
+  --deck-lime:   #DCFB42;  --deck-lime-deep:   #C3DF22;
+  --deck-purple: #CDC9FD;  --deck-purple-deep: #B5B1FC;
+  --deck-pink:   #FEBDDA;  --deck-pink-deep:   #F1ADCA;
+  --deck-blue:   #BDDDFE;  --deck-blue-deep:   #ADCFF1;
+  --deck-green:  #CBFEBD;  --deck-green-deep:  #AEECB6;
+  --deck-yellow: #FFF4AB;  --deck-yellow-deep: #EFDC8F;
+  --deck-red:    #FEBDBD;  --deck-red-deep:    #EFA1A1;
+  --deck-beige:  #F6F4EC;  --deck-beige-deep:  #E8E5DA;
+
+  /* Monochrome mode swaps every deck to these */
+  --deck-mono:      var(--color-background);
+  --deck-mono-deep: var(--grey-200);
+
+  /* ---- Verdict tags ------------------------------------------------------- */
+  --tag-correct-bg: var(--deck-green);   --tag-correct-border: var(--deck-green-deep);
+  --tag-almost-bg:  var(--deck-yellow);  --tag-almost-border:  var(--deck-yellow-deep);
+  --tag-wrong-bg:   var(--deck-red);     --tag-wrong-border:   var(--deck-red-deep);
+
+  /* ---- Semantic roles ---------------------------------------------------- */
+  --page-bg:           var(--color-surface);      /* screen background      */
+  --card-bg:           var(--color-background);   /* study card, sheets     */
+  --text-primary:      var(--color-foreground);
+  --text-secondary:    var(--grey-400);
+  --text-tertiary:     var(--grey-300);
+  --text-placeholder:  var(--grey-200);
+  --deck-meta-color:   var(--grey-300);           /* "Column A → Column B"  */
+  --deck-count-color:  var(--grey-400);
+  --border-subtle:     var(--grey-200);
+  --cta-bg:            var(--color-foreground);
+  --cta-fg:            var(--lime-100);
+  --progress-track:    rgb(12 12 12 / 0.2);
+  --progress-fill:     var(--color-foreground);
+  --banner-bg:         var(--deck-yellow);
+  --banner-border:     var(--deck-yellow-deep);
+  --scrim:             rgb(12 12 12 / 0.32);
+  --menu-bg:           rgb(253 253 252 / 0.86);
+  --press-overlay:     rgb(12 12 12 / 0.05);
+
+  /* ---- Typography -------------------------------------------------------- */
+  --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium:  500;
+  --font-weight-bold:    700;
+
+  --font-size-display:     80px;  /* Done score                            */
+  --font-size-large-title: 34px;
+  --font-size-small-title: 24px;
+  --font-size-button:      18px;
+  --font-size-small:       15px;
+
+  /* Steps the study card falls back through when text doesn't fit */
+  --font-size-fit-1: 28px;
+  --font-size-fit-2: 24px;
+  --font-size-fit-3: 20px;
+
+  --line-height-tight: 120%;
+  --line-height-body:  140%;
+  --letter-spacing-title: -0.02em;
+
+  /* ---- Spacing ----------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --gutter:        var(--space-4);   /* screen side margin                 */
+  --card-padding:  var(--space-6);   /* study card + deck card             */
+
+  /* ---- Radii ------------------------------------------------------------- */
+  --radius-button:   25px;
+  --radius-card:     28px;   /* study card                                  */
+  --radius-deck:     24px;   /* deck card on home                           */
+  --radius-tab:      24px;   /* rating container                            */
+  --radius-tab-item: 20px;   /* active segment                              */
+  --radius-tag:      18.5px;
+  --radius-menu:     24px;
+  --radius-field:    16px;
+  --radius-sheet:    28px;
+  --radius-pill:     999px;
+
+  /* ---- Component sizes --------------------------------------------------- */
+  --size-button:      50px;
+  --size-tab:         58px;
+  --size-tab-inset:   4px;
+  --size-tag:         37px;
+  --tag-padding-x:    19.5px;
+  --size-icon-button: 44px;
+  --size-icon:        20px;
+  --size-progress:    4px;
+  --size-deck-card:   164px;
+  --size-shape-w:     80px;
+  --size-shape-h:     80px;
+  --shape-opacity:    0.35;
+  --size-field:       50px;
+  --size-header:      56px;
+  --size-card-control: 40px;  /* Skip pill, speaker circle        */
+  --size-icon-small:  18px;
+  --size-banner-close: 32px;
+  --screen-max:       520px;
+  --size-logo:        43px;
+  --size-menu-min:    250px;
+
+  /* ---- Elevation --------------------------------------------------------- */
+  --shadow-card:   0 18px 48px rgb(12 12 12 / 0.10), 0 2px 6px rgb(12 12 12 / 0.04);
+  --shadow-card-behind: 0 8px 24px rgb(12 12 12 / 0.05);
+  --shadow-menu:   0 20px 50px rgb(12 12 12 / 0.16), 0 2px 8px rgb(12 12 12 / 0.06);
+  --shadow-button-soft: 0 1px 2px rgb(12 12 12 / 0.06);
+  --blur-menu:     20px;
+
+  /* ---- Card stack -------------------------------------------------------- */
+  --stack-scale-step: 0.03;   /* each card behind is ~3% smaller           */
+  --stack-offset:     8px;    /* and peeks this far below the one above    */
+  --stack-depth:      3;
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-base: 260ms;
+
+  /* ---- Layers ------------------------------------------------------------ */
+  --z-sticky: 10;
+  --z-menu:   40;
+  --z-sheet:  50;
+}
