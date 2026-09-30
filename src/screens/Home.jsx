@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo, Icon, DeckShape } from '../components/Icon.jsx';
 import { Button, IconButton } from '../components/Button.jsx';
@@ -8,7 +8,7 @@ import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { SampleBanner } from '../components/Banner.jsx';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
-import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenColor } from '../styles/tokens.js';
+import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenColor, tokenNumber } from '../styles/tokens.js';
 
 export function Home({
   decks, loading, dueByDeck, colorMode, showBanner,
@@ -19,7 +19,19 @@ export function Home({
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [sheet, setSheet] = useState(null); // { type, deck? }
-  const searchedOnce = useRef(false);
+  const headerRef = useRef(null);
+  const shellPill = useMemo(() => tokenNumber('--size-search-pill', 98), []);
+  const [shellFull, setShellFull] = useState(shellPill);
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return undefined;
+    const gutter = tokenNumber('--gutter', 16);
+    const measure = () => setShellFull(el.clientWidth - gutter * 2);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   // Resolved token colours, so the shell can fade from pill to field colour.
   const shell = useMemo(() => ({
     pill: tokenColor('--outer-button-bg'),
@@ -28,7 +40,7 @@ export function Home({
     fieldBorder: tokenColor('--search-field-bg'),
   }), []);
 
-  function openSearch() { searchedOnce.current = true; setSearching(true); }
+  function openSearch() { setSearching(true); }
   function closeSearch() { setSearching(false); setQuery(''); }
 
   const visible = useMemo(() => {
@@ -42,50 +54,61 @@ export function Home({
 
   return (
     <main className="home">
-      <header className="home__header">
-        {/* Logo and + step aside while the search field grows out of the pill */}
-        <AnimatePresence initial={false}>
-          {!searching && (
-            <motion.div
-              key="logo"
-              className="home__logo"
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0, transition: { ...SPRING.morph, delay: 0.05 } }}
-              exit={{ opacity: 0, x: -12, transition: { duration: 0.15 } }}
-            >
-              <Logo />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <header className="home__header" ref={headerRef}>
+        {/* Logo and + only fade: nothing is scaled or moved, so nothing distorts */}
+        <motion.div
+          className="home__logo"
+          initial={false}
+          animate={{ opacity: searching ? 0 : 1 }}
+          transition={{ duration: searching ? 0.12 : 0.2, delay: searching ? 0 : 0.12 }}
+          aria-hidden={searching}
+        >
+          <Logo />
+        </motion.div>
 
-        <div className={`home__actions ${searching ? 'is-searching' : ''}`}>
+        <div className="home__actions">
+          <motion.div
+            initial={false}
+            animate={{ opacity: searching ? 0 : 1 }}
+            transition={{ duration: searching ? 0.12 : 0.2, delay: searching ? 0 : 0.12 }}
+            style={{ pointerEvents: searching ? 'none' : 'auto' }}
+          >
+            <IconButton icon="plus" label="Add deck" onClick={() => setSheet({ type: 'add' })} tabIndex={searching ? -1 : 0} />
+          </motion.div>
+          <div className="pill-slot" aria-hidden="true" />
+          <Menu
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            className="menu--home"
+            items={[
+              { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
+              { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
+              { divider: true },
+              { label: 'Sign out', danger: true, onSelect: onSignOut },
+            ]}
+          />
+        </div>
+
+        {/* One shell: its real width grows from the pill to the full row. Width
+            changes reflow the contents instead of stretching them. */}
+        <motion.div
+          className="search-shell"
+          initial={false}
+          animate={{
+            width: searching ? shellFull : shellPill,
+            backgroundColor: searching ? shell.field : shell.pill,
+            borderColor: searching ? shell.field : shell.pillBorder,
+          }}
+          transition={SPRING.morph}
+        >
           <AnimatePresence initial={false}>
-            {!searching && (
+            {searching ? (
               <motion.div
-                key="add"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1, transition: { ...SPRING.morph, delay: 0.05 } }}
-                exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.12 } }}
-              >
-                <IconButton icon="plus" label="Add deck" onClick={() => setSheet({ type: 'add' })} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {searching ? (
-            <motion.div
-              layoutId="search-shell"
-              className="search"
-              style={{ borderRadius: 999 }}
-              initial={{ backgroundColor: shell.pill, borderColor: shell.pillBorder }}
-              animate={{ backgroundColor: shell.field, borderColor: shell.fieldBorder }}
-              transition={SPRING.morph}
-            >
-              <motion.div
-                layout
+                key="field"
                 className="search__content"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.2 } }}
+                animate={{ opacity: 1, transition: { delay: 0.08, duration: 0.18 } }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
               >
                 <Icon name="search" className="search__icon" />
                 <input
@@ -101,21 +124,13 @@ export function Home({
                 />
                 <button type="button" className="search__cancel" onClick={closeSearch}>Cancel</button>
               </motion.div>
-            </motion.div>
-          ) : (
-            <motion.div
-              layoutId="search-shell"
-              className="pill"
-              style={{ borderRadius: 999 }}
-              initial={searchedOnce.current ? { backgroundColor: shell.field, borderColor: shell.fieldBorder } : false}
-              animate={{ backgroundColor: shell.pill, borderColor: shell.pillBorder }}
-              transition={SPRING.morph}
-            >
+            ) : (
               <motion.div
-                layout
+                key="pill"
                 className="pill__content"
-                initial={searchedOnce.current ? { opacity: 0 } : false}
+                initial={{ opacity: 0 }}
                 animate={{ opacity: 1, transition: { delay: 0.1, duration: 0.18 } }}
+                exit={{ opacity: 0, transition: { duration: 0.08 } }}
               >
                 <button type="button" className="pill__btn" aria-label="Search decks" onClick={openSearch}>
                   <Icon name="search" />
@@ -131,21 +146,9 @@ export function Home({
                   <Icon name="more" />
                 </button>
               </motion.div>
-            </motion.div>
-          )}
-
-          <Menu
-            open={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            className="menu--home"
-            items={[
-              { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
-              { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
-              { divider: true },
-              { label: 'Sign out', danger: true, onSelect: onSignOut },
-            ]}
-          />
-        </div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </header>
 
       <h1 className="home__title">My study decks</h1>
@@ -164,18 +167,28 @@ export function Home({
         {!!decks.length && !visible.length && (
           <p className="empty__body">No decks match “{query}”.</p>
         )}
-        {visible.map((deck) => (
-          <DeckCard
-            key={deck.id}
-            deck={deck}
-            mode={colorMode}
-            due={dueByDeck[deck.id] || 0}
-            onOpen={() => onStudyDeck(deck)}
-            onUpdateUrl={() => setSheet({ type: 'url', deck })}
-            onCustomize={() => setSheet({ type: 'cover', deck })}
-            onRemove={() => setSheet({ type: 'remove', deck })}
-          />
-        ))}
+        <AnimatePresence initial={false} mode="popLayout">
+          {visible.map((deck) => (
+            <motion.div
+              key={deck.id}
+              layout="position"
+              initial={query ? { opacity: 0, scale: 0.94 } : false}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } }}
+              transition={SPRING.morph}
+            >
+              <DeckCard
+                deck={deck}
+                mode={colorMode}
+                due={dueByDeck[deck.id] || 0}
+                onOpen={() => onStudyDeck(deck)}
+                onUpdateUrl={() => setSheet({ type: 'url', deck })}
+                onCustomize={() => setSheet({ type: 'cover', deck })}
+                onRemove={() => setSheet({ type: 'remove', deck })}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </section>
 
       {decks.length > 0 && (

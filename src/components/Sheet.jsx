@@ -4,6 +4,7 @@ import { IconButton } from './Button.jsx';
 import { SPRING } from '../styles/tokens.js';
 import { useKeyboardInset } from '../lib/useViewport.js';
 import { useFocusIntoView } from '../lib/useFocusIntoView.js';
+import { DESKTOP_QUERY, useMediaQuery } from '../lib/useMediaQuery.js';
 
 /**
  * Overlay sheet with rounded top corners over a dimmed page.
@@ -15,7 +16,23 @@ import { useFocusIntoView } from '../lib/useFocusIntoView.js';
  */
 export function Sheet({ open, onClose, title, children, variant = 'page' }) {
   const reduce = useReducedMotion();
-  useKeyboardInset(open);
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+  useKeyboardInset(open && !desktop);
+
+  // Desktop: a centred popup that fades and scales in. Mobile: unchanged.
+  const motionProps = desktop
+    ? {
+        initial: { opacity: 0, scale: reduce ? 1 : 0.96, y: reduce ? 0 : 8 },
+        animate: { opacity: 1, scale: 1, y: 0 },
+        exit: { opacity: 0, scale: reduce ? 1 : 0.98, transition: { duration: 0.14 } },
+        transition: SPRING.sheet,
+      }
+    : {
+        initial: reduce ? { opacity: 0 } : { y: '100%' },
+        animate: reduce ? { opacity: 1 } : { y: 0 },
+        exit: reduce ? { opacity: 0 } : { y: '100%' },
+        transition: SPRING.sheet,
+      };
 
   useEffect(() => {
     if (!open) return undefined;
@@ -37,19 +54,17 @@ export function Sheet({ open, onClose, title, children, variant = 'page' }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           />
-          <motion.section
-            key="sheet"
-            className={`sheet sheet--${variant}`}
-            role="dialog"
-            aria-modal="true"
-            aria-label={title}
-            initial={reduce ? { opacity: 0 } : { y: '100%' }}
-            animate={reduce ? { opacity: 1 } : { y: 0 }}
-            exit={reduce ? { opacity: 0 } : { y: '100%' }}
-            transition={SPRING.sheet}
-          >
-            <SheetFrame title={title} onClose={onClose}>{children}</SheetFrame>
-          </motion.section>
+          <div key="frame" className={desktop ? 'popup-frame' : undefined} style={desktop ? undefined : { display: 'contents' }}>
+            <motion.section
+              className={`sheet sheet--${variant} ${desktop ? 'sheet--popup' : ''}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label={title}
+              {...motionProps}
+            >
+              <SheetFrame title={title} onClose={onClose}>{children}</SheetFrame>
+            </motion.section>
+          </div>
         </>
       )}
     </AnimatePresence>

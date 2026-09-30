@@ -40,14 +40,8 @@
   text-align: center;
 }
 
-/* Home pill: [search ···] — the same shell grows into the search field */
-.pill {
-  height: var(--size-icon-button);
-  border: 1px solid var(--border-subtle);
-  background: var(--outer-button-bg);
-  overflow: hidden;
-}
-.pill__content { display: flex; align-items: center; height: 100%; padding: 0 var(--space-1); }
+/* Home pill contents: [search ···] (the shell itself lives in screens.css) */
+.pill__content { display: flex; align-items: center; justify-content: flex-end; height: 100%; padding: 0 var(--space-1); }
 .pill__btn {
   width: var(--size-icon-button); height: 100%;
   display: inline-flex; align-items: center; justify-content: center;
@@ -173,6 +167,32 @@
   display: flex; flex-direction: column; gap: var(--space-3);
   padding: var(--space-3) 0 calc(var(--space-4) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
   background: var(--card-bg);
+}
+
+/* Desktop popups: centred card with all corners rounded, sized to content */
+.popup-frame {
+  position: fixed; inset: 0;
+  z-index: calc(var(--z-sheet) + 1);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-10) var(--gutter);
+  pointer-events: none;
+}
+.sheet.sheet--popup {
+  position: relative; inset: auto;
+  width: 100%; max-width: var(--size-popup);
+  max-height: min(760px, 100%);
+  margin: 0;
+  border-radius: var(--radius-sheet);
+  pointer-events: auto;
+}
+.sheet--popup .sheet__scroll { padding-bottom: 0; }
+.sheet--popup .sheet__body,
+.sheet--popup .sheet__scroll > form,
+.sheet--popup .sheet__scroll > .sheet__body { min-height: 0; }
+.sheet--popup .sheet__actions {
+  position: sticky; bottom: 0;          /* Save stays in view when a popup scrolls */
+  padding-bottom: var(--space-5);
+  margin-top: var(--space-2);
 }
 
 /* ---- Fields ------------------------------------------------------------ */

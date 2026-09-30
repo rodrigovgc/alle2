@@ -272,6 +272,9 @@ function FrontFace({ card, interactive, typed, setTyped, inputRef, onFocusChange
             autoCorrect="off"
             autoComplete="off"
             spellCheck={false}
+            data-gramm="false"
+            data-gramm_editor="false"
+            data-enable-grammarly="false"
             aria-label={`Your answer in ${card.backLabel}`}
             onChange={(e) => setTyped(e.target.value)}
             onFocus={() => onFocusChange?.(true)}

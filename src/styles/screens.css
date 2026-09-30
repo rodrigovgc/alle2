@@ -25,7 +25,7 @@
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-title);
 }
-.deck-list { display: flex; flex-direction: column; gap: var(--space-5); padding: 0 var(--gutter); }
+.deck-list { position: relative; display: flex; flex-direction: column; gap: var(--space-5); padding: 0 var(--gutter); }
 .home__cta {
   position: fixed; z-index: var(--z-sticky);
   left: 0; right: 0; bottom: 0;
@@ -37,17 +37,26 @@
 
 .home__header { position: relative; }
 .home__logo { display: flex; }
-.home__actions.is-searching { position: absolute; left: var(--gutter); right: var(--gutter); }
-.home__actions.is-searching .search { flex: 1; }
+.pill-slot { width: var(--size-search-pill); height: var(--size-icon-button); flex: none; }
 
-.search {
+/* The shell sits over the pill slot and grows leftwards into the field */
+.search-shell {
+  position: absolute;
+  right: var(--gutter); top: 50%;
   height: var(--size-icon-button);
-  border: 1px solid transparent;
-  background: var(--search-field-bg);
+  margin-top: calc(var(--size-icon-button) / -2);
+  width: var(--size-search-pill);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  background: var(--outer-button-bg);
   overflow: hidden;
+  z-index: 1;
 }
+.search-shell > * { position: absolute; inset: 0; }
+
 .search__content {
   display: flex; align-items: center; gap: var(--space-2);
+  min-width: 0;
   height: 100%;
   padding: 0 var(--space-1) 0 var(--space-4);
 }
@@ -78,12 +87,13 @@
   left: 0; right: 0;
   top: var(--vvtop, 0px);
   height: var(--vvh, 100dvh);
-  max-width: var(--screen-max);
-  margin: 0 auto;
   display: flex; flex-direction: column; gap: var(--space-4);
+  /* Full-width box so card shadows are never clipped; the side padding keeps
+     the content in the same column (identical to before on phones). */
+  --study-side: max(var(--gutter), calc((100% - var(--screen-max)) / 2 + var(--gutter)));
   padding:
     calc(env(safe-area-inset-top) + var(--space-3))
-    var(--gutter)
+    var(--study-side)
     calc(var(--space-4) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
   overflow: hidden;
   touch-action: manipulation;

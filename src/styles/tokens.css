@@ -112,7 +112,7 @@
   --radius-sheet:    28px;
   --radius-pill:     999px;
   --radius-mark:     4px;
-  --radius-confetti: 6px;
+  --radius-confetti: 8px;
 
   /* ---- Component sizes --------------------------------------------------- */
   --size-button:      50px;
@@ -137,8 +137,10 @@
   --size-menu-min:    250px;
   --size-controls:    124px;  /* bottom area: tab (58) + gap (16) + button (50) */
   --size-swatch:      44px;
-  --size-confetti-w:  28px;
-  --size-confetti-h:  38px;
+  --size-confetti-w:  40px;   /* celebration cards */
+  --size-confetti-h:  54px;
+  --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
+  --size-popup:       480px;  /* desktop popup width */
 
   /* ---- Elevation --------------------------------------------------------- */
   --shadow-card:   0 18px 48px rgb(12 12 12 / 0.10), 0 2px 6px rgb(12 12 12 / 0.04);
