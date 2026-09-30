@@ -94,3 +94,34 @@ export const alternatives = (cell) =>
 /** Bullet = line break when displayed. */
 export const displayLines = (text) =>
   text.split('•').map((s) => s.trim()).filter(Boolean);
+
+/**
+ * Reads cards pasted from an AI chat. Accepts CSV (with or without a
+ * ```code fence```), tab-separated rows (pasted from a spreadsheet), or a
+ * Markdown table. First row is always the header.
+ */
+export function parseLooseTable(input) {
+  let text = input.replace(/\r\n?/g, '\n').trim();
+  const fence = text.match(/```[a-z]*\n([\s\S]*?)```/i);
+  if (fence) text = fence[1].trim();
+
+  const lines = text.split('\n').filter((l) => l.trim());
+  if (!lines.length) throw new DeckImportError('Paste the cards your AI made.');
+
+  let rows;
+  if (lines[0].trim().startsWith('|')) {
+    rows = lines
+      .filter((l) => !/^\s*\|?\s*:?-{2,}/.test(l))           // skip |---|---|
+      .map((l) => {
+        const inner = l.trim().replace(/^\||\|$/g, '');
+        // Cells are split on " | "; a bare "|" inside a cell stays an alternative answer.
+        return (inner.includes(' | ') ? inner.split(/\s+\|\s+/) : inner.split('|')).map((c) => c.trim());
+      });
+    // A Markdown row has exactly two cells here; anything else, fall back.
+    if (rows.some((r) => r.length !== 2)) rows = null;
+  }
+  if (!rows && lines[0].includes('\t')) rows = lines.map((l) => l.split('\t'));
+  if (!rows) rows = parseCSV(lines.join('\n'));
+
+  return rowsToDeck(rows);
+}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase, isConfigured } from './lib/supabase.js';
 import * as api from './lib/api.js';
 import { fetchDeckFromUrl } from './lib/csv.js';
+import { SAMPLE_DECK } from './lib/sampleDeck.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
 import { Auth } from './screens/Auth.jsx';
 import { Home } from './screens/Home.jsx';
@@ -11,7 +12,6 @@ import { Sheet, SheetActions } from './components/Sheet.jsx';
 import { Button } from './components/Button.jsx';
 import { AnimatePresence, motion } from 'framer-motion';
 
-let onboarding = null; // guards against double-seeding (StrictMode, fast re-renders)
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking
@@ -29,7 +29,7 @@ export default function App() {
 }
 
 function Library({ user, onUser }) {
-  const [ready, setReady] = useState(Boolean(user.user_metadata?.seeded));
+  const ready = true;
   const [decks, setDecks] = useState([]);
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,16 +40,6 @@ function Library({ user, onUser }) {
 
   const prefs = user.user_metadata || {};
   const colorMode = prefs.color_mode === 'monochrome' ? 'monochrome' : 'colorful';
-
-  // First login: seed the sample deck once.
-  useEffect(() => {
-    if (ready) return;
-    onboarding ??= api.ensureOnboarded(user);
-    onboarding
-      .then((u) => { onUser(u); setReady(true); })
-      .catch((e) => { setError(e.message); setReady(true); })
-      .finally(() => { onboarding = null; });
-  }, [ready, user, onUser]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,12 +98,12 @@ function Library({ user, onUser }) {
     setScreen({ name: 'study', cards, id: Date.now() });
   }
 
-  const review = useCallback((card, rating, verdict) => {
+  const review = useCallback((card, verdict) => {
     const row = {
       user_id: user.id,
       deck_id: card.deckId,
       card_hash: card.hash,
-      ...schedule(card.progress, rating, verdict),
+      ...schedule(card.progress, verdict),
     };
     setProgress((all) => [
       ...all.filter((p) => !(p.deck_id === row.deck_id && p.card_hash === row.card_hash)),
@@ -127,7 +117,6 @@ function Library({ user, onUser }) {
     try { onUser(await api.updatePrefs(patch)); } catch (e) { setError(e.message); }
   }
 
-  const hasSample = decks.some((d) => d.is_sample);
 
   let view;
   if (screen.name === 'study') {
@@ -148,8 +137,12 @@ function Library({ user, onUser }) {
         loading={loading || !ready}
         dueByDeck={dueByDeck}
         colorMode={colorMode}
-        showBanner={hasSample && !prefs.sample_banner_dismissed}
-        onDismissBanner={() => setPrefs({ sample_banner_dismissed: true })}
+        onAddSample={async () => {
+          try {
+            const created = await api.createDeck(SAMPLE_DECK);
+            setDecks((all) => [...all, created]);
+          } catch (e) { setError(e.message); }
+        }}
         onColorMode={(mode) => setPrefs({ color_mode: mode })}
         onStudyDeck={(deck) => start([deck.id])}
         onShuffle={() => start(decks.map((d) => d.id), { mix: true })}

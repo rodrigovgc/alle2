@@ -5,14 +5,14 @@ import { Button, IconButton } from '../components/Button.jsx';
 import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
 import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
-import { SampleBanner } from '../components/Banner.jsx';
+import { AiBuilder } from '../components/AiBuilder.jsx';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
 import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenColor, tokenNumber } from '../styles/tokens.js';
 
 export function Home({
-  decks, loading, dueByDeck, colorMode, showBanner,
-  onDismissBanner, onColorMode, onStudyDeck, onShuffle,
+  decks, loading, dueByDeck, colorMode,
+  onAddSample, onColorMode, onStudyDeck, onShuffle,
   onAddDeck, onUpdateDeck, onRemoveDeck, onSignOut,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -153,15 +153,28 @@ export function Home({
 
       <h1 className="home__title">My study decks</h1>
 
-      {showBanner && <SampleBanner onDismiss={onDismissBanner} />}
-
       <section className="deck-list" aria-busy={loading}>
         {loading && !decks.length && <div className="deck deck--skeleton" aria-hidden="true" />}
         {!loading && !decks.length && (
-          <div className="empty">
-            <p className="empty__title">No decks yet</p>
-            <p className="empty__body">Publish a Google Sheet as CSV, then add it here.</p>
-            <Button variant="secondary" icon="plus" onClick={() => setSheet({ type: 'add' })}>Add a deck</Button>
+          <div className="start" aria-label="Get started">
+            <StartTile
+              title="Try a sample deck"
+              text="Numbers 1 to 10 in Portuguese, to get a feel for how studying works."
+              action="Add sample deck"
+              onClick={onAddSample}
+            />
+            <StartTile
+              title="Use a sheet you have"
+              text="Link a Google Sheet: fronts in column A, backs in column B."
+              action="Add your sheet"
+              onClick={() => setSheet({ type: 'add' })}
+            />
+            <StartTile
+              title="Create a deck with AI"
+              text="Answer a few questions, get a prompt for your AI, and paste its cards back here."
+              action="Start"
+              onClick={() => setSheet({ type: 'ai' })}
+            />
           </div>
         )}
         {!!decks.length && !visible.length && (
@@ -213,6 +226,16 @@ export function Home({
             close();
           }}
           withTitle
+          onUseAi={() => setSheet({ type: 'ai' })}
+        />
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'ai'} onClose={close} title="Create with AI">
+        <AiBuilder
+          onCreate={async (deck) => {
+            await onAddDeck({ ...deck, color: nextDeckColor(decks.length) });
+            close();
+          }}
         />
       </Sheet>
 
@@ -266,7 +289,7 @@ export function Home({
   );
 }
 
-function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false }) {
+function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false, onUseAi }) {
   const [url, setUrl] = useState(initialUrl);
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -318,6 +341,9 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
       {error && <p className="form-error" role="alert">{error}</p>}
       <SheetActions>
         <Button type="submit" disabled={busy || !url.trim()}>{busy ? 'Reading sheet…' : submitLabel}</Button>
+        {onUseAi && (
+          <button type="button" className="text-btn" onClick={onUseAi}>No sheet yet? Create a deck with AI</button>
+        )}
       </SheetActions>
     </form>
   );
@@ -391,5 +417,15 @@ function CoverForm({ deck, onSubmit }) {
         <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save cover'}</Button>
       </SheetActions>
     </form>
+  );
+}
+
+function StartTile({ title, text, action, onClick }) {
+  return (
+    <section className="start-tile">
+      <h2 className="start-tile__title">{title}</h2>
+      <p className="start-tile__text">{text}</p>
+      <Button variant="secondary" className="start-tile__btn" onClick={onClick}>{action}</Button>
+    </section>
   );
 }

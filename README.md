@@ -38,7 +38,8 @@ Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `verc
 | `src/assets/svg.js` | Logo, icons and deck shapes, extracted from the Figma SVGs. |
 | `src/lib/csv.js` | CSV fetch/parse, Sheets link conversion, `|` and `•` helpers. |
 | `src/lib/evaluate.js` | Normalise + Levenshtein → Correct / Almost right / Not this time. |
-| `src/lib/srs.js` | Leitner (1/2/4/8/16 days) and the 20-card session builder. |
+| `src/lib/srs.js` | Leitner (1/2/4/8/16 days), scheduled from the checked answer, and the 20-card session builder. |
+| `src/lib/prompt.js` | The AI prompt template the “Create with AI” builder fills in. |
 | `src/screens/` | Auth, Home, Study, Done. |
 
 ## Sheet format

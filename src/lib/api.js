@@ -1,5 +1,4 @@
 import { supabase } from './supabase.js';
-import { SAMPLE_DECK } from './sampleDeck.js';
 
 const DECK_FIELDS = 'id,title,csv_url,front_label,back_label,lang,color,cards,is_sample,created_at';
 
@@ -42,14 +41,7 @@ export async function saveProgress(row) {
   check(await supabase.from('progress').upsert(row, { onConflict: 'user_id,deck_id,card_hash' }));
 }
 
-/* ---- First login ------------------------------------------------------- */
-
-/** Seeds the sample deck exactly once per account (flag lives in user metadata). */
-export async function ensureOnboarded(user) {
-  if (user.user_metadata?.seeded) return user;
-  await createDeck(SAMPLE_DECK);
-  return updatePrefs({ seeded: true, sample_banner_dismissed: false });
-}
+/* ---- Preferences ------------------------------------------------------ */
 
 export async function updatePrefs(patch) {
   const { data, error } = await supabase.auth.updateUser({ data: patch });

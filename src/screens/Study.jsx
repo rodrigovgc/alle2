@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button, IconButton } from '../components/Button.jsx';
-import { RatingTabs, RATING_VALUES } from '../components/RatingTabs.jsx';
 import { Tag } from '../components/Tag.jsx';
 import { diffAnswer, evaluate } from '../lib/evaluate.js';
 import { alternatives, displayLines } from '../lib/csv.js';
@@ -10,7 +9,6 @@ import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
 import { SPRING, tokenNumber } from '../styles/tokens.js';
 
-const SUGGESTED = { correct: 'easy', almost: 'learning', wrong: 'hard' };
 
 /** Controls fade in place; they never push the card around. */
 const fade = (reduce) => ({
@@ -34,8 +32,8 @@ function Runs({ runs, markClass }) {
  * One card, two sides; the actions sit on the page below it.
  *  - Typing: the card, its stack, and the keyboard. The Go key answers.
  *  - Keyboard dismissed: Answer fades in at the bottom.
- *  - Answered: the card turns over; the rating appears with Next below it,
- *    in the spot where Answer was.
+ *  - Answered: the card turns over and Next takes Answer's place. The
+ *    verdict decides when the card comes back; there's nothing to rate.
  * The card's size and position never change, so only the card itself moves.
  */
 export function Study({ cards, onReview, onExit, onFinish }) {
@@ -46,7 +44,6 @@ export function Study({ cards, onReview, onExit, onFinish }) {
   const [phase, setPhase] = useState('question');
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState(null);
-  const [rating, setRating] = useState('learning');
   const [correctCount, setCorrectCount] = useState(0);
   const inputRef = useRef(null);
   const busy = useRef(false);
@@ -115,7 +112,6 @@ export function Study({ cards, onReview, onExit, onFinish }) {
         : evaluate(value, card.back);
       setTyped(value);
       setResult(r);
-      setRating(SUGGESTED[r.verdict]);
       setPhase('answer');
       setRevealing(false);
       busy.current = false;
@@ -126,7 +122,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
     if (phase !== 'answer' || busy.current) return;
     busy.current = true;
     const newCorrect = correctCount + (result.verdict === 'correct' ? 1 : 0);
-    onReview(card, rating, result.verdict);
+    onReview(card, result.verdict);
     if (index + 1 >= total) {
       onFinish({ correct: newCorrect, total });
       return;
@@ -139,14 +135,12 @@ export function Study({ cards, onReview, onExit, onFinish }) {
     busy.current = false;
   }
 
-  // Hardware keyboard on the back: Enter = Next, 1/2/3 pick a rating.
+  // Hardware keyboard on the back: Enter = Next.
   useEffect(() => {
     if (phase !== 'answer') return undefined;
     const onKey = (e) => {
       if (e.target.closest?.('button, textarea, input, select')) return;
       if (e.key === 'Enter') { e.preventDefault(); next(); }
-      const n = Number(e.key);
-      if (n >= 1 && n <= 3) setRating(RATING_VALUES[n - 1]);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -233,7 +227,6 @@ export function Study({ cards, onReview, onExit, onFinish }) {
         <AnimatePresence initial={false} mode="popLayout">
           {controls === 'rate' && (
             <motion.div key="rate" className="study__controls-set" {...fade(reduce)}>
-              <RatingTabs value={rating} onChange={setRating} />
               <Button onClick={next}>Next</Button>
             </motion.div>
           )}

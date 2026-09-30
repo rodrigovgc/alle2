@@ -5,20 +5,20 @@ const DAY = 24 * 60 * 60 * 1000;
 const MAX_BOX = LEITNER_INTERVALS_DAYS.length;
 
 /**
- * Leitner, 5 boxes. Unseen cards sit in box 0.
- * Easy +2, Learning +1, Hard → 1. A wrong answer caps the result at box 2.
+ * Leitner, 5 boxes, scheduled from the checked answer (no self-rating):
+ *   Correct       → up one box (a new card counts as box 1, so it lands in 2)
+ *   Almost right  → stays in the same box
+ *   Not this time → back to box 1 (Skip counts as this)
  */
-export function nextBox(currentBox, rating, verdict) {
-  let box;
-  if (rating === 'easy') box = Math.min(MAX_BOX, (currentBox || 0) + 2);
-  else if (rating === 'learning') box = Math.min(MAX_BOX, (currentBox || 0) + 1);
-  else box = 1;
-  if (verdict === 'wrong') box = Math.min(box, 2);
-  return Math.max(1, box);
+export function nextBox(currentBox, verdict) {
+  const box = Math.max(1, currentBox || 1);
+  if (verdict === 'correct') return Math.min(MAX_BOX, box + 1);
+  if (verdict === 'almost') return box;
+  return 1;
 }
 
-export function schedule(prev, rating, verdict, now = new Date()) {
-  const box = nextBox(prev?.box ?? 0, rating, verdict);
+export function schedule(prev, verdict, now = new Date()) {
+  const box = nextBox(prev?.box ?? 0, verdict);
   return {
     box,
     due_at: new Date(now.getTime() + LEITNER_INTERVALS_DAYS[box - 1] * DAY).toISOString(),

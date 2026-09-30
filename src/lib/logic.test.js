@@ -19,14 +19,14 @@ test('evaluate verdicts', () => {
   assert.equal(alt.match, 'uma');
 });
 
-test('leitner boxes', () => {
-  assert.equal(nextBox(0, 'easy', 'correct'), 2);
-  assert.equal(nextBox(4, 'easy', 'correct'), 5);
-  assert.equal(nextBox(5, 'learning', 'correct'), 5);
-  assert.equal(nextBox(3, 'hard', 'correct'), 1);
-  assert.equal(nextBox(3, 'easy', 'wrong'), 2);
-  assert.equal(nextBox(0, 'learning', 'wrong'), 1);
-  const s = schedule({ box: 2, reviews: 3, lapses: 0 }, 'learning', 'correct', new Date('2026-01-01'));
+test('leitner boxes follow the verdict', () => {
+  assert.equal(nextBox(0, 'correct'), 2);   // new card answered right
+  assert.equal(nextBox(3, 'correct'), 4);
+  assert.equal(nextBox(5, 'correct'), 5);   // capped
+  assert.equal(nextBox(3, 'almost'), 3);    // stays
+  assert.equal(nextBox(0, 'almost'), 1);
+  assert.equal(nextBox(4, 'wrong'), 1);
+  const s = schedule({ box: 2, reviews: 3, lapses: 0 }, 'correct', new Date('2026-01-01'));
   assert.equal(s.box, 3);
   assert.equal(s.due_at, new Date('2026-01-05').toISOString());
 });
@@ -74,4 +74,25 @@ test('diff marks only the letters that differ', () => {
   assert.deepEqual(r.answer.filter((x) => x.mark).map((x) => x.text), ['r']);
   const miss = diffAnswer('tres', 'três');
   assert.deepEqual(miss.answer.filter((x) => x.mark).map((x) => x.text), ['ê']);
+});
+
+import { parseLooseTable } from './csv.js';
+import { buildPrompt } from './prompt.js';
+test('pasted AI output: fenced CSV, tabs, markdown', () => {
+  const fenced = 'Here you go!\n```csv\nEnglish,Dutch\nto go,gaan|lopen\n"Hi, you",Hoi\n```\nEnjoy';
+  const d1 = parseLooseTable(fenced);
+  assert.equal(d1.frontLabel, 'English');
+  assert.equal(d1.cards.length, 2);
+  assert.equal(d1.cards[0].back, 'gaan|lopen');
+  const d2 = parseLooseTable('Term\tDefinition\nAtom\tSmallest unit');
+  assert.equal(d2.cards[0].front, 'Atom');
+  const d3 = parseLooseTable('| Event | Year |\n|---|---|\n| Moon landing | 1969 |');
+  assert.deepEqual(d3.cards[0], { front: 'Moon landing', back: '1969' });
+});
+test('prompt fills the template', () => {
+  const p = buildPrompt({ subject: 'language', known: 'English', learning: 'Dutch', front: 'English', back: 'Dutch',
+    frontHint: 'a phrase in English', backHint: 'the same in Dutch', count: 20, level: 'Beginner', alternatives: true });
+  assert.match(p, /Make 20 flashcards for learning Dutch for someone who speaks English/);
+  assert.match(p, /first row is exactly: English,Dutch/);
+  assert.match(p, /gaan\|lopen/);
 });

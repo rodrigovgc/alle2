@@ -54,10 +54,10 @@
   --cta-fg:            var(--lime-100);
   --progress-track:    rgb(12 12 12 / 0.2);
   --progress-fill:     var(--color-foreground);
-  --banner-bg:         var(--deck-yellow);
-  --banner-border:     var(--deck-yellow-deep);
   --scrim:             rgb(12 12 12 / 0.32);
   --press-overlay:     rgb(12 12 12 / 0.05);
+  --start-tile-bg:     var(--color-surface);      /* empty-home tiles, choices, chips */
+  --start-tile-border: var(--color-surface-deep);
   --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
   --inner-button-bg:   var(--color-surface);      /* circle buttons inside a card or sheet */
   --outer-button-bg:   var(--color-background);   /* circle buttons on the page             */
@@ -130,7 +130,6 @@
   --size-header:      56px;
   --size-card-control: 40px;  /* Skip pill, speaker circle        */
   --size-icon-small:  18px;
-  --size-banner-close: 32px;
   --screen-max:       520px;
   --size-logo:        43px;
   --size-menu-min:    250px;
@@ -140,6 +139,11 @@
   --size-confetti-h:  54px;
   --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
   --size-popup:       480px;  /* desktop popup width */
+  --size-mini-card-w: 220px;
+  --size-mini-card-h: 140px;
+  --size-prompt-box:  220px;
+  --size-toggle-w:    44px;
+  --size-toggle-h:    26px;
 
   /* ---- Elevation --------------------------------------------------------- */
   --shadow-card:   0 18px 48px rgb(12 12 12 / 0.10), 0 2px 6px rgb(12 12 12 / 0.04);
