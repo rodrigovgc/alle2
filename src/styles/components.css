@@ -127,29 +127,47 @@
 .menu--home { top: calc(100% + var(--space-2)); right: 0; }
 .menu--deck { top: 0; right: 0; }
 
-/* ---- Sheet ------------------------------------------------------------- */
+/* ---- Sheet (full-screen panel) --------------------------------------- */
 .sheet-layer {
-  position: fixed; left: 0; right: 0;
-  top: var(--vvtop, 0px);
-  height: var(--vvh, 100dvh);
+  position: fixed; inset: 0;
   z-index: var(--z-sheet);
-  display: flex; align-items: flex-end; justify-content: center;
+  background: var(--card-bg);          /* opaque: nothing behind it shows */
 }
-.sheet-scrim { position: absolute; inset: 0; background: var(--scrim); }
 .sheet {
-  position: relative;
-  width: 100%; max-width: var(--screen-max);
-  max-height: calc(100% - var(--space-10));
+  position: absolute; left: 0; right: 0;
+  top: var(--vvtop, 0px);
+  height: var(--vvh, 100dvh);          /* ends at the top of the keyboard */
+  max-width: var(--screen-max);
+  margin: 0 auto;
+  display: flex; flex-direction: column;
+}
+.sheet__header {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--gutter) var(--space-3);
+}
+.sheet__title {
+  font-size: var(--font-size-small-title);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-title);
+}
+.sheet__scroll {
+  flex: 1; min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--card-bg);
-  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-  padding: var(--space-5) var(--gutter) calc(var(--space-6) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-2) var(--gutter) 0;
 }
-.sheet__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); }
-.sheet__title { font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); }
-.sheet__body { display: flex; flex-direction: column; gap: var(--space-4); }
+.sheet__body { display: flex; flex-direction: column; gap: var(--space-5); min-height: 100%; }
 .sheet__text { font-size: var(--font-size-button); line-height: var(--line-height-body); color: var(--text-secondary); }
+.sheet__actions {
+  position: sticky; bottom: 0;
+  margin-top: auto;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-3) 0 calc(var(--space-4) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
+  background: var(--card-bg);
+}
 
 /* ---- Fields ------------------------------------------------------------ */
 .field { display: flex; flex-direction: column; gap: var(--space-2); }

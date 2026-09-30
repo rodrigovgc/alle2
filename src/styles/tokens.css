@@ -150,7 +150,7 @@
   --stack-scale-step: 0.03;   /* each card behind is ~3% smaller           */
   --stack-offset:     8px;    /* and peeks this far below the one above    */
   --stack-depth:      3;
-  --card-ratio:       0.72;   /* width ÷ height — a portrait index card    */
+  --card-ratio:       1.15;   /* width ÷ height — fits above the keyboard on iPhone SE */
 
   /* ---- Motion ------------------------------------------------------------ */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

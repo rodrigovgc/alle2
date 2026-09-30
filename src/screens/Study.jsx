@@ -3,7 +3,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button, IconButton } from '../components/Button.jsx';
 import { RatingTabs } from '../components/RatingTabs.jsx';
 import { Tag } from '../components/Tag.jsx';
-import { Icon } from '../components/Icon.jsx';
 import { diffAnswer, evaluate } from '../lib/evaluate.js';
 import { alternatives, displayLines } from '../lib/csv.js';
 import { canSpeak, speak } from '../lib/speech.js';
@@ -41,19 +40,19 @@ export function Study({ cards, onReview, onExit, onFinish }) {
   const card = cards[index];
 
   /* ---- Card geometry ---------------------------------------------------
-     The card keeps index-card proportions. Its size comes from the screen
-     with the keyboard closed; when the keyboard opens the whole card scales
-     down as one object instead of squashing. */
+     One fixed card size per screen width, with proportions chosen so it fits
+     above the keyboard on the smallest iPhone. The card never changes size
+     between question, answer, and keyboard; spare space stays beige. Only
+     if a screen is shorter still does the card give up a little height. */
   const t = useMemo(() => ({
     offset: tokenNumber('--stack-offset', 8),
     step: tokenNumber('--stack-scale-step', 0.03),
     depth: tokenNumber('--stack-depth', 3),
-    ratio: tokenNumber('--card-ratio', 0.72),
+    ratio: tokenNumber('--card-ratio', 1.15),
   }), []);
 
   const stageRef = useRef(null);
   const [stage, setStage] = useState({ w: 0, h: 0 });
-  const restH = useRef(0);
 
   useLayoutEffect(() => {
     const el = stageRef.current;
@@ -65,15 +64,9 @@ export function Study({ cards, onReview, onExit, onFinish }) {
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!keyboardOpen && stage.h) restH.current = stage.h;
-  }, [keyboardOpen, stage.h]);
-
-  const baseH = keyboardOpen ? restH.current || stage.h : stage.h;
-  const cardW = Math.max(0, Math.min(stage.w, (baseH - t.offset * t.depth) * t.ratio));
-  const cardH = cardW / t.ratio;
-  const scale = keyboardOpen && cardH ? Math.min(1, stage.h / cardH) : 1;
   const spread = keyboardOpen ? 0 : 1; // tuck the stack away while typing
+  const cardW = stage.w;
+  const cardH = Math.max(0, Math.min(cardW / t.ratio, stage.h - t.offset * t.depth * spread));
 
   /* ---- Flow ----------------------------------------------------------- */
 
@@ -132,11 +125,9 @@ export function Study({ cards, onReview, onExit, onFinish }) {
       </nav>
 
       <div className="study__stage" ref={stageRef}>
-        <motion.div
+        <div
           className="study__deck"
-          style={{ width: cardW, height: cardH, visibility: cardW ? 'visible' : 'hidden' }}
-          animate={{ scale }}
-          transition={reduce ? { duration: 0 } : SPRING.stack}
+          style={{ width: cardW, height: cardH, visibility: cardH ? 'visible' : 'hidden' }}
         >
           <AnimatePresence initial={false}>
             {slots.map((c, slot) => {
@@ -176,7 +167,6 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                     setTyped={setTyped}
                     result={front ? result : null}
                     inputRef={front ? inputRef : undefined}
-                    keyboardOpen={keyboardOpen}
                     onSkip={() => reveal({ skipped: true })}
                     onSubmit={() => reveal()}
                   />
@@ -184,29 +174,32 @@ export function Study({ cards, onReview, onExit, onFinish }) {
               );
             })}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
 
-      {!(phase === 'question' && keyboardOpen) && (
+      {phase === 'answer' && (
         <div className="study__controls">
-          {phase === 'question' ? (
-            <Button onClick={() => reveal()}>Answer</Button>
-          ) : (
-            <>
-              <RatingTabs value={rating} onChange={setRating} />
-              <Button onClick={next}>Next</Button>
-            </>
-          )}
+          <RatingTabs value={rating} onChange={setRating} />
+          <Button onClick={next}>Next</Button>
         </div>
       )}
     </div>
   );
 }
 
-function CardFace({ card, interactive, phase, typed, setTyped, result, inputRef, keyboardOpen, onSkip, onSubmit }) {
+function CardFace({ card, interactive, phase, typed, setTyped, result, inputRef, onSkip, onSubmit }) {
   const bodyRef = useRef(null);
   const fit = useFitText(bodyRef, [card.key, phase, phase === 'question' ? typed : '']);
   const isAnswer = phase === 'answer' && result;
+
+  // Grow the answer box with its text, so the card shrinks the font instead of
+  // scrolling the box and hiding the start of what was typed.
+  useLayoutEffect(() => {
+    const ta = inputRef?.current;
+    if (!ta || isAnswer) return;
+    ta.style.height = 'auto';
+    ta.style.height = `${ta.scrollHeight}px`;
+  }, [typed, fit, isAnswer, inputRef]);
 
   let answerFace = null;
   if (isAnswer) {
@@ -257,7 +250,12 @@ function CardFace({ card, interactive, phase, typed, setTyped, result, inputRef,
         )}
       </header>
 
-      <div ref={bodyRef} className="study-card__body" data-fit={fit}>
+      <div
+        ref={bodyRef}
+        className="study-card__body"
+        data-fit={fit}
+        onClick={() => !isAnswer && inputRef?.current?.focus()}
+      >
         {isAnswer ? answerFace : (
           <>
             <p className="study-card__text"><Lines text={card.front} /></p>
@@ -290,17 +288,15 @@ function CardFace({ card, interactive, phase, typed, setTyped, result, inputRef,
         )}
       </div>
 
-      {interactive && !isAnswer && keyboardOpen && (
+      {!isAnswer && (
         <footer className="study-card__footer">
-          <button
-            type="button"
-            className="card-submit"
+          <Button
+            tabIndex={interactive ? 0 : -1}
             onPointerDown={(e) => e.preventDefault()} // keep the keyboard up until we reveal
             onClick={onSubmit}
           >
             Answer
-            <Icon name="arrow" />
-          </button>
+          </Button>
         </footer>
       )}
     </>

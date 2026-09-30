@@ -78,6 +78,7 @@
     calc(var(--space-3) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
   overflow: hidden;
   touch-action: manipulation;
+  background: var(--page-bg);
 }
 .study__nav { display: flex; align-items: center; gap: var(--space-4); flex: none; }
 .progress {
@@ -106,10 +107,9 @@
 .study__stage {
   position: relative;
   flex: 1; min-height: 0;
-  display: flex; justify-content: center; align-items: center;
+  display: flex; justify-content: center; align-items: flex-start;
 }
-.study.is-typing .study__stage { align-items: flex-start; }
-.study__deck { position: relative; transform-origin: top center; }
+.study__deck { position: relative; }
 
 .study-card {
   position: absolute; inset: 0;
@@ -126,7 +126,7 @@
 .study-card__header {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
   min-height: var(--size-card-control);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
   flex: none;
 }
 .study-card__label {
@@ -186,7 +186,8 @@
 .mark--fix   { background: var(--mark-fix-bg); }
 
 .study-card__input {
-  flex: 1; min-height: calc(var(--fs) * 1.2);
+  flex: none; min-height: calc(var(--fs) * 1.2);
+  overflow: hidden;
   width: 100%;
   margin: var(--space-4) 0 0; padding: 0;
   border: 0; outline: none; resize: none;
@@ -211,30 +212,27 @@
 }
 .study-card__verdict { margin-top: var(--space-5); flex: none; }
 
-/* Compact Answer inside the card while the keyboard is up */
-.study-card__footer { display: flex; justify-content: flex-end; flex: none; padding-top: var(--space-3); }
-.card-submit {
-  height: var(--size-card-control);
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  padding: 0 var(--space-4) 0 var(--space-5);
-  border-radius: var(--radius-pill);
-  background: var(--cta-bg); color: var(--cta-fg);
-  font-size: var(--font-size-button);
-}
+/* Answer lives inside the card: full width, at the bottom */
+.study-card__footer { flex: none; padding-top: var(--space-4); }
 
-/* Same height on both sides, so the card never changes size on reveal */
+/* Rating + Next, pinned to the bottom on the answer side */
 .study__controls {
   flex: none;
-  height: var(--size-controls);
-  display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-4);
 }
 
 /* ---- Auth -------------------------------------------------------------- */
 .auth {
-  min-height: 100dvh;
+  position: fixed; left: 0; right: 0;
+  top: var(--vvtop, 0px);
+  height: var(--vvh, 100dvh);          /* shrinks with the keyboard */
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex; flex-direction: column;
-  padding: calc(env(safe-area-inset-top) + var(--space-4)) var(--gutter) calc(env(safe-area-inset-bottom) + var(--space-6));
+  padding: calc(env(safe-area-inset-top) + var(--space-4)) var(--gutter) calc(var(--vv-bottom-inset, env(safe-area-inset-bottom)) + var(--space-6));
 }
+.auth.is-typing .auth__form { margin-top: var(--space-4); padding-top: 0; }
 .auth__brand { min-height: var(--size-header); display: flex; align-items: center; }
 .auth__form { margin-top: auto; margin-bottom: auto; display: flex; flex-direction: column; gap: var(--space-4); padding-top: var(--space-10); }
 .auth__title {

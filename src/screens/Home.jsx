@@ -3,7 +3,7 @@ import { Logo, Icon, DeckShape } from '../components/Icon.jsx';
 import { Button, IconButton } from '../components/Button.jsx';
 import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
-import { Sheet, Field } from '../components/Sheet.jsx';
+import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { SampleBanner } from '../components/Banner.jsx';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
@@ -177,13 +177,15 @@ export function Home({
             <p className="sheet__text">
               “{sheet.deck.title}” and its study progress will be removed. Your Google Sheet stays as it is.
             </p>
-            <Button
-              variant="danger"
-              onClick={async () => { await onRemoveDeck(sheet.deck.id); close(); }}
-            >
-              Remove deck
-            </Button>
-            <Button variant="secondary" onClick={close}>Keep deck</Button>
+            <SheetActions>
+              <Button
+                variant="danger"
+                onClick={async () => { await onRemoveDeck(sheet.deck.id); close(); }}
+              >
+                Remove deck
+              </Button>
+              <Button variant="secondary" onClick={close}>Keep deck</Button>
+            </SheetActions>
           </div>
         )}
       </Sheet>
@@ -242,7 +244,9 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
         </Field>
       )}
       {error && <p className="form-error" role="alert">{error}</p>}
-      <Button type="submit" disabled={busy || !url.trim()}>{busy ? 'Reading sheet…' : submitLabel}</Button>
+      <SheetActions>
+        <Button type="submit" disabled={busy || !url.trim()}>{busy ? 'Reading sheet…' : submitLabel}</Button>
+      </SheetActions>
     </form>
   );
 }
@@ -311,7 +315,9 @@ function CoverForm({ deck, onSubmit }) {
         </select>
       </Field>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save cover'}</Button>
+      <SheetActions>
+        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save cover'}</Button>
+      </SheetActions>
     </form>
   );
 }

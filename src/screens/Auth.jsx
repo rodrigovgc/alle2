@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useVisualViewport } from '../lib/useViewport.js';
+import { useFocusIntoView } from '../lib/useFocusIntoView.js';
 import { supabase, isConfigured } from '../lib/supabase.js';
 import { Logo } from '../components/Icon.jsx';
 import { Button } from '../components/Button.jsx';
@@ -13,6 +15,9 @@ export function Auth() {
   const [notice, setNotice] = useState('');
 
   const isSignUp = mode === 'signup';
+  const typing = useVisualViewport(true);
+  const rootRef = useRef(null);
+  useFocusIntoView(rootRef);
 
   async function submit(e) {
     e.preventDefault();
@@ -51,7 +56,7 @@ export function Auth() {
   }
 
   return (
-    <main className="auth">
+    <main className={`auth ${typing ? 'is-typing' : ''}`} ref={rootRef}>
       <div className="auth__brand"><Logo /></div>
       <form className="auth__form" onSubmit={submit} noValidate>
         <h1 className="auth__title">{isSignUp ? 'Create your account' : 'Sign in'}</h1>
@@ -66,6 +71,7 @@ export function Auth() {
             type="email"
             autoComplete="email"
             inputMode="email"
+            enterKeyHint="next"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -76,6 +82,7 @@ export function Auth() {
             className="input"
             type="password"
             autoComplete={isSignUp ? 'new-password' : 'current-password'}
+            enterKeyHint="go"
             required
             minLength={6}
             value={password}

@@ -46,5 +46,3 @@ Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `verc
 Row 1 names the sides (`English`, `Dutch`). Column A is the front, column B the back.
 `gaan|lopen` accepts either answer. `eerst • dan` shows on two lines.
 A normal share link also works if the sheet is shared as “Anyone with the link”; it's converted to CSV.
-
-Live

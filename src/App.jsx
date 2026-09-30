@@ -7,7 +7,7 @@ import { Auth } from './screens/Auth.jsx';
 import { Home } from './screens/Home.jsx';
 import { Study } from './screens/Study.jsx';
 import { Done } from './screens/Done.jsx';
-import { Sheet } from './components/Sheet.jsx';
+import { Sheet, SheetActions } from './components/Sheet.jsx';
 import { Button } from './components/Button.jsx';
 
 let onboarding = null; // guards against double-seeding (StrictMode, fast re-renders)
@@ -177,10 +177,12 @@ function Library({ user, onUser }) {
           <p className="sheet__text">
             Nothing is due right now and there are no new cards left. You can review the cards coming up next anyway.
           </p>
-          <Button onClick={() => start(caughtUp.deckIds, { mix: caughtUp.mix, practice: true })}>
-            Practise anyway
-          </Button>
-          <Button variant="secondary" onClick={() => setCaughtUp(null)}>Not now</Button>
+          <SheetActions>
+            <Button onClick={() => start(caughtUp.deckIds, { mix: caughtUp.mix, practice: true })}>
+              Practise anyway
+            </Button>
+            <Button variant="secondary" onClick={() => setCaughtUp(null)}>Not now</Button>
+          </SheetActions>
         </div>
       </Sheet>
 
