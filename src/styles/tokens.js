@@ -34,6 +34,13 @@ export function tokenNumber(name, fallback) {
   return Number.isFinite(v) ? v : fallback;
 }
 
+/** Resolve a colour token to its value, for animations that interpolate colour. */
+export function tokenColor(name, fallback = 'transparent') {
+  if (typeof window === 'undefined') return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
 export const nextDeckColor = (count) => DECK_COLORS[count % DECK_COLORS.length];
 
 export const SPRING = {
@@ -41,6 +48,8 @@ export const SPRING = {
   deal: { type: 'spring', stiffness: 210, damping: 30, mass: 1 },
   // Stack cards moving up a slot
   stack: { type: 'spring', stiffness: 380, damping: 36 },
+  // Search pill expanding into a field
+  morph: { type: 'spring', stiffness: 420, damping: 40 },
   // Menus
   pop: { type: 'spring', stiffness: 520, damping: 38 },
   // Sheets: no bounce, settles cleanly

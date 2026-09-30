@@ -12,6 +12,13 @@ import { SPRING, tokenNumber } from '../styles/tokens.js';
 
 const SUGGESTED = { correct: 'easy', almost: 'learning', wrong: 'hard' };
 
+/** Controls fade in place; they never push the card around. */
+const fade = (reduce) => ({
+  initial: { opacity: 0, y: reduce ? 0 : 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, transition: { duration: 0.1 } },
+});
+
 function Lines({ text }) {
   return displayLines(text.replace(/\s*\|\s*/g, ' / ')).map((l, i) => (
     <span key={i} className="line">{l}</span>
@@ -24,14 +31,15 @@ function Runs({ runs, markClass }) {
 }
 
 /*
- * One card, two sides, and a tray at the bottom for the actions.
- *  - Typing: just the card and the keyboard. The keyboard's Go key answers.
- *  - Keyboard dismissed: the tray rises with Answer.
- *  - Answered: the card turns over; the tray holds the rating with Next
- *    below it, in the spot where Answer was.
+ * One card, two sides; the actions sit on the page below it.
+ *  - Typing: the card, its stack, and the keyboard. The Go key answers.
+ *  - Keyboard dismissed: Answer fades in at the bottom.
+ *  - Answered: the card turns over; the rating appears with Next below it,
+ *    in the spot where Answer was.
+ * The card's size and position never change, so only the card itself moves.
  */
 export function Study({ cards, onReview, onExit, onFinish }) {
-  const keyboardOpen = useVisualViewport(true);
+  useVisualViewport(true);
   const reduce = useReducedMotion();
 
   const [index, setIndex] = useState(0);
@@ -46,39 +54,51 @@ export function Study({ cards, onReview, onExit, onFinish }) {
   const total = cards.length;
   const card = cards[index];
 
-  /* ---- Card geometry: one fixed size that fits above the keyboard ------ */
+  /* ---- Card geometry ---------------------------------------------------
+     The card's size depends only on the screen width, so it is identical
+     while typing, after answering, and with the keyboard up or down. The
+     stack behind it always stays. Proportions (--card-ratio) are chosen so
+     card + stack fit above the keyboard on the smallest iPhone. */
   const t = useMemo(() => ({
     offset: tokenNumber('--stack-offset', 8),
     step: tokenNumber('--stack-scale-step', 0.03),
     depth: tokenNumber('--stack-depth', 3),
-    ratio: tokenNumber('--card-ratio', 1.15),
+    ratio: tokenNumber('--card-ratio', 1.25),
   }), []);
 
   const stageRef = useRef(null);
-  const [stage, setStage] = useState({ w: 0, h: 0 });
+  const [cardW, setCardW] = useState(0);
   useLayoutEffect(() => {
     const el = stageRef.current;
     if (!el) return undefined;
-    const measure = () => setStage({ w: el.clientWidth, h: el.clientHeight });
+    const measure = () => setCardW((w) => (Math.abs(w - el.clientWidth) > 1 ? el.clientWidth : w));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  const cardH = cardW / t.ratio;
 
-  const spread = keyboardOpen ? 0 : 1; // tuck the stack away while typing
-  const cardW = stage.w;
-  const cardH = Math.max(0, Math.min(cardW / t.ratio, stage.h - t.offset * t.depth * spread));
+  // On phones the keyboard's Go key answers, so the Answer button steps aside
+  // while the answer field has focus. Hardware keyboards keep the button.
+  const coarse = useMemo(() => typeof window !== 'undefined'
+    && window.matchMedia?.('(pointer: coarse)').matches, []);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [revealing, setRevealing] = useState(false);
 
   /* ---- Flow ----------------------------------------------------------- */
 
+  // Focus inside the same tap that opened the deck or dealt the card, so iOS
+  // opens the keyboard. Re-runs once the card has its size.
+  const sized = cardW > 0;
   useLayoutEffect(() => {
-    if (phase === 'question') inputRef.current?.focus({ preventScroll: true });
-  }, [index, phase]);
+    if (phase === 'question' && sized) inputRef.current?.focus({ preventScroll: true });
+  }, [index, phase, sized]);
 
   function reveal({ skipped = false } = {}) {
     if (phase !== 'question' || busy.current) return;
     busy.current = true;
+    setRevealing(true);
     const ta = inputRef.current;
     ta?.blur(); // commits any word the keyboard was still holding
     // Read the field itself, one frame later, so the check always sees
@@ -92,6 +112,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
       setResult(r);
       setRating(SUGGESTED[r.verdict]);
       setPhase('answer');
+      setRevealing(false);
       busy.current = false;
     });
   }
@@ -128,10 +149,10 @@ export function Study({ cards, onReview, onExit, onFinish }) {
 
   const slots = cards.slice(index, index + 1 + t.depth);
   const flipped = phase === 'answer';
-  const showTray = flipped || !keyboardOpen;
+  const controls = flipped ? 'rate' : (revealing || (coarse && inputFocused)) ? null : 'answer';
 
   return (
-    <div className={`study ${keyboardOpen ? 'is-typing' : ''}`}>
+    <div className="study">
       <nav className="study__nav">
         <IconButton icon="close" label="Close deck" onClick={onExit} />
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={index + 1}>
@@ -141,7 +162,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
       </nav>
 
       <div className="study__stage" ref={stageRef}>
-        <div className="study__deck" style={{ width: cardW, height: cardH, visibility: cardH ? 'visible' : 'hidden' }}>
+        <div className="study__deck" style={{ width: cardW, height: cardH }}>
           <AnimatePresence initial={false}>
             {slots.map((c, slot) => {
               const front = slot === 0;
@@ -151,8 +172,8 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                   className={`study-card ${front ? 'is-front' : 'is-behind'}`}
                   aria-hidden={!front}
                   inert={front ? undefined : ''}
-                  initial={{ y: (slot + 1) * t.offset * spread, scale: 1 - (slot + 1) * t.step * spread, opacity: 0 }}
-                  animate={{ y: slot * t.offset * spread, scale: 1 - slot * t.step * spread, opacity: 1, zIndex: t.depth + 1 - slot }}
+                  initial={{ y: (slot + 1) * t.offset, scale: 1 - (slot + 1) * t.step, opacity: 0 }}
+                  animate={{ y: slot * t.offset, scale: 1 - slot * t.step, opacity: 1, zIndex: t.depth + 1 - slot }}
                   exit={reduce
                     ? { opacity: 0, transition: { duration: 0.15 } }
                     : { x: '-125%', rotate: -8, zIndex: 20, transition: { ...SPRING.deal, zIndex: { duration: 0 } } }}
@@ -172,6 +193,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                           typed={typed}
                           setTyped={setTyped}
                           inputRef={inputRef}
+                          onFocusChange={setInputFocused}
                           onSkip={() => reveal({ skipped: true })}
                           onSubmit={() => reveal()}
                         />
@@ -192,37 +214,26 @@ export function Study({ cards, onReview, onExit, onFinish }) {
         </div>
       </div>
 
-      <AnimatePresence initial={false}>
-        {showTray && (
-          <motion.div
-            key="tray"
-            className="tray"
-            initial={reduce ? { opacity: 0 } : { y: '100%' }}
-            animate={reduce ? { opacity: 1 } : { y: 0 }}
-            exit={reduce ? { opacity: 0 } : { y: '100%', transition: { duration: 0.12 } }}
-            transition={SPRING.sheet}
-          >
-            {flipped ? (
-              <>
-                <RatingTabs value={rating} onChange={setRating} />
-                <Button onClick={next}>Next</Button>
-              </>
-            ) : (
-              <Button
-                onPointerDown={(e) => e.preventDefault()}
-                onClick={() => reveal()}
-              >
-                Answer
-              </Button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="study__controls">
+        <AnimatePresence initial={false} mode="popLayout">
+          {controls === 'rate' && (
+            <motion.div key="rate" className="study__controls-set" {...fade(reduce)}>
+              <RatingTabs value={rating} onChange={setRating} />
+              <Button onClick={next}>Next</Button>
+            </motion.div>
+          )}
+          {controls === 'answer' && (
+            <motion.div key="answer" className="study__controls-set" {...fade(reduce)}>
+              <Button onPointerDown={(e) => e.preventDefault()} onClick={() => reveal()}>Answer</Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-function FrontFace({ card, interactive, typed, setTyped, inputRef, onSkip, onSubmit }) {
+function FrontFace({ card, interactive, typed, setTyped, inputRef, onFocusChange, onSkip, onSubmit }) {
   const bodyRef = useRef(null);
   const fit = useFitText(bodyRef, [card.key, typed]);
 
@@ -263,6 +274,8 @@ function FrontFace({ card, interactive, typed, setTyped, inputRef, onSkip, onSub
             spellCheck={false}
             aria-label={`Your answer in ${card.backLabel}`}
             onChange={(e) => setTyped(e.target.value)}
+            onFocus={() => onFocusChange?.(true)}
+            onBlur={() => onFocusChange?.(false)}
             onKeyDown={(e) => {
               // Enter answers (desktop and the phone's Go key). Shift+Enter adds a line.
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {

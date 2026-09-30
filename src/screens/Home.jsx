@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Logo, Icon, DeckShape } from '../components/Icon.jsx';
 import { Button, IconButton } from '../components/Button.jsx';
 import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
@@ -7,7 +8,7 @@ import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { SampleBanner } from '../components/Banner.jsx';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
-import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, deckColorVars, deckShape, nextDeckColor } from '../styles/tokens.js';
+import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenColor } from '../styles/tokens.js';
 
 export function Home({
   decks, loading, dueByDeck, colorMode, showBanner,
@@ -18,7 +19,17 @@ export function Home({
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [sheet, setSheet] = useState(null); // { type, deck? }
-  const searchRef = useRef(null);
+  const searchedOnce = useRef(false);
+  // Resolved token colours, so the shell can fade from pill to field colour.
+  const shell = useMemo(() => ({
+    pill: tokenColor('--outer-button-bg'),
+    pillBorder: tokenColor('--border-subtle'),
+    field: tokenColor('--search-field-bg'),
+    fieldBorder: tokenColor('--search-field-bg'),
+  }), []);
+
+  function openSearch() { searchedOnce.current = true; setSearching(true); }
+  function closeSearch() { setSearching(false); setQuery(''); }
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -32,33 +43,81 @@ export function Home({
   return (
     <main className="home">
       <header className="home__header">
-        {searching ? (
-          <div className="search">
-            <Icon name="search" className="search__icon" />
-            <input
-              ref={searchRef}
-              className="search__input"
-              type="search"
-              placeholder="Search decks"
-              value={query}
-              autoFocus
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <button
-              type="button"
-              className="search__cancel"
-              onClick={() => { setSearching(false); setQuery(''); }}
+        {/* Logo and + step aside while the search field grows out of the pill */}
+        <AnimatePresence initial={false}>
+          {!searching && (
+            <motion.div
+              key="logo"
+              className="home__logo"
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0, transition: { ...SPRING.morph, delay: 0.05 } }}
+              exit={{ opacity: 0, x: -12, transition: { duration: 0.15 } }}
             >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <>
-            <Logo />
-            <div className="home__actions">
-              <IconButton icon="plus" label="Add deck" onClick={() => setSheet({ type: 'add' })} />
-              <div className="pill">
-                <button type="button" className="pill__btn" aria-label="Search decks" onClick={() => setSearching(true)}>
+              <Logo />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className={`home__actions ${searching ? 'is-searching' : ''}`}>
+          <AnimatePresence initial={false}>
+            {!searching && (
+              <motion.div
+                key="add"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1, transition: { ...SPRING.morph, delay: 0.05 } }}
+                exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.12 } }}
+              >
+                <IconButton icon="plus" label="Add deck" onClick={() => setSheet({ type: 'add' })} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {searching ? (
+            <motion.div
+              layoutId="search-shell"
+              className="search"
+              style={{ borderRadius: 999 }}
+              initial={{ backgroundColor: shell.pill, borderColor: shell.pillBorder }}
+              animate={{ backgroundColor: shell.field, borderColor: shell.fieldBorder }}
+              transition={SPRING.morph}
+            >
+              <motion.div
+                layout
+                className="search__content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.2 } }}
+              >
+                <Icon name="search" className="search__icon" />
+                <input
+                  className="search__input"
+                  type="search"
+                  placeholder="Search decks"
+                  aria-label="Search decks"
+                  value={query}
+                  autoFocus
+                  enterKeyHint="search"
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && closeSearch()}
+                />
+                <button type="button" className="search__cancel" onClick={closeSearch}>Cancel</button>
+              </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              layoutId="search-shell"
+              className="pill"
+              style={{ borderRadius: 999 }}
+              initial={searchedOnce.current ? { backgroundColor: shell.field, borderColor: shell.fieldBorder } : false}
+              animate={{ backgroundColor: shell.pill, borderColor: shell.pillBorder }}
+              transition={SPRING.morph}
+            >
+              <motion.div
+                layout
+                className="pill__content"
+                initial={searchedOnce.current ? { opacity: 0 } : false}
+                animate={{ opacity: 1, transition: { delay: 0.1, duration: 0.18 } }}
+              >
+                <button type="button" className="pill__btn" aria-label="Search decks" onClick={openSearch}>
                   <Icon name="search" />
                 </button>
                 <button
@@ -71,21 +130,22 @@ export function Home({
                 >
                   <Icon name="more" />
                 </button>
-              </div>
-              <Menu
-                open={menuOpen}
-                onClose={() => setMenuOpen(false)}
-                className="menu--home"
-                items={[
-                  { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
-                  { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
-                  { divider: true },
-                  { label: 'Sign out', danger: true, onSelect: onSignOut },
-                ]}
-              />
-            </div>
-          </>
-        )}
+              </motion.div>
+            </motion.div>
+          )}
+
+          <Menu
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            className="menu--home"
+            items={[
+              { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
+              { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
+              { divider: true },
+              { label: 'Sign out', danger: true, onSelect: onSignOut },
+            ]}
+          />
+        </div>
       </header>
 
       <h1 className="home__title">My study decks</h1>

@@ -40,15 +40,14 @@
   text-align: center;
 }
 
-/* Home pill: [search ···] */
+/* Home pill: [search ···] — the same shell grows into the search field */
 .pill {
   height: var(--size-icon-button);
-  border-radius: var(--radius-pill);
-  background: var(--color-background);
   border: 1px solid var(--border-subtle);
-  display: inline-flex; align-items: center;
-  padding: 0 var(--space-1);
+  background: var(--outer-button-bg);
+  overflow: hidden;
 }
+.pill__content { display: flex; align-items: center; height: 100%; padding: 0 var(--space-1); }
 .pill__btn {
   width: var(--size-icon-button); height: 100%;
   display: inline-flex; align-items: center; justify-content: center;
