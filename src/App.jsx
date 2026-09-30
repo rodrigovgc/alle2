@@ -9,6 +9,7 @@ import { Study } from './screens/Study.jsx';
 import { Done } from './screens/Done.jsx';
 import { Sheet, SheetActions } from './components/Sheet.jsx';
 import { Button } from './components/Button.jsx';
+import { AnimatePresence, motion } from 'framer-motion';
 
 let onboarding = null; // guards against double-seeding (StrictMode, fast re-renders)
 
@@ -128,24 +129,20 @@ function Library({ user, onUser }) {
 
   const hasSample = decks.some((d) => d.is_sample);
 
+  let view;
   if (screen.name === 'study') {
-    return (
+    view = (
       <Study
-        key={screen.id}
         cards={screen.cards}
         onReview={review}
         onExit={() => setScreen({ name: 'home' })}
         onFinish={(score) => setScreen({ name: 'done', ...score })}
       />
     );
-  }
-
-  if (screen.name === 'done') {
-    return <Done correct={screen.correct} total={screen.total} onDone={() => setScreen({ name: 'home' })} />;
-  }
-
-  return (
-    <>
+  } else if (screen.name === 'done') {
+    view = <Done correct={screen.correct} total={screen.total} onDone={() => setScreen({ name: 'home' })} />;
+  } else {
+    view = (
       <Home
         decks={decks}
         loading={loading || !ready}
@@ -171,6 +168,25 @@ function Library({ user, onUser }) {
         }}
         onSignOut={() => supabase.auth.signOut()}
       />
+    );
+  }
+
+  return (
+    <>
+      {/* Screens cross-fade. The new one mounts straight away (so the study
+          screen can still open the keyboard within the tap); the old one fades
+          out on top without taking up space. */}
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.div
+          key={screen.name === 'study' ? `study-${screen.id}` : screen.name}
+          className="screen"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: 0.2, ease: 'easeOut' } }}
+          exit={{ opacity: 0, transition: { duration: 0.14, ease: 'easeIn' } }}
+        >
+          {view}
+        </motion.div>
+      </AnimatePresence>
 
       <Sheet open={!!caughtUp} onClose={() => setCaughtUp(null)} title="All caught up" variant="dialog">
         <div className="sheet__body">

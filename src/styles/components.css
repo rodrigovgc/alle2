@@ -94,14 +94,14 @@
 /* ---- Menu -------------------------------------------------------------- */
 .menu-scrim { position: fixed; inset: 0; z-index: var(--z-menu); }
 .menu {
-  --menu-tint: var(--color-background);
+  --menu-tint: var(--card-bg);
   position: absolute; z-index: calc(var(--z-menu) + 1);
   min-width: var(--size-menu-min);
   padding: var(--space-2) 0;
   border-radius: var(--radius-menu);
-  background: color-mix(in srgb, var(--menu-tint) 30%, var(--menu-bg));
-  -webkit-backdrop-filter: blur(var(--blur-menu)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-menu)) saturate(1.4);
+  /* Solid, lightly tinted by the deck colour. No backdrop blur: blurring a
+     layer while it animates is what made menus flicker. */
+  background: color-mix(in srgb, var(--menu-tint) 24%, var(--card-bg));
   box-shadow: var(--shadow-menu);
   border: 1px solid var(--border-subtle);
   transform-origin: top right;
@@ -183,6 +183,7 @@
   max-height: min(760px, 100%);
   margin: 0;
   border-radius: var(--radius-sheet);
+  overflow: hidden;                      /* keeps the pinned Save bar inside the corners */
   pointer-events: auto;
 }
 .sheet--popup .sheet__scroll { padding-bottom: 0; }

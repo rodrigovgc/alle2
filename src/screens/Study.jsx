@@ -78,6 +78,11 @@ export function Study({ cards, onReview, onExit, onFinish }) {
     return () => ro.disconnect();
   }, []);
   const cardH = cardW / t.ratio;
+  // From the card's spot to fully past the left edge, with margin for the tilt.
+  const throwDistance = () => {
+    const left = stageRef.current?.getBoundingClientRect().left ?? 0;
+    return left + cardW + cardH * 0.3 + 24;
+  };
 
   // On phones the keyboard's Go key answers, so the Answer button steps aside
   // while the answer field has focus. Hardware keyboards keep the button.
@@ -176,7 +181,17 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                   animate={{ y: slot * t.offset, scale: 1 - slot * t.step, opacity: 1, zIndex: t.depth + 1 - slot }}
                   exit={reduce
                     ? { opacity: 0, transition: { duration: 0.15 } }
-                    : { x: '-125%', rotate: -8, zIndex: 20, transition: { ...SPRING.deal, zIndex: { duration: 0 } } }}
+                    : {
+                        // Throw it clear of the screen edge, whatever the screen width.
+                        x: -(throwDistance()),
+                        rotate: -10,
+                        zIndex: 20,
+                        transition: {
+                          x: { duration: 0.42, ease: [0.45, 0, 0.55, 1] },
+                          rotate: { duration: 0.42, ease: [0.45, 0, 0.55, 1] },
+                          zIndex: { duration: 0 },
+                        },
+                      }}
                   transition={reduce ? { duration: 0 } : SPRING.stack}
                 >
                   {front ? (

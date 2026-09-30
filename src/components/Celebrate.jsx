@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { DeckShape } from './Icon.jsx';
-import { DECK_COLORS, deckColorVars } from '../styles/tokens.js';
+import { DECK_COLORS, deckColorVars, tokenNumber } from '../styles/tokens.js';
 
 const rand = (min, max) => min + Math.random() * (max - min);
 
@@ -12,21 +12,29 @@ const rand = (min, max) => min + Math.random() * (max - min);
 export function Celebrate({ ratio = 1 }) {
   const reduce = useReducedMotion();
   const pieces = useMemo(() => {
-    const count = Math.round(14 + ratio * 26);
+    // Keep every card on screen: size the throw to the space around the score
+    // (the burst starts at the middle of the screen), and fade out before an edge.
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 390;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 844;
+    const pw = tokenNumber('--size-confetti-w', 40);
+    const ph = tokenNumber('--size-confetti-h', 54);
+    const roomX = Math.max(60, vw / 2 - pw);            // to each side
+    const roomUp = Math.max(120, vh / 2 - ph - 60);      // below the status bar
+    const roomDown = Math.max(120, vh / 2 - ph - 90);    // above the Done button
+    const count = Math.round(14 + ratio * 22);
     return Array.from({ length: count }, (_, i) => {
       const color = DECK_COLORS[i % DECK_COLORS.length];
-      const angle = rand(-1.25, 1.25);            // mostly upward fan
-      const power = rand(180, 360);
+      const side = rand(-1, 1);
       return {
         id: i,
         color,
-        x: Math.sin(angle) * power * 1.3,
-        peak: -Math.cos(angle) * power - rand(40, 120),
-        fall: rand(420, 700),
-        rotate: rand(-540, 540),
-        delay: rand(0, 0.25),
-        duration: rand(1.6, 2.4),
-        scale: rand(0.7, 1.15),
+        x: side * roomX,
+        peak: -rand(0.45, 1) * roomUp,
+        fall: rand(0.2, 0.9) * roomDown,
+        rotate: rand(-360, 360),
+        delay: rand(0, 0.2),
+        duration: rand(1.5, 2.1),
+        scale: rand(0.75, 1.05),
       };
     });
   }, [ratio]);
@@ -44,7 +52,7 @@ export function Celebrate({ ratio = 1 }) {
             style={{ '--deck-fill': fill, '--deck-deep': deep }}
             initial={{ x: 0, y: 0, rotate: 0, scale: 0, opacity: 1 }}
             animate={{
-              x: [0, p.x * 0.7, p.x],
+              x: [0, p.x * 0.75, p.x],
               y: [0, p.peak, p.fall],
               rotate: [0, p.rotate * 0.4, p.rotate],
               scale: [0, p.scale, p.scale],
@@ -53,8 +61,9 @@ export function Celebrate({ ratio = 1 }) {
             transition={{
               duration: p.duration,
               delay: p.delay,
-              times: [0, 0.35, 1],
+              times: [0, 0.4, 1],
               ease: ['easeOut', 'easeIn'],
+              opacity: { duration: p.duration, delay: p.delay, times: [0, 0.65, 1] },
             }}
           >
             <DeckShape shape={p.color} />
