@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button, IconButton } from '../components/Button.jsx';
-import { RatingActions, RATING_VALUES } from '../components/RatingTabs.jsx';
+import { RatingTabs, RATING_VALUES } from '../components/RatingTabs.jsx';
 import { Tag } from '../components/Tag.jsx';
 import { diffAnswer, evaluate } from '../lib/evaluate.js';
 import { alternatives, displayLines } from '../lib/csv.js';
@@ -24,10 +24,11 @@ function Runs({ runs, markClass }) {
 }
 
 /*
- * One card, two sides. The question is on the front with Answer at the
- * bottom; Answer turns the card over. The back shows the answer with the
- * rating in the same place Answer was, and a rating deals the next card.
- * Nothing outside the card changes between the two sides.
+ * One card, two sides, and a tray at the bottom for the actions.
+ *  - Typing: just the card and the keyboard. The keyboard's Go key answers.
+ *  - Keyboard dismissed: the tray rises with Answer.
+ *  - Answered: the card turns over; the tray holds the rating with Next
+ *    below it, in the spot where Answer was.
  */
 export function Study({ cards, onReview, onExit, onFinish }) {
   const keyboardOpen = useVisualViewport(true);
@@ -37,6 +38,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
   const [phase, setPhase] = useState('question');
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState(null);
+  const [rating, setRating] = useState('learning');
   const [correctCount, setCorrectCount] = useState(0);
   const inputRef = useRef(null);
   const busy = useRef(false);
@@ -88,12 +90,13 @@ export function Study({ cards, onReview, onExit, onFinish }) {
         : evaluate(value, card.back);
       setTyped(value);
       setResult(r);
+      setRating(SUGGESTED[r.verdict]);
       setPhase('answer');
       busy.current = false;
     });
   }
 
-  function rate(rating) {
+  function next() {
     if (phase !== 'answer' || busy.current) return;
     busy.current = true;
     const newCorrect = correctCount + (result.verdict === 'correct' ? 1 : 0);
@@ -110,14 +113,14 @@ export function Study({ cards, onReview, onExit, onFinish }) {
     busy.current = false;
   }
 
-  // Hardware keyboard on the back: Enter takes the suggestion, 1/2/3 pick.
+  // Hardware keyboard on the back: Enter = Next, 1/2/3 pick a rating.
   useEffect(() => {
     if (phase !== 'answer') return undefined;
     const onKey = (e) => {
       if (e.target.closest?.('button, textarea, input, select')) return;
-      if (e.key === 'Enter') { e.preventDefault(); rate(SUGGESTED[result.verdict]); }
+      if (e.key === 'Enter') { e.preventDefault(); next(); }
       const n = Number(e.key);
-      if (n >= 1 && n <= 3) rate(RATING_VALUES[n - 1]);
+      if (n >= 1 && n <= 3) setRating(RATING_VALUES[n - 1]);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -125,6 +128,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
 
   const slots = cards.slice(index, index + 1 + t.depth);
   const flipped = phase === 'answer';
+  const showTray = flipped || !keyboardOpen;
 
   return (
     <div className={`study ${keyboardOpen ? 'is-typing' : ''}`}>
@@ -173,9 +177,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                         />
                       </div>
                       <div className="study-card__face study-card__face--back" aria-hidden={!flipped}>
-                        {result && (
-                          <BackFace card={c} typed={typed} result={result} onRate={rate} />
-                        )}
+                        {result && <BackFace card={c} typed={typed} result={result} />}
                       </div>
                     </motion.div>
                   ) : (
@@ -189,6 +191,33 @@ export function Study({ cards, onReview, onExit, onFinish }) {
           </AnimatePresence>
         </div>
       </div>
+
+      <AnimatePresence initial={false}>
+        {showTray && (
+          <motion.div
+            key="tray"
+            className="tray"
+            initial={reduce ? { opacity: 0 } : { y: '100%' }}
+            animate={reduce ? { opacity: 1 } : { y: 0 }}
+            exit={reduce ? { opacity: 0 } : { y: '100%', transition: { duration: 0.12 } }}
+            transition={SPRING.sheet}
+          >
+            {flipped ? (
+              <>
+                <RatingTabs value={rating} onChange={setRating} />
+                <Button onClick={next}>Next</Button>
+              </>
+            ) : (
+              <Button
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => reveal()}
+              >
+                Answer
+              </Button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -247,20 +276,11 @@ function FrontFace({ card, interactive, typed, setTyped, inputRef, onSkip, onSub
         )}
       </div>
 
-      <footer className="study-card__footer">
-        <Button
-          tabIndex={interactive ? 0 : -1}
-          onPointerDown={(e) => e.preventDefault()} // keep the keyboard up until we reveal
-          onClick={onSubmit}
-        >
-          Answer
-        </Button>
-      </footer>
     </>
   );
 }
 
-function BackFace({ card, typed, result, onRate }) {
+function BackFace({ card, typed, result }) {
   const bodyRef = useRef(null);
   const fit = useFitText(bodyRef, [card.key, result.match, typed]);
 
@@ -273,7 +293,7 @@ function BackFace({ card, typed, result, onRate }) {
   return (
     <>
       <header className="study-card__header">
-        <Tag verdict={result.verdict} />
+        <span className="study-card__label">{card.backLabel}</span>
         {canSpeak() && (
           <IconButton
             icon="speaker"
@@ -299,11 +319,8 @@ function BackFace({ card, typed, result, onRate }) {
         {others.length > 0 && (
           <p className="study-card__helper">Also accepted: {others.join(', ')}</p>
         )}
+        <div className="study-card__verdict"><Tag verdict={result.verdict} /></div>
       </div>
-
-      <footer className="study-card__footer">
-        <RatingActions key={card.key} suggested={SUGGESTED[result.verdict]} onRate={onRate} />
-      </footer>
     </>
   );
 }

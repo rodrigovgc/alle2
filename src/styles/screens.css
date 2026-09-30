@@ -72,14 +72,12 @@
   max-width: var(--screen-max);
   margin: 0 auto;
   display: flex; flex-direction: column; gap: var(--space-4);
-  padding:
-    calc(env(safe-area-inset-top) + var(--space-3))
-    var(--gutter)
-    calc(var(--space-3) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
+  padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--gutter) 0;
   overflow: hidden;
   touch-action: manipulation;
   background: var(--page-bg);
 }
+.study.is-typing { padding-bottom: var(--space-3); }
 .study__nav { display: flex; align-items: center; gap: var(--space-4); flex: none; }
 .progress {
   flex: 1;
@@ -224,10 +222,18 @@
 }
 
 /* Answer lives inside the card: full width, at the bottom */
-.study-card__footer {
+.study-card__verdict { margin-top: var(--space-5); flex: none; }
+
+/* Bottom tray: white, rounded top corners, like the sheets. Holds Answer,
+   or the rating with Next below it. */
+.tray {
   flex: none;
-  height: calc(var(--size-tab) + var(--space-4));
-  display: flex; flex-direction: column; justify-content: flex-end;
+  display: flex; flex-direction: column; gap: var(--space-4);
+  margin: 0 calc(var(--gutter) * -1);
+  padding: var(--space-4) var(--gutter) calc(var(--space-4) + env(safe-area-inset-bottom));
+  background: var(--tray-bg);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  box-shadow: var(--shadow-tray);
 }
 
 
