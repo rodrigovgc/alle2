@@ -58,6 +58,7 @@
   --press-overlay:     rgb(12 12 12 / 0.05);
   --start-tile-bg:     color-mix(in srgb, var(--color-surface-deep) 45%, var(--color-surface)); /* empty-home tiles */
   --start-tile-border: var(--color-surface-deep);
+  --tab-light-track:   var(--color-surface);      /* segmented control + prompt box on white */
   --choice-bg:         var(--color-surface);      /* builder choices and chips */
   --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
   --inner-button-bg:   var(--color-surface);      /* circle buttons inside a card or sheet */

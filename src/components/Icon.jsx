@@ -12,7 +12,9 @@ export function Icon({ name, size, className = '', label }) {
       aria-label={label}
       role={label ? 'img' : undefined}
     >
-      <path d={icon.d} fill="currentColor" />
+      {icon.stroke
+        ? <path d={icon.d} fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        : <path d={icon.d} fill="currentColor" />}
     </svg>
   );
 }

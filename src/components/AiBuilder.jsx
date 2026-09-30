@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Button } from './Button.jsx';
+import { Button, IconButton } from './Button.jsx';
+import { Icon } from './Icon.jsx';
 import { Field, SheetActions } from './Sheet.jsx';
 import { DeckImportError, parseLooseTable } from '../lib/csv.js';
 import { inferLang } from '../lib/speech.js';
 import {
-  LEVELS, SIDE_PRESETS, SIZES, SUBJECTS, buildPrompt, describeTopic, presetFor,
+  LEVELS, SIZES, SUBJECTS, buildPrompt, describeTopic, presetFor,
 } from '../lib/prompt.js';
 
 const STEPS = ['subject', 'topic', 'sides', 'size', 'prompt', 'paste'];
@@ -83,7 +84,7 @@ export function AiBuilder({ onCreate }) {
       {STEPS[step] !== 'paste' && (
         <SheetActions>
           <Button type="submit" disabled={!valid[step]}>
-            {STEPS[step] === 'prompt' ? 'I have the cards' : 'Continue'}
+            Continue
           </Button>
           {step > 0 && <Button variant="secondary" onClick={() => go(-1)}>Back</Button>}
         </SheetActions>
@@ -201,27 +202,19 @@ function TopicStep({ v, set }) {
 }
 
 function SidesStep({ v, set }) {
-  const presets = SIDE_PRESETS[v.subject] ?? SIDE_PRESETS.other;
+  const swap = () => set({
+    front: v.back, back: v.front, frontHint: v.backHint, backHint: v.frontHint,
+  });
   return (
     <>
-      <StepHead
-        title="Front and back"
-        text="Column A goes on the front of each card: what you see. Column B goes on the back: what you type from memory."
-      />
+      <StepHead title="Front and back" />
       <FlipPreview front={v.front} back={v.back} />
-      {presets.length > 1 && (
-        <Chips
-          label="Suggestions"
-          options={presets.map((p, i) => ({ value: i, label: `${p.a} → ${p.b}` }))}
-          value={v.presetIndex}
-          onChange={(i) => set({ presetIndex: i, ...presetFor(v.subject, v, i) })}
-        />
-      )}
-      <div className="builder__pair">
-        <Field label="Column A · front">
+      <div className="builder__sides">
+        <Field label="Front">
           <input className="input" value={v.front} onChange={(e) => set({ front: e.target.value, frontHint: '' })} />
         </Field>
-        <Field label="Column B · back">
+        <IconButton icon="swap" label="Swap front and back" className="icon-btn--inner builder__swap" onClick={swap} />
+        <Field label="Back">
           <input className="input" value={v.back} onChange={(e) => set({ back: e.target.value, backHint: '' })} />
         </Field>
       </div>
@@ -261,21 +254,48 @@ function FlipPreview({ front, back }) {
 function SizeStep({ v, set }) {
   return (
     <>
-      <StepHead title="How many cards?" />
-      <Chips label="Number of cards" options={SIZES.map((n) => ({ value: n, label: String(n) }))} value={v.count} onChange={(n) => set({ count: n })} />
+      <StepHead title="Deck settings" />
       <div className="builder__group">
-        <span className="field__label">Level</span>
-        <Chips label="Level" options={LEVELS} value={v.level} onChange={(l) => set({ level: l })} />
+        <span className="field__label" id="size-label">How many cards?</span>
+        <Segmented
+          labelledBy="size-label"
+          options={SIZES.map((n) => ({ value: n, label: String(n) }))}
+          value={v.count}
+          onChange={(n) => set({ count: n })}
+        />
       </div>
-      <label className="toggle">
-        <input type="checkbox" checked={v.alternatives} onChange={(e) => set({ alternatives: e.target.checked })} />
-        <span className="toggle__track" aria-hidden="true"><span className="toggle__thumb" /></span>
-        <span className="toggle__text">
-          Accept more than one right answer
-          <span className="field__hint">When a card has more than one correct answer, any of them counts.</span>
-        </span>
-      </label>
+      <div className="builder__group">
+        <span className="field__label" id="level-label">Difficulty</span>
+        <Segmented
+          labelledBy="level-label"
+          options={LEVELS.map((l) => ({ value: l, label: l }))}
+          value={v.level}
+          onChange={(l) => set({ level: l })}
+        />
+      </div>
     </>
+  );
+}
+
+/** Segmented control in the Tab style: light beige track, white active segment. */
+function Segmented({ options, value, onChange, labelledBy }) {
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
+  return (
+    <div className="tabs tabs--light" role="radiogroup" aria-labelledby={labelledBy} style={{ '--count': options.length }}>
+      <span className="tabs__thumb" style={{ '--i': index }} aria-hidden="true" />
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={value === o.value}
+          className={`tabs__item ${value === o.value ? 'is-active' : ''}`}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -305,10 +325,18 @@ function PromptStep({ v }) {
         title="Your prompt is ready"
         text="Copy it into ChatGPT, Claude, Gemini or any AI chat. When it replies, copy its whole answer and come back here."
       />
-      <pre className="prompt-box" id="ai-prompt">{prompt}</pre>
-      <Button variant="secondary" icon={copied ? 'check' : undefined} onClick={copy}>
-        {copied ? 'Copied' : 'Copy prompt'}
-      </Button>
+      <div className="prompt-box">
+        <pre className="prompt-box__text" id="ai-prompt">{prompt}</pre>
+        <button
+          type="button"
+          className="prompt-box__copy"
+          aria-label={copied ? 'Prompt copied' : 'Copy prompt'}
+          onClick={copy}
+        >
+          <Icon name={copied ? 'check' : 'copy'} />
+        </button>
+        <span className="visually-hidden" role="status">{copied ? 'Prompt copied' : ''}</span>
+      </div>
     </>
   );
 }
