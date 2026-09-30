@@ -94,5 +94,5 @@ test('prompt fills the template', () => {
     frontHint: 'a phrase in English', backHint: 'the same in Dutch', count: 20, level: 'Beginner', alternatives: true });
   assert.match(p, /Make 20 flashcards for learning Dutch for someone who speaks English/);
   assert.match(p, /first row is exactly: English,Dutch/);
-  assert.match(p, /gaan\|lopen/);
+  assert.match(p, /answer one\|answer two/);
 });

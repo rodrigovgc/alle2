@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase, isConfigured } from './lib/supabase.js';
 import * as api from './lib/api.js';
 import { fetchDeckFromUrl } from './lib/csv.js';
-import { SAMPLE_DECK } from './lib/sampleDeck.js';
+import { SAMPLE_DECKS } from './lib/sampleDeck.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
 import { Auth } from './screens/Auth.jsx';
 import { Home } from './screens/Home.jsx';
@@ -137,9 +137,9 @@ function Library({ user, onUser }) {
         loading={loading || !ready}
         dueByDeck={dueByDeck}
         colorMode={colorMode}
-        onAddSample={async () => {
+        onAddSample={async (key) => {
           try {
-            const created = await api.createDeck(SAMPLE_DECK);
+            const created = await api.createDeck(SAMPLE_DECKS[key]);
             setDecks((all) => [...all, created]);
           } catch (e) { setError(e.message); }
         }}

@@ -272,7 +272,7 @@ function SizeStep({ v, set }) {
         <span className="toggle__track" aria-hidden="true"><span className="toggle__thumb" /></span>
         <span className="toggle__text">
           Accept more than one right answer
-          <span className="field__hint">Like “gaan” or “lopen” for “to go”.</span>
+          <span className="field__hint">When a card has more than one correct answer, any of them counts.</span>
         </span>
       </label>
     </>

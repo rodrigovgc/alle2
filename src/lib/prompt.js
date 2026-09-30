@@ -49,7 +49,7 @@ export function buildPrompt(v) {
   const a = v.front.trim();
   const b = v.back.trim();
   const altRule = v.alternatives
-    ? `- If more than one answer is right for "${b}", put them all in the same cell separated by a vertical bar, like: gaan|lopen`
+    ? `- If more than one answer is right for "${b}", put them all in the same cell separated by a vertical bar, like: answer one|answer two`
     : `- Give exactly one answer in "${b}".`;
 
   return [

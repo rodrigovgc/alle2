@@ -73,7 +73,7 @@ export function Home({
             transition={{ duration: searching ? 0.12 : 0.2, delay: searching ? 0 : 0.12 }}
             style={{ pointerEvents: searching ? 'none' : 'auto' }}
           >
-            <IconButton icon="plus" label="Add deck" onClick={() => setSheet({ type: 'add' })} tabIndex={searching ? -1 : 0} />
+            <IconButton icon="plus" label="Add deck" onClick={() => setSheet({ type: 'choose' })} tabIndex={searching ? -1 : 0} />
           </motion.div>
           <div className="pill-slot" aria-hidden="true" />
           <Menu
@@ -151,30 +151,25 @@ export function Home({
         </motion.div>
       </header>
 
-      <h1 className="home__title">My study decks</h1>
+      {(loading || decks.length > 0) && <h1 className="home__title">My study decks</h1>}
 
       <section className="deck-list" aria-busy={loading}>
         {loading && !decks.length && <div className="deck deck--skeleton" aria-hidden="true" />}
         {!loading && !decks.length && (
           <div className="start" aria-label="Get started">
-            <StartTile
-              title="Try a sample deck"
-              text="Numbers 1 to 10 in Portuguese, to get a feel for how studying works."
-              action="Add sample deck"
-              onClick={onAddSample}
-            />
-            <StartTile
-              title="Use a sheet you have"
-              text="Link a Google Sheet: fronts in column A, backs in column B."
-              action="Add your sheet"
-              onClick={() => setSheet({ type: 'add' })}
-            />
-            <StartTile
-              title="Create a deck with AI"
-              text="Answer a few questions, get a prompt for your AI, and paste its cards back here."
-              action="Start"
-              onClick={() => setSheet({ type: 'ai' })}
-            />
+            <section className="start-tile">
+              <h2 className="start-tile__title">Try a sample deck</h2>
+              <p className="start-tile__text">Pick a deck to see how studying works.</p>
+              <div className="start-tile__samples">
+                <SampleCard title="Numbers in Portuguese" color="red" onClick={() => onAddSample('portuguese')} />
+                <SampleCard title="Multiplication tables" color="green" onClick={() => onAddSample('multiplication')} />
+              </div>
+            </section>
+            <section className="start-tile">
+              <h2 className="start-tile__title">Create your own deck</h2>
+              <p className="start-tile__text">Import cards from Google Sheets or create a new deck with AI.</p>
+              <CreateChoices onAi={() => setSheet({ type: 'ai' })} onImport={() => setSheet({ type: 'add' })} />
+            </section>
           </div>
         )}
         {!!decks.length && !visible.length && (
@@ -210,9 +205,18 @@ export function Home({
         </div>
       )}
 
-      <Sheet open={sheet?.type === 'add'} onClose={close} title="Add a deck">
+      <Sheet open={sheet?.type === 'choose'} onClose={close} title="Create your own deck" variant="dialog">
+        <div className="sheet__body">
+          <p className="sheet__text">Import cards from Google Sheets or create a new deck with AI.</p>
+          <SheetActions>
+            <CreateChoices onAi={() => setSheet({ type: 'ai' })} onImport={() => setSheet({ type: 'add' })} />
+          </SheetActions>
+        </div>
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'add'} onClose={close} title="Import from Google Sheets">
         <DeckUrlForm
-          submitLabel="Add deck"
+          submitLabel="Import deck"
           onSubmit={async (parsed, extra) => {
             await onAddDeck({
               title: extra.title || parsed.backLabel,
@@ -226,7 +230,6 @@ export function Home({
             close();
           }}
           withTitle
-          onUseAi={() => setSheet({ type: 'ai' })}
         />
       </Sheet>
 
@@ -289,7 +292,7 @@ export function Home({
   );
 }
 
-function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false, onUseAi }) {
+function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false }) {
   const [url, setUrl] = useState(initialUrl);
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -341,9 +344,6 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
       {error && <p className="form-error" role="alert">{error}</p>}
       <SheetActions>
         <Button type="submit" disabled={busy || !url.trim()}>{busy ? 'Reading sheet…' : submitLabel}</Button>
-        {onUseAi && (
-          <button type="button" className="text-btn" onClick={onUseAi}>No sheet yet? Create a deck with AI</button>
-        )}
       </SheetActions>
     </form>
   );
@@ -420,12 +420,30 @@ function CoverForm({ deck, onSubmit }) {
   );
 }
 
-function StartTile({ title, text, action, onClick }) {
+function CreateChoices({ onAi, onImport }) {
   return (
-    <section className="start-tile">
-      <h2 className="start-tile__title">{title}</h2>
-      <p className="start-tile__text">{text}</p>
-      <Button variant="secondary" className="start-tile__btn" onClick={onClick}>{action}</Button>
-    </section>
+    <div className="create-choices">
+      <Button onClick={onAi}>Create with AI</Button>
+      <Button variant="secondary" className="btn--on-tile" onClick={onImport}>Import from Google Sheets</Button>
+    </div>
+  );
+}
+
+/** A small deck card that adds a sample deck when tapped. */
+function SampleCard({ title, color, onClick }) {
+  const { fill, deep } = deckColorVars(color);
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      className="sample-card"
+      style={{ '--deck-fill': fill, '--deck-deep': deep }}
+      disabled={busy}
+      aria-label={`Add the sample deck ${title}`}
+      onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
+    >
+      <span className="sample-card__title">{title}</span>
+      <DeckShape shape={color} />
+    </button>
   );
 }

@@ -56,8 +56,9 @@
   --progress-fill:     var(--color-foreground);
   --scrim:             rgb(12 12 12 / 0.32);
   --press-overlay:     rgb(12 12 12 / 0.05);
-  --start-tile-bg:     var(--color-surface);      /* empty-home tiles, choices, chips */
+  --start-tile-bg:     color-mix(in srgb, var(--color-surface-deep) 45%, var(--color-surface)); /* empty-home tiles */
   --start-tile-border: var(--color-surface-deep);
+  --choice-bg:         var(--color-surface);      /* builder choices and chips */
   --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
   --inner-button-bg:   var(--color-surface);      /* circle buttons inside a card or sheet */
   --outer-button-bg:   var(--color-background);   /* circle buttons on the page             */
@@ -139,6 +140,8 @@
   --size-confetti-h:  54px;
   --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
   --size-popup:       480px;  /* desktop popup width */
+  --size-sample-card: 112px;
+  --size-sample-shape: 70px;
   --size-mini-card-w: 220px;
   --size-mini-card-h: 140px;
   --size-prompt-box:  220px;
