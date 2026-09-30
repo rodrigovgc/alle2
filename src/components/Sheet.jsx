@@ -2,17 +2,20 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { IconButton } from './Button.jsx';
 import { SPRING } from '../styles/tokens.js';
-import { useVisualViewport } from '../lib/useViewport.js';
+import { useKeyboardInset } from '../lib/useViewport.js';
 import { useFocusIntoView } from '../lib/useFocusIntoView.js';
 
 /**
- * Full-screen panel for forms (add deck, update URL, customise, confirm).
- * Opaque, so nothing shows behind it or around the keyboard. The header stays
- * put; only the body scrolls, and it always ends at the top of the keyboard.
+ * Overlay sheet with rounded top corners over a dimmed page.
+ *   variant="page"   — tall, for forms. Starts just under the status bar, so
+ *                      fields sit high and the keyboard never has to push it.
+ *   variant="dialog" — fits its content, for short confirmations.
+ * The header never scrolls. The sheet runs to the bottom edge of the screen,
+ * so the area around the keyboard is always the sheet's own white.
  */
-export function Sheet({ open, onClose, title, children }) {
+export function Sheet({ open, onClose, title, children, variant = 'page' }) {
   const reduce = useReducedMotion();
-  useVisualViewport(open);
+  useKeyboardInset(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -24,18 +27,30 @@ export function Sheet({ open, onClose, title, children }) {
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
-          className="sheet-layer"
-          role="dialog"
-          aria-modal="true"
-          aria-label={title}
-          initial={reduce ? { opacity: 0 } : { y: '100%' }}
-          animate={reduce ? { opacity: 1 } : { y: 0 }}
-          exit={reduce ? { opacity: 0 } : { y: '100%' }}
-          transition={SPRING.deal}
-        >
-          <SheetFrame title={title} onClose={onClose}>{children}</SheetFrame>
-        </motion.div>
+        <>
+          <motion.div
+            key="scrim"
+            className="sheet-scrim"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          />
+          <motion.section
+            key="sheet"
+            className={`sheet sheet--${variant}`}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            initial={reduce ? { opacity: 0 } : { y: '100%' }}
+            animate={reduce ? { opacity: 1 } : { y: 0 }}
+            exit={reduce ? { opacity: 0 } : { y: '100%' }}
+            transition={SPRING.sheet}
+          >
+            <SheetFrame title={title} onClose={onClose}>{children}</SheetFrame>
+          </motion.section>
+        </>
       )}
     </AnimatePresence>
   );
@@ -45,13 +60,13 @@ function SheetFrame({ title, onClose, children }) {
   const scrollRef = useRef(null);
   useFocusIntoView(scrollRef);
   return (
-    <section className="sheet">
+    <>
       <header className="sheet__header">
         <h2 className="sheet__title">{title}</h2>
         <IconButton icon="close" label="Close" onClick={onClose} className="icon-btn--inner" />
       </header>
       <div className="sheet__scroll" ref={scrollRef}>{children}</div>
-    </section>
+    </>
   );
 }
 
@@ -65,7 +80,7 @@ export function Field({ label, hint, children }) {
   );
 }
 
-/** Buttons at the end of a sheet form. They stick above the keyboard. */
+/** Buttons at the end of a sheet. They stick just above the keyboard. */
 export function SheetActions({ children }) {
   return <div className="sheet__actions">{children}</div>;
 }

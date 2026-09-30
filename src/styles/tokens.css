@@ -150,6 +150,7 @@
   --stack-scale-step: 0.03;   /* each card behind is ~3% smaller           */
   --stack-offset:     8px;    /* and peeks this far below the one above    */
   --stack-depth:      3;
+  --card-perspective: 1400px; /* depth for the card flip */
   --card-ratio:       1.15;   /* width ÷ height — fits above the keyboard on iPhone SE */
 
   /* ---- Motion ------------------------------------------------------------ */

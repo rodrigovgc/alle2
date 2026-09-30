@@ -113,15 +113,27 @@
 
 .study-card {
   position: absolute; inset: 0;
+  transform-origin: bottom center;
+  --card-shadow: var(--shadow-card-behind);
+}
+.study-card.is-front  { --card-shadow: var(--shadow-card); }
+.study-card.is-behind { pointer-events: none; }
+
+/* Two faces on one card; the flipper turns it over */
+.study__deck { perspective: var(--card-perspective); }
+.study-card__flipper { position: absolute; inset: 0; transform-style: preserve-3d; }
+.study-card__face {
+  position: absolute; inset: 0;
   display: flex; flex-direction: column;
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--card-bg);
-  transform-origin: bottom center;
+  box-shadow: var(--card-shadow);
   transition: box-shadow var(--duration-base) var(--ease-out);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
-.study-card.is-front  { box-shadow: var(--shadow-card); }
-.study-card.is-behind { box-shadow: var(--shadow-card-behind); pointer-events: none; }
+.study-card__face--back { transform: rotateY(180deg); }
 
 .study-card__header {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
@@ -210,16 +222,15 @@
   line-height: var(--line-height-body);
   color: var(--text-tertiary);
 }
-.study-card__verdict { margin-top: var(--space-5); flex: none; }
 
 /* Answer lives inside the card: full width, at the bottom */
-.study-card__footer { flex: none; padding-top: var(--space-4); }
-
-/* Rating + Next, pinned to the bottom on the answer side */
-.study__controls {
+.study-card__footer {
   flex: none;
-  display: flex; flex-direction: column; gap: var(--space-4);
+  height: calc(var(--size-tab) + var(--space-4));
+  display: flex; flex-direction: column; justify-content: flex-end;
 }
+
+
 
 /* ---- Auth -------------------------------------------------------------- */
 .auth {

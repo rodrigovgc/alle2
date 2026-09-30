@@ -43,3 +43,32 @@ export function useVisualViewport(active = true) {
 
   return keyboardOpen;
 }
+
+/**
+ * Lighter hook for sheets: locks page scroll and publishes --kb, the height
+ * the keyboard covers at the bottom of the screen. The sheet itself never
+ * moves or resizes; only its scroll area makes room, so nothing jumps.
+ */
+export function useKeyboardInset(active = true) {
+  useEffect(() => {
+    if (!active) return undefined;
+    const root = document.documentElement;
+    const vv = window.visualViewport;
+    root.classList.add('is-locked');
+    const update = () => {
+      const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+      root.style.setProperty('--kb', `${Math.round(kb)}px`);
+      root.style.setProperty('--vv-bottom-inset', kb > KEYBOARD_THRESHOLD ? '0px' : 'env(safe-area-inset-bottom)');
+    };
+    update();
+    vv?.addEventListener('resize', update);
+    vv?.addEventListener('scroll', update);
+    return () => {
+      vv?.removeEventListener('resize', update);
+      vv?.removeEventListener('scroll', update);
+      root.classList.remove('is-locked');
+      root.style.removeProperty('--kb');
+      root.style.removeProperty('--vv-bottom-inset');
+    };
+  }, [active]);
+}

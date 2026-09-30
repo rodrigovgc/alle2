@@ -172,7 +172,7 @@ function Library({ user, onUser }) {
         onSignOut={() => supabase.auth.signOut()}
       />
 
-      <Sheet open={!!caughtUp} onClose={() => setCaughtUp(null)} title="All caught up">
+      <Sheet open={!!caughtUp} onClose={() => setCaughtUp(null)} title="All caught up" variant="dialog">
         <div className="sheet__body">
           <p className="sheet__text">
             Nothing is due right now and there are no new cards left. You can review the cards coming up next anyway.

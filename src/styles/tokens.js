@@ -41,8 +41,12 @@ export const SPRING = {
   deal: { type: 'spring', stiffness: 210, damping: 30, mass: 1 },
   // Stack cards moving up a slot
   stack: { type: 'spring', stiffness: 380, damping: 36 },
-  // Menus and sheets
+  // Menus
   pop: { type: 'spring', stiffness: 520, damping: 38 },
+  // Sheets: no bounce, settles cleanly
+  sheet: { type: 'spring', stiffness: 360, damping: 40, mass: 1 },
+  // Turning the card over
+  flip: { type: 'spring', stiffness: 260, damping: 28 },
 };
 
 export const SESSION_SIZE = 20;

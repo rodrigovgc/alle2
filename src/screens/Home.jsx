@@ -171,7 +171,7 @@ export function Home({
         )}
       </Sheet>
 
-      <Sheet open={sheet?.type === 'remove'} onClose={close} title="Remove deck">
+      <Sheet open={sheet?.type === 'remove'} onClose={close} title="Remove deck" variant="dialog">
         {sheet?.deck && (
           <div className="sheet__body">
             <p className="sheet__text">
@@ -219,7 +219,7 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
           className="input"
           type="url"
           inputMode="url"
-          name="sheet-link"
+          name="alle-sheet-source"
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="none"
@@ -227,15 +227,14 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
           enterKeyHint="go"
           placeholder="https://docs.google.com/…"
           value={url}
-          autoFocus
           onChange={(e) => setUrl(e.target.value)}
         />
       </Field>
       {withTitle && (
-        <Field label="Deck title" hint="Leave empty to use the back column’s name.">
+        <Field label="Deck name" hint="Leave empty to use the back column’s name.">
           <input
             className="input"
-            name="deck-title"
+            name="alle-deck-name"
             autoComplete="off"
             enterKeyHint="go"
             value={title}
@@ -306,8 +305,8 @@ function CoverForm({ deck, onSubmit }) {
         </div>
       </fieldset>
 
-      <Field label="Deck title">
-        <input className="input" name="deck-title" autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <Field label="Deck name">
+        <input className="input" name="alle-deck-name" autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>
       <Field label="Read-aloud language" hint={`Used for the speaker on the ${deck.back_label} side.`}>
         <select className="input" value={lang} onChange={(e) => setLang(e.target.value)}>

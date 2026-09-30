@@ -127,24 +127,30 @@
 .menu--home { top: calc(100% + var(--space-2)); right: 0; }
 .menu--deck { top: 0; right: 0; }
 
-/* ---- Sheet (full-screen panel) --------------------------------------- */
-.sheet-layer {
+/* ---- Sheet ------------------------------------------------------------ */
+.sheet-scrim {
   position: fixed; inset: 0;
   z-index: var(--z-sheet);
-  background: var(--card-bg);          /* opaque: nothing behind it shows */
+  background: var(--scrim);
 }
 .sheet {
-  position: absolute; left: 0; right: 0;
-  top: var(--vvtop, 0px);
-  height: var(--vvh, 100dvh);          /* ends at the top of the keyboard */
+  position: fixed; left: 0; right: 0; bottom: 0;   /* to the screen edge, under the keyboard */
+  z-index: calc(var(--z-sheet) + 1);
   max-width: var(--screen-max);
   margin: 0 auto;
   display: flex; flex-direction: column;
+  background: var(--card-bg);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  box-shadow: var(--shadow-menu);
+  will-change: transform;
 }
+.sheet--page   { top: calc(env(safe-area-inset-top) + var(--space-3)); }
+.sheet--dialog { max-height: calc(100dvh - env(safe-area-inset-top) - var(--space-10)); }
+
 .sheet__header {
   flex: none;
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
-  padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--gutter) var(--space-3);
+  padding: var(--space-5) var(--gutter) var(--space-3);
 }
 .sheet__title {
   font-size: var(--font-size-small-title);
@@ -157,13 +163,14 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: var(--space-2) var(--gutter) 0;
+  padding: var(--space-2) var(--gutter) var(--kb, 0px);   /* room above the keyboard */
 }
-.sheet__body { display: flex; flex-direction: column; gap: var(--space-5); min-height: 100%; }
+.sheet__body { display: flex; flex-direction: column; gap: var(--space-5); }
+.sheet--page .sheet__body { min-height: 100%; }
+.sheet__scroll > form, .sheet__scroll > .sheet__body { min-height: 100%; }
 .sheet__text { font-size: var(--font-size-button); line-height: var(--line-height-body); color: var(--text-secondary); }
 .sheet__actions {
-  position: sticky; bottom: 0;
-  margin-top: auto;
+  margin-top: auto;   /* sits at the bottom of the space above the keyboard */
   display: flex; flex-direction: column; gap: var(--space-3);
   padding: var(--space-3) 0 calc(var(--space-4) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
   background: var(--card-bg);
