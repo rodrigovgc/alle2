@@ -1,7 +1,25 @@
 import { useState } from 'react';
 import { DeckShape, Icon } from './Icon.jsx';
 import { Menu } from './Menu.jsx';
-import { deckColorVars } from '../styles/tokens.js';
+import { deckColorVars, deckShape } from '../styles/tokens.js';
+
+/** Non-interactive copy of a deck card, used as the live preview in Customize cover. */
+export function DeckPreview({ deck }) {
+  const { fill, deep } = deckColorVars(deck.color);
+  const count = deck.cards?.length ?? 0;
+  return (
+    <div className="deck deck--preview" style={{ '--deck-fill': fill, '--deck-deep': deep }} aria-hidden="true">
+      <div className="deck__surface">
+        <span className="deck__meta">
+          {deck.front_label}<Icon name="arrow" className="deck__arrow" />{deck.back_label}
+        </span>
+        <span className="deck__title">{deck.title || 'Untitled deck'}</span>
+        <span className="deck__count">{count} {count === 1 ? 'card' : 'cards'}</span>
+        <DeckShape shape={deckShape(deck)} />
+      </div>
+    </div>
+  );
+}
 
 export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onRemove }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -28,7 +46,7 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
           {count} {count === 1 ? 'card' : 'cards'}
           {due > 0 && <span className="deck__due"> · {due} due</span>}
         </span>
-        <DeckShape shape={deck.color} />
+        <DeckShape shape={deckShape(deck)} />
       </button>
       <button
         type="button"

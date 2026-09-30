@@ -47,7 +47,7 @@
   --text-secondary:    var(--grey-400);
   --text-tertiary:     var(--grey-300);
   --text-placeholder:  var(--grey-200);
-  --deck-meta-color:   var(--grey-300);           /* "Column A → Column B"  */
+  --deck-meta-color:   var(--grey-400);           /* "Column A → Column B"  */
   --deck-count-color:  var(--grey-400);
   --border-subtle:     var(--grey-200);
   --cta-bg:            var(--color-foreground);
@@ -59,6 +59,10 @@
   --scrim:             rgb(12 12 12 / 0.32);
   --menu-bg:           rgb(253 253 252 / 0.86);
   --press-overlay:     rgb(12 12 12 / 0.05);
+  --inner-button-bg:   var(--color-surface);      /* circle buttons inside a card or sheet */
+  --outer-button-bg:   var(--color-background);   /* circle buttons on the page             */
+  --mark-wrong-bg:     var(--deck-red);           /* letters typed wrong                    */
+  --mark-fix-bg:       var(--deck-green);         /* letters that fix them                  */
 
   /* ---- Typography -------------------------------------------------------- */
   --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -106,6 +110,8 @@
   --radius-field:    16px;
   --radius-sheet:    28px;
   --radius-pill:     999px;
+  --radius-mark:     4px;
+  --radius-confetti: 6px;
 
   /* ---- Component sizes --------------------------------------------------- */
   --size-button:      50px;
@@ -128,6 +134,10 @@
   --screen-max:       520px;
   --size-logo:        43px;
   --size-menu-min:    250px;
+  --size-controls:    124px;  /* bottom area: tab (58) + gap (16) + button (50) */
+  --size-swatch:      44px;
+  --size-confetti-w:  28px;
+  --size-confetti-h:  38px;
 
   /* ---- Elevation --------------------------------------------------------- */
   --shadow-card:   0 18px 48px rgb(12 12 12 / 0.10), 0 2px 6px rgb(12 12 12 / 0.04);
@@ -140,6 +150,7 @@
   --stack-scale-step: 0.03;   /* each card behind is ~3% smaller           */
   --stack-offset:     8px;    /* and peeks this far below the one above    */
   --stack-depth:      3;
+  --card-ratio:       0.72;   /* width ÷ height — a portrait index card    */
 
   /* ---- Motion ------------------------------------------------------------ */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

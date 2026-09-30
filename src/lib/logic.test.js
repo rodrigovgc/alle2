@@ -66,3 +66,12 @@ test('sheet url conversion', () => {
     'https://docs.google.com/spreadsheets/d/e/2PACX-x/pub?output=csv',
   );
 });
+
+import { diffAnswer } from './evaluate.js';
+test('diff marks only the letters that differ', () => {
+  const r = diffAnswer('Hoe kom jij naat het werk', 'Hoe kom jij naar het werk?');
+  assert.deepEqual(r.typed.filter((x) => x.mark).map((x) => x.text), ['t']);
+  assert.deepEqual(r.answer.filter((x) => x.mark).map((x) => x.text), ['r']);
+  const miss = diffAnswer('tres', 'três');
+  assert.deepEqual(miss.answer.filter((x) => x.mark).map((x) => x.text), ['ê']);
+});

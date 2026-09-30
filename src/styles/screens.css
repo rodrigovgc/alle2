@@ -102,12 +102,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The stage keeps room below for the peeking stack */
+/* The stage centres a card with fixed index-card proportions. */
 .study__stage {
   position: relative;
   flex: 1; min-height: 0;
-  margin-bottom: calc(var(--stack-offset) * var(--stack-depth));
+  display: flex; justify-content: center; align-items: center;
 }
+.study.is-typing .study__stage { align-items: flex-start; }
+.study__deck { position: relative; transform-origin: top center; }
 
 .study-card {
   position: absolute; inset: 0;
@@ -115,16 +117,11 @@
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--card-bg);
-}
-.study-card--front { box-shadow: var(--shadow-card); will-change: transform; }
-.study-card--behind {
-  box-shadow: var(--shadow-card-behind);
   transform-origin: bottom center;
-  transform:
-    translateY(calc(var(--stack-offset) * var(--i)))
-    scale(calc(1 - var(--stack-scale-step) * var(--i)));
-  transition: transform var(--duration-base) var(--ease-out);
+  transition: box-shadow var(--duration-base) var(--ease-out);
 }
+.study-card.is-front  { box-shadow: var(--shadow-card); }
+.study-card.is-behind { box-shadow: var(--shadow-card-behind); pointer-events: none; }
 
 .study-card__header {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
@@ -137,20 +134,21 @@
   color: var(--text-tertiary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+/* Buttons inside the card: beige, no stroke */
 .skip {
   height: var(--size-card-control);
   padding: 0 var(--space-4);
   border-radius: var(--radius-pill);
-  border: 1px solid var(--border-subtle);
-  background: var(--color-background);
+  background: var(--inner-button-bg);
   font-size: var(--font-size-button);
 }
-.icon-btn--small { width: var(--size-card-control); height: var(--size-card-control); }
+.icon-btn--card { width: var(--size-card-control); height: var(--size-card-control); }
 
 .study-card__body {
   --fs: var(--font-size-large-title);
   flex: 1; min-height: 0;
-  display: flex; flex-direction: column; gap: var(--space-4);
+  display: flex; flex-direction: column;
   overflow: hidden;
 }
 .study-card__body[data-fit='1'] { --fs: var(--font-size-fit-1); }
@@ -167,13 +165,30 @@
   overflow-wrap: anywhere;
   flex: none;
 }
+.study-card__text + .study-card__text { margin-top: var(--space-3); }
 .study-card__text .line { display: block; }
 .study-card__text--typed { color: var(--text-tertiary); }
+.study-card__text--typed.is-struck {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--deck-red-deep);
+}
+
+/* Letter marks: what went wrong, and what fixes it */
+.mark {
+  color: var(--text-primary);
+  border-radius: var(--radius-mark);
+  padding: 0 1px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.mark--wrong { background: var(--mark-wrong-bg); }
+.mark--fix   { background: var(--mark-fix-bg); }
 
 .study-card__input {
   flex: 1; min-height: calc(var(--fs) * 1.2);
   width: 100%;
-  margin: 0; padding: 0;
+  margin: var(--space-4) 0 0; padding: 0;
   border: 0; outline: none; resize: none;
   background: transparent;
   font-size: var(--fs);
@@ -183,13 +198,36 @@
   color: var(--text-tertiary);
   caret-color: var(--text-primary);
 }
-.study-card__input::placeholder { color: var(--text-placeholder); opacity: 1; }
+.study-card__input::placeholder,
+.study-card__input--static { color: var(--text-placeholder); opacity: 1; }
 .study-card__input:focus-visible { outline: none; }
 
-.study-card__verdict { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); flex: none; }
-.study-card__also { font-size: var(--font-size-small); color: var(--text-tertiary); line-height: var(--line-height-body); }
+/* Helper text sits under the answer like a form hint, then space, then the verdict */
+.study-card__helper {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+  color: var(--text-tertiary);
+}
+.study-card__verdict { margin-top: var(--space-5); flex: none; }
 
-.study__controls { display: flex; flex-direction: column; gap: var(--space-4); flex: none; }
+/* Compact Answer inside the card while the keyboard is up */
+.study-card__footer { display: flex; justify-content: flex-end; flex: none; padding-top: var(--space-3); }
+.card-submit {
+  height: var(--size-card-control);
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 0 var(--space-4) 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--cta-bg); color: var(--cta-fg);
+  font-size: var(--font-size-button);
+}
+
+/* Same height on both sides, so the card never changes size on reveal */
+.study__controls {
+  flex: none;
+  height: var(--size-controls);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-4);
+}
 
 /* ---- Auth -------------------------------------------------------------- */
 .auth {
@@ -225,3 +263,29 @@
 }
 .done__total { color: var(--text-tertiary); }
 .done__message { max-width: 28ch; font-size: var(--font-size-button); line-height: var(--line-height-body); color: var(--text-secondary); }
+
+/* ---- Celebration ------------------------------------------------------- */
+.done__center { position: relative; }
+.done__score, .done__message { position: relative; z-index: 1; }
+.celebrate {
+  position: absolute; left: 50%; top: 50%;
+  width: 0; height: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.celebrate__card {
+  position: absolute;
+  left: calc(var(--size-confetti-w) / -2);
+  top: calc(var(--size-confetti-h) / -2);
+  width: var(--size-confetti-w); height: var(--size-confetti-h);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-confetti);
+  background: var(--deck-fill);
+  border: 1px solid var(--deck-deep);
+}
+.celebrate__card .deck-shape {
+  position: static;
+  width: 70%; height: 70%;
+  opacity: 1;
+}
+.done { overflow: hidden; }

@@ -2,9 +2,12 @@ import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { IconButton } from './Button.jsx';
 import { SPRING } from '../styles/tokens.js';
+import { useVisualViewport } from '../lib/useViewport.js';
 
 /** Bottom sheet for forms (add deck, update URL, customise, confirm). */
 export function Sheet({ open, onClose, title, children }) {
+  // Pin the layer to the visible area so the keyboard never covers the form.
+  useVisualViewport(open);
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -35,7 +38,7 @@ export function Sheet({ open, onClose, title, children }) {
           >
             <header className="sheet__header">
               <h2 className="sheet__title">{title}</h2>
-              <IconButton icon="close" label="Close" onClick={onClose} className="icon-btn--quiet" />
+              <IconButton icon="close" label="Close" onClick={onClose} className="icon-btn--inner" />
             </header>
             {children}
           </motion.section>

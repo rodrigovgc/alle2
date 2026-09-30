@@ -1,13 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { Logo, Icon, DeckShape } from '../components/Icon.jsx';
 import { Button, IconButton } from '../components/Button.jsx';
-import { DeckCard } from '../components/DeckCard.jsx';
+import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
 import { Sheet, Field } from '../components/Sheet.jsx';
 import { SampleBanner } from '../components/Banner.jsx';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
-import { DECK_COLORS, DECK_COLOR_LABELS, deckColorVars, nextDeckColor } from '../styles/tokens.js';
+import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, deckColorVars, deckShape, nextDeckColor } from '../styles/tokens.js';
 
 export function Home({
   decks, loading, dueByDeck, colorMode, showBanner,
@@ -80,7 +80,7 @@ export function Home({
                   { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
                   { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
                   { divider: true },
-                  { label: 'Sign out', onSelect: onSignOut },
+                  { label: 'Sign out', danger: true, onSelect: onSignOut },
                 ]}
               />
             </div>
@@ -217,6 +217,12 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
           className="input"
           type="url"
           inputMode="url"
+          name="sheet-link"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          enterKeyHint="go"
           placeholder="https://docs.google.com/…"
           value={url}
           autoFocus
@@ -225,7 +231,14 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
       </Field>
       {withTitle && (
         <Field label="Deck title" hint="Leave empty to use the back column’s name.">
-          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input
+            className="input"
+            name="deck-title"
+            autoComplete="off"
+            enterKeyHint="go"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </Field>
       )}
       {error && <p className="form-error" role="alert">{error}</p>}
@@ -237,38 +250,67 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
 function CoverForm({ deck, onSubmit }) {
   const [title, setTitle] = useState(deck.title);
   const [color, setColor] = useState(deck.color);
+  const [shape, setShape] = useState(deckShape(deck));
   const [lang, setLang] = useState(deck.lang);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const current = deckColorVars(color);
 
   return (
     <form
       className="sheet__body"
       onSubmit={async (e) => {
-        e.preventDefault(); setBusy(true);
-        try { await onSubmit({ title: title.trim() || deck.title, color, lang }); } finally { setBusy(false); }
+        e.preventDefault(); setBusy(true); setError('');
+        try {
+          await onSubmit({ title: title.trim() || deck.title, color, shape, lang });
+        } catch (err) {
+          setError(/shape/.test(err.message)
+            ? 'Shapes need one database update. Run supabase/002_shapes.sql in Supabase, then save again.'
+            : err.message);
+        } finally { setBusy(false); }
       }}
     >
-      <Field label="Deck title">
-        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
-      </Field>
-      <fieldset className="swatches">
+      <DeckPreview deck={{ ...deck, title, color, shape }} />
+
+      <fieldset className="picker">
         <legend className="field__label">Colour</legend>
-        {DECK_COLORS.map((c) => {
-          const { fill, deep } = deckColorVars(c);
-          return (
-            <label key={c} className="swatch" style={{ '--deck-fill': fill, '--deck-deep': deep }}>
-              <input type="radio" name="color" value={c} checked={color === c} onChange={() => setColor(c)} />
-              <span className="swatch__chip"><DeckShape shape={c} /></span>
-              <span className="visually-hidden">{DECK_COLOR_LABELS[c]}</span>
-            </label>
-          );
-        })}
+        <div className="colors">
+          {[NO_COLOR, ...DECK_COLORS].map((c) => {
+            const { fill, deep } = deckColorVars(c);
+            const label = c === NO_COLOR ? 'No colour' : DECK_COLOR_LABELS[c];
+            return (
+              <label key={c} className={`color ${c === NO_COLOR ? 'color--none' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep }}>
+                <input type="radio" name="color" value={c} checked={color === c} onChange={() => setColor(c)} />
+                <span className="color__dot" />
+                <span className="visually-hidden">{label}</span>
+              </label>
+            );
+          })}
+        </div>
       </fieldset>
+
+      <fieldset className="picker">
+        <legend className="field__label">Shape</legend>
+        <div className="shapes" style={{ '--deck-fill': current.fill, '--deck-deep': current.deep }}>
+          {DECK_SHAPES.map((sh, i) => (
+            <label key={sh} className="shape">
+              <input type="radio" name="shape" value={sh} checked={shape === sh} onChange={() => setShape(sh)} />
+              <span className="shape__tile"><DeckShape shape={sh} /></span>
+              <span className="visually-hidden">Shape {i + 1}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <Field label="Deck title">
+        <input className="input" name="deck-title" autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </Field>
       <Field label="Read-aloud language" hint={`Used for the speaker on the ${deck.back_label} side.`}>
         <select className="input" value={lang} onChange={(e) => setLang(e.target.value)}>
           {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
       </Field>
+      {error && <p className="form-error" role="alert">{error}</p>}
       <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save cover'}</Button>
     </form>
   );
