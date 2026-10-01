@@ -7,6 +7,8 @@ import { alternatives, displayLines } from '../lib/csv.js';
 import { canSpeak, speak } from '../lib/speech.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
+import { imageSrc } from '../lib/media.js';
+import { makeOptions } from '../lib/srs.js';
 import { SPRING, tokenNumber } from '../styles/tokens.js';
 
 
@@ -50,6 +52,14 @@ export function Study({ cards, onReview, onExit, onFinish }) {
 
   const total = cards.length;
   const card = cards[index];
+  const isChoice = card.mode === 'choice';
+  const correctOption = alternatives(card.back)[0];
+  // Options are fixed per card, so they don't reshuffle while the card is up.
+  const options = useMemo(
+    () => (isChoice ? makeOptions(correctOption, card.pool) : null),
+    [card.key, isChoice], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const [picked, setPicked] = useState(null);
 
   /* ---- Card geometry ---------------------------------------------------
      The card's size depends only on the screen width, so it is identical
@@ -94,8 +104,8 @@ export function Study({ cards, onReview, onExit, onFinish }) {
   // opens the keyboard. Re-runs once the card has its size.
   const sized = cardW > 0;
   useLayoutEffect(() => {
-    if (phase === 'question' && sized) inputRef.current?.focus({ preventScroll: true });
-  }, [index, phase, sized]);
+    if (phase === 'question' && sized && !isChoice) inputRef.current?.focus({ preventScroll: true });
+  }, [index, phase, sized, isChoice]);
 
   function reveal({ skipped = false } = {}) {
     if (phase !== 'question' || busy.current) return;
@@ -118,6 +128,20 @@ export function Study({ cards, onReview, onExit, onFinish }) {
     });
   }
 
+  function choose(option) {
+    if (phase !== 'question' || busy.current || picked) return;
+    busy.current = true;
+    setPicked(option);
+    const right = option === correctOption;
+    // Let the colours register on the buttons, then turn the card.
+    setTimeout(() => {
+      setTyped(option);
+      setResult({ verdict: right ? 'correct' : 'wrong', match: correctOption, mode: 'choice' });
+      setPhase('answer');
+      busy.current = false;
+    }, reduce ? 150 : 650);
+  }
+
   function next() {
     if (phase !== 'answer' || busy.current) return;
     busy.current = true;
@@ -132,14 +156,20 @@ export function Study({ cards, onReview, onExit, onFinish }) {
     setPhase('question');
     setTyped('');
     setResult(null);
+    setPicked(null);
     busy.current = false;
   }
 
-  // Hardware keyboard on the back: Enter = Next.
+  // Hardware keyboard: Enter = Next on the back; 1–4 pick an option.
   useEffect(() => {
-    if (phase !== 'answer') return undefined;
     const onKey = (e) => {
-      if (e.target.closest?.('button, textarea, input, select')) return;
+      if (e.target.closest?.('textarea, input, select')) return;
+      if (phase === 'question' && options) {
+        const n = Number(e.key);
+        if (n >= 1 && n <= options.length) choose(options[n - 1]);
+        return;
+      }
+      if (phase !== 'answer' || e.target.closest?.('button')) return;
       if (e.key === 'Enter') { e.preventDefault(); next(); }
     };
     window.addEventListener('keydown', onKey);
@@ -148,7 +178,9 @@ export function Study({ cards, onReview, onExit, onFinish }) {
 
   const slots = cards.slice(index, index + 1 + t.depth);
   const flipped = phase === 'answer';
-  const controls = flipped ? 'rate' : (revealing || (coarse && inputFocused)) ? null : 'answer';
+  const controls = flipped ? 'rate'
+    : isChoice ? 'choice'
+    : (revealing || (coarse && inputFocused)) ? null : 'answer';
 
   return (
     <div className="study">
@@ -198,7 +230,8 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                       <div className="study-card__face">
                         <FrontFace
                           card={c}
-                          interactive={!flipped}
+                          canSkip={!flipped}
+                          interactive={!flipped && c.mode !== 'choice'}
                           typed={typed}
                           setTyped={setTyped}
                           inputRef={inputRef}
@@ -230,6 +263,25 @@ export function Study({ cards, onReview, onExit, onFinish }) {
               <Button onClick={next}>Next</Button>
             </motion.div>
           )}
+          {controls === 'choice' && (
+            <motion.div key={`choice-${index}`} className="study__controls-set choices-quiz" {...fade(reduce)}>
+              {options.map((o, i) => {
+                const state = !picked ? '' : o === correctOption ? 'is-right' : o === picked ? 'is-wrong' : 'is-dim';
+                return (
+                  <button
+                    key={o}
+                    type="button"
+                    className={`quiz-option ${state}`}
+                    disabled={Boolean(picked)}
+                    aria-keyshortcuts={String(i + 1)}
+                    onClick={() => choose(o)}
+                  >
+                    {o}
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
           {controls === 'answer' && (
             <motion.div key="answer" className="study__controls-set" {...fade(reduce)}>
               <Button onPointerDown={(e) => e.preventDefault()} onClick={() => reveal()}>Answer</Button>
@@ -241,7 +293,25 @@ export function Study({ cards, onReview, onExit, onFinish }) {
   );
 }
 
-function FrontFace({ card, interactive, typed, setTyped, inputRef, onFocusChange, onSkip, onSubmit }) {
+/** A picture on the card. If it can't load, say so instead of showing a broken image. */
+function CardPicture({ src }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <p className="study-card__picture-missing">This picture didn’t load. Skip this card for now.</p>;
+  return (
+    <img
+      className="study-card__picture"
+      src={src}
+      alt="Picture to identify"
+      decoding="async"
+      draggable={false}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFocusChange, onSkip, onSubmit }) {
+  const picture = imageSrc(card.front);
+  const typedMode = card.mode !== 'choice';
   const bodyRef = useRef(null);
   const fit = useFitText(bodyRef, [card.key, typed]);
 
@@ -258,17 +328,19 @@ function FrontFace({ card, interactive, typed, setTyped, inputRef, onFocusChange
     <>
       <header className="study-card__header">
         <span className="study-card__label">{card.frontLabel}</span>
-        <button type="button" className="skip" onClick={onSkip} tabIndex={interactive ? 0 : -1}>Skip</button>
+        <button type="button" className="skip" onClick={onSkip} tabIndex={canSkip ? 0 : -1}>Skip</button>
       </header>
 
       <div
         ref={bodyRef}
-        className="study-card__body"
+        className={`study-card__body ${picture ? 'has-picture' : ''}`}
         data-fit={fit}
         onClick={() => interactive && inputRef?.current?.focus()}
       >
-        <p className="study-card__text"><Lines text={card.front} /></p>
-        {interactive ? (
+        {picture
+          ? <CardPicture src={picture} />
+          : <p className="study-card__text"><Lines text={card.front} /></p>}
+        {!typedMode ? null : interactive ? (
           <textarea
             ref={inputRef}
             className="study-card__input"
@@ -310,7 +382,7 @@ function BackFace({ card, typed, result }) {
 
   const answerText = result.match.replace(/\s*•\s*/g, '\n');
   const hasTyped = result.verdict !== 'correct' && !result.skipped && typed.trim();
-  const diff = hasTyped ? diffAnswer(typed, answerText) : null;
+  const diff = hasTyped && result.mode !== 'choice' ? diffAnswer(typed, answerText) : null;
   const showDiff = diff && diff.changed <= 0.5;
   const others = alternatives(card.back).filter((a) => a !== result.match);
 

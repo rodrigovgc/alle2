@@ -141,6 +141,7 @@
   --size-confetti-h:  54px;
   --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
   --size-popup:       480px;  /* desktop popup width */
+  --size-quiz-option: 50px;
   --size-sample-card: 112px;
   --size-sample-shape: 70px;
   --size-mini-card-w: 220px;

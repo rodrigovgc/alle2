@@ -235,6 +235,40 @@
 .study-card__input--static { color: var(--text-placeholder); opacity: 1; }
 .study-card__input:focus-visible { outline: none; }
 
+/* Pictures (signs, flags): centred in the card body, never cropped */
+.study-card__body.has-picture { align-items: center; }
+.study-card__picture {
+  flex: 1; min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  user-select: none; -webkit-user-select: none;
+}
+.study-card__body.has-picture .study-card__input { align-self: stretch; }
+.study-card__picture-missing {
+  flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+  color: var(--text-tertiary); line-height: var(--line-height-body);
+}
+
+/* Multiple choice: four options where Answer usually sits */
+.choices-quiz { gap: var(--space-2); }
+.quiz-option {
+  min-height: var(--size-quiz-option);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-field);
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--font-size-button);
+  line-height: var(--line-height-tight);
+  text-align: left;
+  color: var(--text-primary);
+  transition: background var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-base), transform var(--duration-fast) var(--ease-out);
+}
+.quiz-option:active:not(:disabled) { transform: scale(0.98); }
+.quiz-option:disabled { cursor: default; }
+.quiz-option.is-right { background: var(--tag-correct-bg); border-color: var(--tag-correct-border); }
+.quiz-option.is-wrong { background: var(--tag-wrong-bg); border-color: var(--tag-wrong-border); }
+.quiz-option.is-dim { opacity: 0.45; }
+
 /* Helper text sits under the answer like a form hint, then space, then the verdict */
 .study-card__helper {
   margin-top: var(--space-2);

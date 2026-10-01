@@ -3,8 +3,10 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button, IconButton } from './Button.jsx';
 import { Icon } from './Icon.jsx';
 import { Field, SheetActions } from './Sheet.jsx';
+import { Segmented } from './Segmented.jsx';
 import { DeckImportError, parseLooseTable } from '../lib/csv.js';
 import { inferLang } from '../lib/speech.js';
+import { imageSrc } from '../lib/media.js';
 import {
   LEVELS, SIZES, SUBJECTS, buildPrompt, describeTopic, presetFor,
 } from '../lib/prompt.js';
@@ -277,28 +279,6 @@ function SizeStep({ v, set }) {
   );
 }
 
-/** Segmented control in the Tab style: light beige track, white active segment. */
-function Segmented({ options, value, onChange, labelledBy }) {
-  const index = Math.max(0, options.findIndex((o) => o.value === value));
-  return (
-    <div className="tabs tabs--light" role="radiogroup" aria-labelledby={labelledBy} style={{ '--count': options.length }}>
-      <span className="tabs__thumb" style={{ '--i': index }} aria-hidden="true" />
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          className={`tabs__item ${value === o.value ? 'is-active' : ''}`}
-          onClick={() => onChange(o.value)}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function PromptStep({ v }) {
   const prompt = useMemo(() => buildPrompt(v), [v]);
   const [copied, setCopied] = useState(false);
@@ -394,7 +374,9 @@ function PasteStep({ v, onCreate, onBack }) {
           </p>
           {parsed.deck.cards.slice(0, 5).map((c, i) => (
             <div key={i} className="preview-list__row">
-              <span>{c.front}</span>
+              {imageSrc(c.front)
+                ? <img className="preview-list__img" src={imageSrc(c.front)} alt={c.front} />
+                : <span>{c.front}</span>}
               <span>{c.back.replace(/\|/g, ' / ')}</span>
             </div>
           ))}

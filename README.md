@@ -18,7 +18,7 @@ No Supabase yet? Put `VITE_DEMO=true` in `.env.local` instead. Auth and data the
 ## Supabase
 
 1. Create a project, then run `supabase/schema.sql` in the SQL editor (tables + row-level security).
-   Already set up from an earlier version? Run `supabase/002_shapes.sql` once instead (adds deck shapes).
+   Already set up from an earlier version? Run `supabase/002_shapes.sql` and `supabase/003_answer_mode.sql` once instead.
 2. Authentication → Providers → Email: on. Turn off “Confirm email” if you want instant sign-in while testing.
 3. Copy the project URL and anon key into `.env.local` (and into Vercel → Settings → Environment Variables).
 
@@ -46,4 +46,5 @@ Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `verc
 
 Row 1 names the sides (`English`, `Dutch`). Column A is the front, column B the back.
 `gaan|lopen` accepts either answer. `eerst • dan` shows on two lines.
+A cell can be a picture: a Wikimedia Commons file name (`Flag of Belgium.svg`) or an image link.
 A normal share link also works if the sheet is shared as “Anyone with the link”; it's converted to CSV.

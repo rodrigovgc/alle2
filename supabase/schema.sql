@@ -13,6 +13,7 @@ create table if not exists public.decks (
   lang        text not null default 'en-US',
   color       text not null default 'lime',   -- a deck colour, or 'none'
   shape       text,                           -- null = the shape that goes with the colour
+  answer_mode text,                           -- 'type' | 'choice' | null = automatic
   cards       jsonb not null default '[]'::jsonb,   -- [{ "front": "...", "back": "..." }]
   is_sample   boolean not null default false,
   created_at  timestamptz not null default now()

@@ -1,4 +1,6 @@
 import { hashFront } from './hash.js';
+import { alternatives } from './csv.js';
+import { imageSrc } from './media.js';
 import { LEITNER_INTERVALS_DAYS, SESSION_SIZE, NEW_CARDS_PER_SESSION } from '../styles/tokens.js';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -37,11 +39,48 @@ const shuffle = (arr) => {
   return a;
 };
 
+/* ---- Answer mode ------------------------------------------------------ */
+
+const MIN_CHOICES = 4;
+const VERY_LONG_ANSWER = 40; // characters: definitions and sentences
+const PICTURE_PHRASE_WORDS = 2; // words: "Uneven road" under a sign, not "Belgium" under a flag
+
+/** The distinct main answers of a deck: the pool multiple-choice options come from. */
+export function choicePool(deck) {
+  return [...new Set((deck.cards || []).map((c) => alternatives(c.back)[0]).filter(Boolean))];
+}
+
+/**
+ * 'type' or 'choice'. A deck's own setting wins. Otherwise multiple choice is
+ * used when answers are very long (definitions), or when the fronts are
+ * pictures and the answers are phrases (sign meanings). Language decks and
+ * picture-to-name decks (flags) stay typed. Needs at least four answers.
+ */
+export function answerMode(deck) {
+  const pool = choicePool(deck);
+  if (pool.length < MIN_CHOICES) return 'type';
+  if (deck.answer_mode === 'type' || deck.answer_mode === 'choice') return deck.answer_mode;
+  const avgChars = pool.reduce((n, a) => n + a.length, 0) / pool.length;
+  if (avgChars > VERY_LONG_ANSWER) return 'choice';
+  const cards = deck.cards || [];
+  const pictures = cards.filter((c) => imageSrc(c.front)).length > cards.length / 2;
+  const avgWords = pool.reduce((n, a) => n + a.split(/\s+/).length, 0) / pool.length;
+  return pictures && avgWords >= PICTURE_PHRASE_WORDS ? 'choice' : 'type';
+}
+
+/** Four options: the right answer plus three others from the same deck, shuffled. */
+export function makeOptions(correct, pool) {
+  const others = shuffle(pool.filter((a) => a.toLowerCase() !== correct.toLowerCase())).slice(0, MIN_CHOICES - 1);
+  return shuffle([correct, ...others]);
+}
+
 /** Flatten decks into study cards with their progress attached. */
 export function collectCards(decks, progressRows) {
   const byKey = new Map(progressRows.map((p) => [`${p.deck_id}:${p.card_hash}`, p]));
-  return decks.flatMap((deck) =>
-    (deck.cards || []).map((c) => {
+  return decks.flatMap((deck) => {
+    const mode = answerMode(deck);
+    const pool = mode === 'choice' ? choicePool(deck) : null;
+    return (deck.cards || []).map((c) => {
       const hash = hashFront(c.front);
       return {
         key: `${deck.id}:${hash}`,
@@ -52,10 +91,12 @@ export function collectCards(decks, progressRows) {
         frontLabel: deck.front_label,
         backLabel: deck.back_label,
         lang: deck.lang,
+        mode,
+        pool,
         progress: byKey.get(`${deck.id}:${hash}`) || null,
       };
-    }),
-  );
+    });
+  });
 }
 
 /**

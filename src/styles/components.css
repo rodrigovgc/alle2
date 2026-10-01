@@ -283,6 +283,16 @@ select.input { background-image: none; }
   margin-top: var(--space-4);
 }
 .sheet .create-choices { margin-top: 0; }
+.start-tile__more { align-self: center; margin-top: var(--space-1); }
+.library { margin-top: 0; }
+.sample-card.is-added { opacity: 1; }
+.sample-card__added {
+  display: flex; align-items: center; gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: var(--font-size-small); font-weight: var(--font-weight-regular);
+  color: var(--text-secondary); letter-spacing: 0;
+}
+.sample-card__added .icon { width: var(--size-icon-small); height: var(--size-icon-small); }
 .btn--on-tile { background: var(--outer-button-bg); }
 
 /* Sample deck: a small deck card; tapping adds it */
@@ -302,6 +312,7 @@ select.input { background-image: none; }
 .sample-card:active:not(:disabled) { transform: scale(0.985); }
 .sample-card:disabled { opacity: 0.7; }
 .sample-card__title {
+  display: flex; flex-direction: column;
   font-size: var(--font-size-fit-1);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
@@ -423,6 +434,7 @@ select.input { background-image: none; }
 .input--area { height: auto; padding: var(--space-3) var(--space-4); resize: vertical; line-height: var(--line-height-body); font-size: var(--font-size-small); }
 .preview-list { display: flex; flex-direction: column; gap: var(--space-2); }
 .preview-list__head { font-weight: var(--font-weight-bold); }
+.preview-list__img { height: var(--size-icon-button); width: auto; max-width: 100%; object-fit: contain; justify-self: start; }
 .preview-list__row {
   display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);
   padding: var(--space-2) 0;

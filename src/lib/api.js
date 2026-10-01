@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 
-const DECK_FIELDS = 'id,title,csv_url,front_label,back_label,lang,color,cards,is_sample,created_at';
+const DECK_FIELDS = '*'; // tolerant of optional columns added by later migrations
 
 function check({ data, error }) {
   if (error) throw error;

@@ -96,3 +96,23 @@ test('prompt fills the template', () => {
   assert.match(p, /first row is exactly: English,Dutch/);
   assert.match(p, /answer one\|answer two/);
 });
+
+import { answerMode, makeOptions } from './srs.js';
+import { imageSrc } from './media.js';
+import { SAMPLE_DECKS } from './sampleDeck.js';
+test('answer mode: long answers use multiple choice, short ones typing', () => {
+  assert.equal(answerMode(SAMPLE_DECKS.belgianSigns), 'choice');
+  assert.equal(answerMode(SAMPLE_DECKS.flagsWorld), 'type');
+  assert.equal(answerMode({ ...SAMPLE_DECKS.flagsWorld, answer_mode: 'choice' }), 'choice');
+  assert.equal(answerMode({ cards: [{ front: 'a', back: 'a long answer that is long' }], answer_mode: 'choice' }), 'type');
+  const opts = makeOptions('Stop', ['Stop', 'Yield', 'No parking', 'Roundabout', 'Dead end']);
+  assert.equal(opts.length, 4);
+  assert.ok(opts.includes('Stop'));
+  assert.equal(new Set(opts).size, 4);
+});
+test('image cells', () => {
+  assert.match(imageSrc('Flag of Belgium.svg'), /Special:FilePath\/Flag_of_Belgium\.svg/);
+  assert.equal(imageSrc('https://example.com/a.png'), 'https://example.com/a.png');
+  assert.equal(imageSrc('How do you get to work?'), null);
+  assert.equal(imageSrc('3.5'), null);
+});

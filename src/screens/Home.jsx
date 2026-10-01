@@ -6,6 +6,9 @@ import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
 import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
+import { Segmented } from '../components/Segmented.jsx';
+import { READY_MADE } from '../lib/sampleDeck.js';
+import { answerMode } from '../lib/srs.js';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
 import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenColor, tokenNumber } from '../styles/tokens.js';
@@ -164,6 +167,9 @@ export function Home({
                 <SampleCard title="Numbers in Portuguese" color="red" onClick={() => onAddSample('portuguese')} />
                 <SampleCard title="Multiplication tables" color="green" onClick={() => onAddSample('multiplication')} />
               </div>
+              <button type="button" className="text-btn start-tile__more" onClick={() => setSheet({ type: 'library' })}>
+                More ready-made decks
+              </button>
             </section>
             <section className="start-tile">
               <h2 className="start-tile__title">Create your own deck</h2>
@@ -210,7 +216,30 @@ export function Home({
           <p className="sheet__text">Import cards from Google Sheets or create a new deck with AI.</p>
           <SheetActions>
             <CreateChoices onAi={() => setSheet({ type: 'ai' })} onImport={() => setSheet({ type: 'add' })} />
+            <button type="button" className="text-btn" onClick={() => setSheet({ type: 'library' })}>
+              Browse ready-made decks
+            </button>
           </SheetActions>
+        </div>
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'library'} onClose={close} title="Ready-made decks">
+        <div className="sheet__body">
+          <p className="sheet__text">Tap a deck to add it. You can remove it any time.</p>
+          <div className="start-tile__samples library">
+            {READY_MADE.map((r) => {
+              const added = decks.some((d) => d.is_sample && d.title === r.title);
+              return (
+                <SampleCard
+                  key={r.key}
+                  title={r.title}
+                  color={r.color}
+                  added={added}
+                  onClick={async () => { await onAddSample(r.key); close(); }}
+                />
+              );
+            })}
+          </div>
         </div>
       </Sheet>
 
@@ -354,6 +383,8 @@ function CoverForm({ deck, onSubmit }) {
   const [color, setColor] = useState(deck.color);
   const [shape, setShape] = useState(deckShape(deck));
   const [lang, setLang] = useState(deck.lang);
+  const [mode, setMode] = useState(answerMode(deck));
+  const canChoose = answerMode({ ...deck, answer_mode: 'choice' }) === 'choice';
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const current = deckColorVars(color);
@@ -364,11 +395,15 @@ function CoverForm({ deck, onSubmit }) {
       onSubmit={async (e) => {
         e.preventDefault(); setBusy(true); setError('');
         try {
-          await onSubmit({ title: title.trim() || deck.title, color, shape, lang });
+          const patch = { title: title.trim() || deck.title, color, shape, lang };
+          if (mode !== answerMode(deck)) patch.answer_mode = mode; // only send when changed
+          await onSubmit(patch);
         } catch (err) {
-          setError(/shape/.test(err.message)
-            ? 'Shapes need one database update. Run supabase/002_shapes.sql in Supabase, then save again.'
-            : err.message);
+          setError(/answer_mode/.test(err.message)
+            ? 'Answer settings need one database update. Run supabase/003_answer_mode.sql in Supabase, then save again.'
+            : /shape/.test(err.message)
+              ? 'Shapes need one database update. Run supabase/002_shapes.sql in Supabase, then save again.'
+              : err.message);
         } finally { setBusy(false); }
       }}
     >
@@ -407,6 +442,17 @@ function CoverForm({ deck, onSubmit }) {
       <Field label="Deck name">
         <input className="input" name="alle-deck-name" autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>
+      {canChoose && (
+        <div className="builder__group">
+          <span className="field__label" id="answer-label">Answer by</span>
+          <Segmented
+            labelledBy="answer-label"
+            options={[{ value: 'type', label: 'Typing' }, { value: 'choice', label: 'Multiple choice' }]}
+            value={mode}
+            onChange={setMode}
+          />
+        </div>
+      )}
       <Field label="Read-aloud language" hint={`Used for the speaker on the ${deck.back_label} side.`}>
         <select className="input" value={lang} onChange={(e) => setLang(e.target.value)}>
           {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
@@ -430,19 +476,22 @@ function CreateChoices({ onAi, onImport }) {
 }
 
 /** A small deck card that adds a sample deck when tapped. */
-function SampleCard({ title, color, onClick }) {
+function SampleCard({ title, color, onClick, added = false }) {
   const { fill, deep } = deckColorVars(color);
   const [busy, setBusy] = useState(false);
   return (
     <button
       type="button"
-      className="sample-card"
+      className={`sample-card ${added ? 'is-added' : ''}`}
       style={{ '--deck-fill': fill, '--deck-deep': deep }}
-      disabled={busy}
-      aria-label={`Add the sample deck ${title}`}
+      disabled={busy || added}
+      aria-label={added ? `${title}, already added` : `Add the sample deck ${title}`}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
     >
-      <span className="sample-card__title">{title}</span>
+      <span className="sample-card__title">
+        {title}
+        {added && <span className="sample-card__added"><Icon name="check" /> Added</span>}
+      </span>
       <DeckShape shape={color} />
     </button>
   );
