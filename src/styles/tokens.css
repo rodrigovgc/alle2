@@ -63,6 +63,7 @@
   --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
   --inner-button-bg:   var(--color-surface);      /* circle buttons inside a card or sheet */
   --outer-button-bg:   var(--color-background);   /* circle buttons on the page             */
+  --picture-frame:     var(--grey-200);           /* outline on flags so white edges show */
   --mark-wrong-bg:     var(--deck-red);           /* letters typed wrong                    */
   --mark-fix-bg:       var(--deck-green);         /* letters that fix them                  */
 

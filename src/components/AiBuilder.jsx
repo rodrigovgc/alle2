@@ -6,7 +6,7 @@ import { Field, SheetActions } from './Sheet.jsx';
 import { Segmented } from './Segmented.jsx';
 import { DeckImportError, parseLooseTable } from '../lib/csv.js';
 import { inferLang } from '../lib/speech.js';
-import { imageSrc } from '../lib/media.js';
+import { imageSrc, needsFrame } from '../lib/media.js';
 import {
   LEVELS, SIZES, SUBJECTS, buildPrompt, describeTopic, presetFor,
 } from '../lib/prompt.js';
@@ -375,7 +375,7 @@ function PasteStep({ v, onCreate, onBack }) {
           {parsed.deck.cards.slice(0, 5).map((c, i) => (
             <div key={i} className="preview-list__row">
               {imageSrc(c.front)
-                ? <img className="preview-list__img" src={imageSrc(c.front)} alt={c.front} />
+                ? <img className={`preview-list__img ${needsFrame(c.front) ? 'is-framed' : ''}`} src={imageSrc(c.front)} alt={c.front} />
                 : <span>{c.front}</span>}
               <span>{c.back.replace(/\|/g, ' / ')}</span>
             </div>

@@ -7,7 +7,7 @@ import { alternatives, displayLines } from '../lib/csv.js';
 import { canSpeak, speak } from '../lib/speech.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
-import { imageSrc } from '../lib/media.js';
+import { imageSrc, needsFrame } from '../lib/media.js';
 import { makeOptions } from '../lib/srs.js';
 import { SPRING, tokenNumber } from '../styles/tokens.js';
 
@@ -294,18 +294,20 @@ export function Study({ cards, onReview, onExit, onFinish }) {
 }
 
 /** A picture on the card. If it can't load, say so instead of showing a broken image. */
-function CardPicture({ src }) {
+function CardPicture({ src, framed }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <p className="study-card__picture-missing">This picture didn’t load. Skip this card for now.</p>;
   return (
-    <img
-      className="study-card__picture"
-      src={src}
-      alt="Picture to identify"
-      decoding="async"
-      draggable={false}
-      onError={() => setFailed(true)}
-    />
+    <div className="study-card__picture-wrap">
+      <img
+        className={`study-card__picture ${framed ? 'is-framed' : ''}`}
+        src={src}
+        alt="Picture to identify"
+        decoding="async"
+        draggable={false}
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 }
 
@@ -338,7 +340,7 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
         onClick={() => interactive && inputRef?.current?.focus()}
       >
         {picture
-          ? <CardPicture src={picture} />
+          ? <CardPicture src={picture} framed={needsFrame(card.front)} />
           : <p className="study-card__text"><Lines text={card.front} /></p>}
         {!typedMode ? null : interactive ? (
           <textarea

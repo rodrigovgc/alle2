@@ -17,3 +17,6 @@ export function imageSrc(cell = '') {
   }
   return null;
 }
+
+/** Flags have white areas that disappear on a white card, so they get a frame. */
+export const needsFrame = (cell = '') => /^\s*flag of /i.test(cell);

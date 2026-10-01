@@ -34,11 +34,17 @@
 .icon-btn--inner { background: var(--inner-button-bg); border-color: transparent; }
 
 .text-btn {
-  color: var(--text-secondary);
-  font-size: var(--font-size-small);
-  padding: var(--space-3);
+  min-height: var(--size-icon-button);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font-size: var(--font-size-button);
+  font-weight: var(--font-weight-medium);
   text-align: center;
+  transition: background var(--duration-fast);
 }
+.text-btn:hover { background: var(--press-overlay); }
+.text-btn:active { background: var(--press-overlay); }
 
 /* Home pill contents: [search ···] (the shell itself lives in screens.css) */
 .pill__content { display: flex; align-items: center; justify-content: flex-end; height: 100%; padding: 0 var(--space-1); }
@@ -435,6 +441,7 @@ select.input { background-image: none; }
 .preview-list { display: flex; flex-direction: column; gap: var(--space-2); }
 .preview-list__head { font-weight: var(--font-weight-bold); }
 .preview-list__img { height: var(--size-icon-button); width: auto; max-width: 100%; object-fit: contain; justify-self: start; }
+.preview-list__img.is-framed { outline: 1px solid var(--picture-frame); }
 .preview-list__row {
   display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);
   padding: var(--space-2) 0;

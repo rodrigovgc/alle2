@@ -161,20 +161,18 @@ export function Home({
         {!loading && !decks.length && (
           <div className="start" aria-label="Get started">
             <section className="start-tile">
-              <h2 className="start-tile__title">Try a sample deck</h2>
-              <p className="start-tile__text">Pick a deck to see how studying works.</p>
-              <div className="start-tile__samples">
-                <SampleCard title="Numbers in Portuguese" color="red" onClick={() => onAddSample('portuguese')} />
-                <SampleCard title="Multiplication tables" color="green" onClick={() => onAddSample('multiplication')} />
-              </div>
-              <button type="button" className="text-btn start-tile__more" onClick={() => setSheet({ type: 'library' })}>
-                More ready-made decks
-              </button>
-            </section>
-            <section className="start-tile">
               <h2 className="start-tile__title">Create your own deck</h2>
               <p className="start-tile__text">Import cards from Google Sheets or create a new deck with AI.</p>
               <CreateChoices onAi={() => setSheet({ type: 'ai' })} onImport={() => setSheet({ type: 'add' })} />
+            </section>
+            <section className="start-tile">
+              <h2 className="start-tile__title">Try a sample deck</h2>
+              <p className="start-tile__text">Pick a deck to see how studying works.</p>
+              <div className="start-tile__samples">
+                {READY_MADE.map((r) => (
+                  <SampleCard key={r.key} title={r.title} color={r.color} onClick={() => onAddSample(r.key)} />
+                ))}
+              </div>
             </section>
           </div>
         )}
