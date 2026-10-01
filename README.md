@@ -29,6 +29,10 @@ there is no profiles table.
 
 Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `vercel.json` handles SPA routing.
 
+## Design system
+
+Open `/design` on any running copy (for example `alle-app.vercel.app/design`). It shows every colour, type size, spacing, radius, icon and component, rendered live from `tokens.css` and the real components.
+
 ## Where things live
 
 | Path | What |

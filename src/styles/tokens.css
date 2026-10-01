@@ -72,18 +72,23 @@
 
   --font-weight-regular: 400;
   --font-weight-medium:  500;
+  --font-weight-semibold: 600;
   --font-weight-bold:    700;
 
-  --font-size-display:     80px;  /* Done score                            */
-  --font-size-large-title: 34px;
-  --font-size-small-title: 24px;
-  --font-size-button:      18px;
-  --font-size-small:       15px;
+  /* Type scale, aligned with iOS text styles (Large Title 34 · Title 1 28 ·
+     Title 3 20 · Body 17 · Subhead 15 · Footnote 13) so Alle reads like a
+     native app. One step below the Figma brief (34/24/18/15), on purpose. */
+  --font-size-display:     64px;  /* Done score                           */
+  --font-size-large-title: 28px;  /* deck names, card text, auth title    */
+  --font-size-small-title: 20px;  /* section, sheet and tile titles       */
+  --font-size-button:      17px;  /* body text, buttons, inputs           */
+  --font-size-small:       15px;  /* secondary text                       */
+  --font-size-caption:     13px;  /* labels, hints, meta                  */
 
   /* Steps the study card falls back through when text doesn't fit */
-  --font-size-fit-1: 28px;
-  --font-size-fit-2: 24px;
-  --font-size-fit-3: 20px;
+  --font-size-fit-1: 24px;
+  --font-size-fit-2: 20px;
+  --font-size-fit-3: 17px;
 
   --line-height-tight: 120%;
   --line-height-body:  140%;
@@ -134,7 +139,7 @@
   --size-card-control: 40px;  /* Skip pill, speaker circle        */
   --size-icon-small:  18px;
   --screen-max:       520px;
-  --size-logo:        43px;
+  --size-logo:        32px;
   --size-menu-min:    250px;
   --size-controls:    124px;  /* bottom area: tab (58) + gap (16) + button (50) */
   --size-swatch:      44px;
@@ -143,6 +148,7 @@
   --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
   --size-popup:       480px;  /* desktop popup width */
   --size-quiz-option: 50px;
+  --size-card-picture: 120px; /* signs and flags on a study card */
   --size-sample-card: 112px;
   --size-sample-shape: 70px;
   --size-mini-card-w: 220px;

@@ -7,7 +7,7 @@ import { alternatives, displayLines } from '../lib/csv.js';
 import { canSpeak, speak } from '../lib/speech.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
-import { imageSrc, needsFrame } from '../lib/media.js';
+import { imageSrc, imageSources, needsFrame } from '../lib/media.js';
 import { makeOptions } from '../lib/srs.js';
 import { SPRING, tokenNumber } from '../styles/tokens.js';
 
@@ -38,10 +38,13 @@ function Runs({ runs, markClass }) {
  *    verdict decides when the card comes back; there's nothing to rate.
  * The card's size and position never change, so only the card itself moves.
  */
-export function Study({ cards, onReview, onExit, onFinish }) {
+export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
   useVisualViewport(true);
   const reduce = useReducedMotion();
 
+  // The session can shrink: a card whose picture can't load is taken out
+  // before (or as) it reaches the top, since it couldn't be answered.
+  const [cards, setCards] = useState(sessionCards);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState('question');
   const [typed, setTyped] = useState('');
@@ -49,9 +52,23 @@ export function Study({ cards, onReview, onExit, onFinish }) {
   const [correctCount, setCorrectCount] = useState(0);
   const inputRef = useRef(null);
   const busy = useRef(false);
+  const correctRef = useRef(0);
+
+  function dropCard(key) {
+    setCards((list) => {
+      const pos = list.findIndex((c) => c.key === key);
+      if (pos < index) return list;                        // already studied
+      if (pos === index && phase !== 'question') return list; // answer is showing
+      return list.filter((c) => c.key !== key);
+    });
+  }
+  useEffect(() => {
+    if (cards.length === 0) onExit();
+    else if (index >= cards.length) onFinish({ correct: correctRef.current, total: cards.length });
+  }, [cards.length, index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = cards.length;
-  const card = cards[index];
+  const card = cards[Math.min(index, Math.max(0, total - 1))];
   const isChoice = card.mode === 'choice';
   const correctOption = alternatives(card.back)[0];
   // Options are fixed per card, so they don't reshuffle while the card is up.
@@ -152,6 +169,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
       return;
     }
     setCorrectCount(newCorrect);
+    correctRef.current = newCorrect;
     setIndex(index + 1);
     setPhase('question');
     setTyped('');
@@ -235,6 +253,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                           typed={typed}
                           setTyped={setTyped}
                           inputRef={inputRef}
+                          onBroken={() => dropCard(c.key)}
                           onFocusChange={setInputFocused}
                           onSkip={() => reveal({ skipped: true })}
                           onSubmit={() => reveal()}
@@ -246,7 +265,7 @@ export function Study({ cards, onReview, onExit, onFinish }) {
                     </motion.div>
                   ) : (
                     <div className="study-card__face">
-                      <FrontFace card={c} interactive={false} typed="" />
+                      <FrontFace card={c} interactive={false} typed="" onBroken={() => dropCard(c.key)} />
                     </div>
                   )}
                 </motion.div>
@@ -294,24 +313,31 @@ export function Study({ cards, onReview, onExit, onFinish }) {
 }
 
 /** A picture on the card. If it can't load, say so instead of showing a broken image. */
-function CardPicture({ src, framed }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) return <p className="study-card__picture-missing">This picture didn’t load. Skip this card for now.</p>;
+/**
+ * A picture on the card. Tries each source in turn; if none loads, reports it
+ * so the session can drop the card (a question without its picture can't be answered).
+ */
+function CardPicture({ sources, framed, onBroken }) {
+  const [i, setI] = useState(0);
+  const failed = i >= sources.length;
+  useEffect(() => { if (failed) onBroken?.(); }, [failed]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (failed) return <div className="study-card__picture-wrap" />;
   return (
     <div className="study-card__picture-wrap">
       <img
+        key={sources[i]}
         className={`study-card__picture ${framed ? 'is-framed' : ''}`}
-        src={src}
+        src={sources[i]}
         alt="Picture to identify"
         decoding="async"
         draggable={false}
-        onError={() => setFailed(true)}
+        onError={() => setI((n) => n + 1)}
       />
     </div>
   );
 }
 
-function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFocusChange, onSkip, onSubmit }) {
+function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFocusChange, onSkip, onSubmit, onBroken }) {
   const picture = imageSrc(card.front);
   const typedMode = card.mode !== 'choice';
   const bodyRef = useRef(null);
@@ -340,7 +366,7 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
         onClick={() => interactive && inputRef?.current?.focus()}
       >
         {picture
-          ? <CardPicture src={picture} framed={needsFrame(card.front)} />
+          ? <CardPicture sources={imageSources(card.front)} framed={needsFrame(card.front)} onBroken={onBroken} />
           : <p className="study-card__text"><Lines text={card.front} /></p>}
         {!typedMode ? null : interactive ? (
           <textarea

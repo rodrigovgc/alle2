@@ -1,0 +1,31 @@
+/* Layout for the /design page only. Values come from tokens.css. */
+.ds { max-width: 760px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + var(--space-8)) var(--gutter) var(--space-10); }
+.ds-head { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-8); }
+.ds-head__title { font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); }
+.ds-head__text { color: var(--text-secondary); line-height: var(--line-height-body); }
+.ds-head code { font-size: var(--font-size-caption); background: var(--color-surface-deep); padding: 1px var(--space-1); border-radius: var(--radius-mark); }
+.ds-section { padding: var(--space-6) 0; border-top: 1px solid var(--color-surface-deep); display: flex; flex-direction: column; gap: var(--space-5); }
+.ds-section__title { font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); }
+.ds-group { display: flex; flex-direction: column; gap: var(--space-3); }
+.ds-group__title { font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.ds-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
+.ds-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); grid-column: span 2; }
+.ds-swatch { display: flex; flex-direction: column; gap: var(--space-1); }
+.ds-swatch__chip { height: var(--size-field); border-radius: var(--radius-field); border: 1px solid var(--border-subtle); }
+.ds-swatch__name { font-size: var(--font-size-caption); font-weight: var(--font-weight-medium); }
+.ds-swatch__value, .ds-token { font-size: var(--font-size-caption); color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.ds-type { display: flex; flex-direction: column; gap: var(--space-1); }
+.ds-type__meta { display: flex; gap: var(--space-3); align-items: baseline; font-size: var(--font-size-caption); color: var(--text-secondary); }
+.ds-space { display: flex; align-items: center; gap: var(--space-3); }
+.ds-space__bar { height: var(--space-3); background: var(--lime-100); border-radius: 2px; }
+.ds-radii { display: flex; flex-wrap: wrap; gap: var(--space-5); }
+.ds-radius { display: flex; flex-direction: column; gap: var(--space-2); }
+.ds-radius__box { width: 72px; height: 72px; background: var(--card-bg); border: 1px solid var(--grey-200); }
+.ds-stack { display: flex; flex-direction: column; gap: var(--space-3); max-width: var(--screen-max); }
+.ds-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.ds-study { position: relative; height: 240px; max-width: var(--screen-max); }
+.ds-shapes { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: var(--space-3); }
+.ds-shape { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; border-radius: var(--radius-field); background: var(--deck-fill); border: 1px solid var(--deck-deep); color: var(--deck-deep); }
+.ds-shape .deck-shape { position: static; width: 60%; height: 60%; opacity: 1; }
+.ds-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: var(--space-3); }
+.ds-icon { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) 0; border-radius: var(--radius-field); background: var(--card-bg); font-size: var(--font-size-caption); color: var(--text-secondary); }

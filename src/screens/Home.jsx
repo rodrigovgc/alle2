@@ -54,6 +54,8 @@ export function Home({
   }, [decks, query]);
 
   const close = () => setSheet(null);
+  // Ready-made decks the user hasn't added yet; added ones are hidden.
+  const remainingReadyMade = READY_MADE.filter((r) => !decks.some((d) => d.is_sample && d.title === r.title));
 
   return (
     <main className="home">
@@ -214,30 +216,32 @@ export function Home({
           <p className="sheet__text">Import cards from Google Sheets or create a new deck with AI.</p>
           <SheetActions>
             <CreateChoices onAi={() => setSheet({ type: 'ai' })} onImport={() => setSheet({ type: 'add' })} />
-            <button type="button" className="text-btn" onClick={() => setSheet({ type: 'library' })}>
-              Browse ready-made decks
-            </button>
+            {remainingReadyMade.length > 0 && (
+              <button type="button" className="text-btn" onClick={() => setSheet({ type: 'library' })}>
+                Browse ready-made decks
+              </button>
+            )}
           </SheetActions>
         </div>
       </Sheet>
 
       <Sheet open={sheet?.type === 'library'} onClose={close} title="Ready-made decks">
         <div className="sheet__body">
-          <p className="sheet__text">Tap a deck to add it. You can remove it any time.</p>
-          <div className="start-tile__samples library">
-            {READY_MADE.map((r) => {
-              const added = decks.some((d) => d.is_sample && d.title === r.title);
-              return (
+          {remainingReadyMade.length > 0 && <p className="sheet__text">Tap a deck to add it.</p>}
+          {remainingReadyMade.length ? (
+            <div className="start-tile__samples library">
+              {remainingReadyMade.map((r) => (
                 <SampleCard
                   key={r.key}
                   title={r.title}
                   color={r.color}
-                  added={added}
                   onClick={async () => { await onAddSample(r.key); close(); }}
                 />
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="sheet__text">You’ve added every ready-made deck.</p>
+          )}
         </div>
       </Sheet>
 

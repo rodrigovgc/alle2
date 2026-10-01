@@ -1,0 +1,221 @@
+import { useEffect, useState } from 'react';
+import { Button, IconButton } from '../components/Button.jsx';
+import { Tag } from '../components/Tag.jsx';
+import { Segmented } from '../components/Segmented.jsx';
+import { Field } from '../components/Sheet.jsx';
+import { DeckPreview } from '../components/DeckCard.jsx';
+import { DeckShape, Icon, Logo } from '../components/Icon.jsx';
+import { ICONS } from '../assets/svg.js';
+import { DECK_COLORS, DECK_SHAPES } from '../styles/tokens.js';
+
+/*
+ * Alle's design system, live. Every swatch reads its value from tokens.css and
+ * every component is the real one the app uses, so this page can't drift.
+ * Open it at /design.
+ */
+
+const COLOR_GROUPS = [
+  ['Base', ['--color-background', '--color-surface', '--color-surface-deep', '--color-foreground']],
+  ['Greys', ['--grey-500', '--grey-400', '--grey-300', '--grey-200']],
+  ['Accent', ['--lime-100', '--lime-200']],
+  ['Feedback', ['--tag-correct-bg', '--tag-correct-border', '--tag-almost-bg', '--tag-almost-border', '--tag-wrong-bg', '--tag-wrong-border', '--color-danger']],
+];
+
+const TYPE = [
+  ['--font-size-display', 'Display', '14/20', 700],
+  ['--font-size-large-title', 'Large title', 'Numbers in Portuguese', 700],
+  ['--font-size-small-title', 'Title', 'Create your own deck', 700],
+  ['--font-size-button', 'Body · Button', 'Import cards from Google Sheets', 400],
+  ['--font-size-small', 'Secondary', 'Pick a deck to see how studying works.', 400],
+  ['--font-size-caption', 'Caption', 'Digit → Portuguese · 10 cards', 400],
+];
+
+const SPACES = ['--space-1', '--space-2', '--space-3', '--space-4', '--space-5', '--space-6', '--space-8', '--space-10'];
+const RADII = ['--radius-mark', '--radius-field', '--radius-tag', '--radius-deck', '--radius-button', '--radius-card', '--radius-sheet'];
+
+function useToken(name) {
+  const [v, setV] = useState('');
+  useEffect(() => {
+    setV(getComputedStyle(document.documentElement).getPropertyValue(name).trim());
+  }, [name]);
+  return v;
+}
+
+function Swatch({ name }) {
+  const value = useToken(name);
+  return (
+    <div className="ds-swatch">
+      <span className="ds-swatch__chip" style={{ background: `var(${name})` }} />
+      <span className="ds-swatch__name">{name.replace('--', '')}</span>
+      <span className="ds-swatch__value">{value}</span>
+    </div>
+  );
+}
+
+function Token({ name }) {
+  const value = useToken(name);
+  return <span className="ds-token">{name} · {value}</span>;
+}
+
+function Section({ title, children }) {
+  return (
+    <section className="ds-section">
+      <h2 className="ds-section__title">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+export function DesignSystem() {
+  const [seg, setSeg] = useState(20);
+  return (
+    <main className="ds">
+      <header className="ds-head">
+        <Logo />
+        <h1 className="ds-head__title">Design system</h1>
+        <p className="ds-head__text">
+          Live from the app. Colours and sizes come from <code>src/styles/tokens.css</code>; components are the real ones.
+          Change a token and this page, and the app, change with it.
+        </p>
+      </header>
+
+      <Section title="Colour">
+        {COLOR_GROUPS.map(([label, names]) => (
+          <div key={label} className="ds-group">
+            <h3 className="ds-group__title">{label}</h3>
+            <div className="ds-swatches">{names.map((n) => <Swatch key={n} name={n} />)}</div>
+          </div>
+        ))}
+        <div className="ds-group">
+          <h3 className="ds-group__title">Deck colours · fill and deep</h3>
+          <div className="ds-swatches">
+            {DECK_COLORS.map((c) => (
+              <div key={c} className="ds-pair">
+                <Swatch name={`--deck-${c}`} />
+                <Swatch name={`--deck-${c}-deep`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Typography · Inter">
+        {TYPE.map(([name, label, sample, weight]) => (
+          <div key={name} className="ds-type">
+            <span className="ds-type__meta">{label}<Token name={name} /></span>
+            <span style={{ fontSize: `var(${name})`, fontWeight: weight, lineHeight: 'var(--line-height-tight)', letterSpacing: weight === 700 ? 'var(--letter-spacing-title)' : 0 }}>
+              {sample}
+            </span>
+          </div>
+        ))}
+      </Section>
+
+      <Section title="Spacing and radius">
+        <div className="ds-group">
+          {SPACES.map((n) => (
+            <div key={n} className="ds-space"><span className="ds-space__bar" style={{ width: `var(${n})` }} /><Token name={n} /></div>
+          ))}
+        </div>
+        <div className="ds-radii">
+          {RADII.map((n) => (
+            <div key={n} className="ds-radius"><span className="ds-radius__box" style={{ borderRadius: `var(${n})` }} /><Token name={n} /></div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Buttons">
+        <div className="ds-stack">
+          <Button>Primary · Answer</Button>
+          <Button icon="shuffle">Primary with icon</Button>
+          <Button variant="secondary">Secondary</Button>
+          <Button variant="danger">Danger · Remove deck</Button>
+          <Button disabled>Disabled</Button>
+          <button type="button" className="text-btn">Text button</button>
+        </div>
+        <div className="ds-row">
+          <IconButton icon="plus" label="Outer icon button" />
+          <IconButton icon="close" label="Outer icon button" />
+          <IconButton icon="speaker" label="Inner icon button" className="icon-btn--inner" />
+          <IconButton icon="swap" label="Inner icon button" className="icon-btn--inner" />
+          <button type="button" className="skip">Skip</button>
+        </div>
+      </Section>
+
+      <Section title="Controls">
+        <div className="ds-stack">
+          <Segmented labelledBy="" options={[20, 50, 100].map((n) => ({ value: n, label: String(n) }))} value={seg} onChange={setSeg} />
+          <div className="ds-row"><Tag verdict="correct" /><Tag verdict="almost" /><Tag verdict="wrong" /></div>
+          <div className="progress" style={{ '--progress': 0.4 }}><span className="progress__fill" /></div>
+          <Field label="Field label" hint="Hint text in caption size.">
+            <input className="input" placeholder="Placeholder" />
+          </Field>
+          <div className="chips">
+            <button type="button" className="chip is-checked">Chosen chip</button>
+            <button type="button" className="chip">Chip</button>
+          </div>
+          <label className="choice is-checked"><span>Choice row, selected</span></label>
+          <label className="choice"><span>Choice row</span></label>
+        </div>
+      </Section>
+
+      <Section title="Multiple choice">
+        <div className="ds-stack">
+          <button type="button" className="quiz-option">Option</button>
+          <button type="button" className="quiz-option is-right">Right answer</button>
+          <button type="button" className="quiz-option is-wrong">Wrong pick</button>
+          <button type="button" className="quiz-option is-dim">Other options, dimmed</button>
+        </div>
+      </Section>
+
+      <Section title="Cards">
+        <div className="ds-stack">
+          <DeckPreview deck={{ title: 'Numbers in Portuguese', front_label: 'Digit', back_label: 'Portuguese', color: 'red', cards: Array(10) }} />
+          <DeckPreview deck={{ title: 'Monochrome deck', front_label: 'English', back_label: 'Dutch', color: 'none', shape: 'purple', cards: Array(156) }} />
+          <div className="ds-study">
+            <div className="study-card__face" style={{ '--card-shadow': 'var(--shadow-card)' }}>
+              <header className="study-card__header">
+                <span className="study-card__label">English</span>
+                <button type="button" className="skip">Skip</button>
+              </header>
+              <div className="study-card__body">
+                <p className="study-card__text">How do you get to work?</p>
+                <span className="study-card__input study-card__input--static">Type answer…</span>
+              </div>
+            </div>
+          </div>
+          <div className="ds-study">
+            <div className="study-card__face" style={{ '--card-shadow': 'var(--shadow-card)' }}>
+              <header className="study-card__header">
+                <span className="study-card__label">Dutch</span>
+                <IconButton icon="speaker" label="Read aloud" className="icon-btn--inner icon-btn--card" />
+              </header>
+              <div className="study-card__body">
+                <p className="study-card__text study-card__text--typed">Hoe kom jij naa<mark className="mark mark--wrong">t</mark> het werk</p>
+                <p className="study-card__text">Hoe kom jij naa<mark className="mark mark--fix">r</mark> het werk?</p>
+                <div className="study-card__verdict"><Tag verdict="almost" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Deck shapes">
+        <div className="ds-shapes">
+          {DECK_SHAPES.map((sh) => (
+            <span key={sh} className="ds-shape" style={{ '--deck-fill': `var(--deck-${sh})`, '--deck-deep': `var(--deck-${sh}-deep)` }}>
+              <DeckShape shape={sh} />
+            </span>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Icons">
+        <div className="ds-icons">
+          {Object.keys(ICONS).map((k) => (
+            <span key={k} className="ds-icon"><Icon name={k} /><span>{k}</span></span>
+          ))}
+        </div>
+      </Section>
+    </main>
+  );
+}

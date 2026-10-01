@@ -117,7 +117,7 @@
 }
 .study__count {
   min-width: 3ch; text-align: right;
-  font-size: var(--font-size-button);
+  font-size: var(--font-size-small);
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
 }
@@ -162,7 +162,7 @@
   flex: none;
 }
 .study-card__label {
-  font-size: var(--font-size-small);
+  font-size: var(--font-size-caption);
   color: var(--text-tertiary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -239,12 +239,13 @@
 .study-card__body.has-picture { align-items: center; }
 .study-card__picture-wrap {
   flex: 1; min-height: 0; width: 100%;
+  max-height: var(--size-card-picture);
   display: flex; align-items: center; justify-content: center;
 }
 /* Sized to the picture itself, so a frame hugs the flag, not the empty space around it */
 .study-card__picture {
   display: block;
-  max-width: 100%; max-height: 100%;
+  max-width: 70%; max-height: 100%;
   width: auto; height: auto;
   user-select: none; -webkit-user-select: none;
 }
@@ -278,7 +279,7 @@
 /* Helper text sits under the answer like a form hint, then space, then the verdict */
 .study-card__helper {
   margin-top: var(--space-2);
-  font-size: var(--font-size-small);
+  font-size: var(--font-size-caption);
   line-height: var(--line-height-body);
   color: var(--text-tertiary);
 }
