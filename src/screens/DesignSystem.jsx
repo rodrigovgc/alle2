@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { getThemePref, setThemePref } from '../lib/theme.js';
 import { Button, IconButton } from '../components/Button.jsx';
 import { Tag } from '../components/Tag.jsx';
 import { Segmented } from '../components/Segmented.jsx';
@@ -33,12 +34,58 @@ const TYPE = [
 const SPACES = ['--space-1', '--space-2', '--space-3', '--space-4', '--space-5', '--space-6', '--space-8', '--space-10'];
 const RADII = ['--radius-mark', '--radius-field', '--radius-tag', '--radius-deck', '--radius-button', '--radius-card', '--radius-sheet'];
 
+// Re-read token values whenever the theme changes.
+function useThemeTick() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const on = () => setTick((t) => t + 1);
+    window.addEventListener('alle-theme', on);
+    window.addEventListener('storage', on);
+    return () => { window.removeEventListener('alle-theme', on); window.removeEventListener('storage', on); };
+  }, []);
+  return tick;
+}
+
 function useToken(name) {
+  const tick = useThemeTick();
   const [v, setV] = useState('');
   useEffect(() => {
     setV(getComputedStyle(document.documentElement).getPropertyValue(name).trim());
-  }, [name]);
+  }, [name, tick]);
   return v;
+}
+
+const DEVICES = [
+  { value: 'se', label: 'iPhone SE', w: 375, h: 667, island: false },
+  { value: 'pro', label: 'iPhone 16 Pro', w: 402, h: 874, island: true },
+  { value: 'max', label: 'iPhone 16 Pro Max', w: 440, h: 956, island: true },
+];
+
+/** The real app running inside a phone frame. It shares the browser's login. */
+function PhonePreview() {
+  const [device, setDevice] = useState('pro');
+  const [key, setKey] = useState(0);
+  const frame = useRef(null);
+  const d = DEVICES.find((x) => x.value === device);
+  const top = d.island ? 54 : 20;      // status bar area
+  const bottom = d.island ? 34 : 0;    // home indicator area
+  return (
+    <div className="ds-phone-wrap">
+      <div className="ds-row">
+        <Segmented labelledBy="" options={DEVICES} value={device} onChange={setDevice} />
+        <Button variant="secondary" className="ds-reload" onClick={() => setKey((k) => k + 1)}>Reload</Button>
+      </div>
+      <div className="ds-phone" style={{ width: d.w, height: d.h, '--top': `${top}px`, '--bottom': `${bottom}px` }}>
+        <div className="ds-phone__status">
+          <span>9:41</span>
+          {d.island && <span className="ds-phone__island" />}
+        </div>
+        <iframe key={`${device}-${key}`} ref={frame} className="ds-phone__screen" src="/" title={`Alle on ${d.label}`} />
+        {d.island && <span className="ds-phone__home" />}
+      </div>
+      <p className="ds-head__text">The real app, signed in as you. Taps, typing and navigation all work; the appearance switch above applies here too.</p>
+    </div>
+  );
 }
 
 function Swatch({ name }) {
@@ -68,6 +115,7 @@ function Section({ title, children }) {
 
 export function DesignSystem() {
   const [seg, setSeg] = useState(20);
+  const [theme, setTheme] = useState(getThemePref);
   return (
     <main className="ds">
       <header className="ds-head">
@@ -77,7 +125,17 @@ export function DesignSystem() {
           Live from the app. Colours and sizes come from <code>src/styles/tokens.css</code>; components are the real ones.
           Change a token and this page, and the app, change with it.
         </p>
+        <Segmented
+          labelledBy=""
+          options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'Automatic' }]}
+          value={theme}
+          onChange={(t) => { setThemePref(t); setTheme(t); }}
+        />
       </header>
+
+      <Section title="Phone preview">
+        <PhonePreview />
+      </Section>
 
       <Section title="Colour">
         {COLOR_GROUPS.map(([label, names]) => (

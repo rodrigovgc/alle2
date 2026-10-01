@@ -31,7 +31,9 @@ Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `verc
 
 ## Design system
 
-Open `/design` on any running copy (for example `alle-app.vercel.app/design`). It shows every colour, type size, spacing, radius, icon and component, rendered live from `tokens.css` and the real components.
+Open `/design` on any running copy (for example `alle-app.vercel.app/design`). It shows every colour, type size, spacing, radius, icon and component, rendered live from `tokens.css` and the real components, with a light/dark switch and a phone preview that runs the real app at iPhone SE, 16 Pro and 16 Pro Max sizes.
+
+Dark mode is the `:root[data-theme="dark"]` block at the end of `tokens.css`: the same token names with dark values.
 
 ## Where things live
 

@@ -5,10 +5,10 @@ import { deckColorVars, deckShape } from '../styles/tokens.js';
 
 /** Non-interactive copy of a deck card, used as the live preview in Customize cover. */
 export function DeckPreview({ deck }) {
-  const { fill, deep } = deckColorVars(deck.color);
+  const { fill, deep, ink, ink2 } = deckColorVars(deck.color);
   const count = deck.cards?.length ?? 0;
   return (
-    <div className="deck deck--preview" style={{ '--deck-fill': fill, '--deck-deep': deep }} aria-hidden="true">
+    <div className="deck deck--preview" style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }} aria-hidden="true">
       <div className="deck__surface">
         <span className="deck__meta">
           {deck.front_label}<Icon name="arrow" className="deck__arrow" />{deck.back_label}
@@ -23,7 +23,7 @@ export function DeckPreview({ deck }) {
 
 export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onRemove }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { fill, deep } = deckColorVars(deck.color, mode);
+  const { fill, deep, ink, ink2 } = deckColorVars(deck.color, mode);
   const count = deck.cards?.length ?? 0;
 
   const items = [
@@ -34,7 +34,7 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
   ];
 
   return (
-    <article className={`deck ${menuOpen ? 'is-raised' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep }}>
+    <article className={`deck ${menuOpen ? 'is-raised' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}>
       <button type="button" className="deck__surface" onClick={onOpen} aria-label={`Study ${deck.title}`}>
         <span className="deck__meta">
           {deck.front_label}

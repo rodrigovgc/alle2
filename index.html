@@ -22,6 +22,14 @@
       rel="stylesheet"
     />
     <title>Alle</title>
+    <script>
+      // Apply the saved appearance before anything paints, so there's no flash.
+      try {
+        var p = localStorage.getItem('alle-theme') || 'light';
+        var d = p === 'dark' || (p === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = d ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

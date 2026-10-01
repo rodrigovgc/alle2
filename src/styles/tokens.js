@@ -16,11 +16,13 @@ export const NO_COLOR = 'none';
 
 /** CSS values for a deck's fill + deep colour, honouring colour mode. */
 export function deckColorVars(color, mode = 'colorful') {
+  // ink: text colour on the card. Pastels keep dark ink in both themes;
+  // monochrome cards follow the theme.
   if (mode === 'monochrome' || color === NO_COLOR) {
-    return { fill: 'var(--deck-mono)', deep: 'var(--deck-mono-deep)' };
+    return { fill: 'var(--deck-mono)', deep: 'var(--deck-mono-deep)', ink: 'var(--color-foreground)', ink2: 'var(--grey-400)' };
   }
   const key = DECK_COLORS.includes(color) ? color : 'lime';
-  return { fill: `var(--deck-${key})`, deep: `var(--deck-${key}-deep)` };
+  return { fill: `var(--deck-${key})`, deep: `var(--deck-${key}-deep)`, ink: 'var(--ink)', ink2: 'var(--ink-2)' };
 }
 
 /** A deck's shape: its own choice, else the shape that belongs to its colour. */

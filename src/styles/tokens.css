@@ -50,8 +50,10 @@
   --deck-meta-color:   var(--grey-400);           /* "Column A → Column B"  */
   --deck-count-color:  var(--grey-400);
   --border-subtle:     var(--grey-200);
+  --border-selected:   var(--grey-400);           /* chosen chip / choice */
+  --size-border-selected: 1.5px;
   --cta-bg:            var(--color-foreground);
-  --cta-fg:            var(--lime-100);
+  --cta-fg:            var(--color-background);   /* white on black (dark mode: black on white) */
   --progress-track:    rgb(12 12 12 / 0.2);
   --progress-fill:     var(--color-foreground);
   --scrim:             rgb(12 12 12 / 0.32);
@@ -175,8 +177,48 @@
   --duration-fast: 160ms;
   --duration-base: 260ms;
 
+  /* Text on pastel surfaces (deck cards, verdict chips, answer marks) stays
+     dark in both themes, because the pastels stay light. */
+  --ink:   #0C0C0C;
+  --ink-2: #585858;
+  --on-danger: #FDFDFC;
+
+  color-scheme: light;
+
   /* ---- Layers ------------------------------------------------------------ */
   --z-sticky: 10;
   --z-menu:   40;
   --z-sheet:  50;
+}
+
+/* ==========================================================================
+   Dark theme — the same token names with dark values. Set by lib/theme.js
+   as <html data-theme="dark">. Cards sit lighter than the page, as in iOS.
+   ========================================================================== */
+:root[data-theme="dark"] {
+  --color-background:   #1F1E1B;   /* cards, sheets, inputs (raised)     */
+  --color-surface:      #141311;   /* page                               */
+  --color-surface-deep: #2D2B27;
+  --color-foreground:   #F3F1EA;
+
+  --grey-500: #F3F1EA;
+  --grey-400: #B3AFA5;
+  --grey-300: #7E7B73;
+  --grey-200: #3A3833;
+
+  --color-danger: #F2555A;
+
+  --deck-mono:      #26241F;
+  --deck-mono-deep: #3A3833;
+
+  --progress-track: rgb(243 241 234 / 0.2);
+  --scrim:          rgb(0 0 0 / 0.55);
+  --press-overlay:  rgb(255 255 255 / 0.06);
+
+  --shadow-card:   0 18px 48px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.3);
+  --shadow-card-behind: 0 8px 24px rgb(0 0 0 / 0.3);
+  --shadow-menu:   0 20px 50px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.35);
+  --shadow-button-soft: 0 1px 2px rgb(0 0 0 / 0.5);
+
+  color-scheme: dark;
 }

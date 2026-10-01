@@ -9,6 +9,7 @@ import { AiBuilder } from '../components/AiBuilder.jsx';
 import { Segmented } from '../components/Segmented.jsx';
 import { READY_MADE } from '../lib/sampleDeck.js';
 import { answerMode } from '../lib/srs.js';
+import { getThemePref, setThemePref } from '../lib/theme.js';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
 import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenColor, tokenNumber } from '../styles/tokens.js';
@@ -54,6 +55,8 @@ export function Home({
   }, [decks, query]);
 
   const close = () => setSheet(null);
+  const [theme, setTheme] = useState(getThemePref);
+  const changeTheme = (t) => { setThemePref(t); setTheme(t); };
   // Ready-made decks the user hasn't added yet; added ones are hidden.
   const remainingReadyMade = READY_MADE.filter((r) => !decks.some((d) => d.is_sample && d.title === r.title));
 
@@ -88,6 +91,10 @@ export function Home({
             items={[
               { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
               { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
+              { divider: true },
+              { label: 'Light', checked: theme === 'light', onSelect: () => changeTheme('light') },
+              { label: 'Dark', checked: theme === 'dark', onSelect: () => changeTheme('dark') },
+              { label: 'Automatic', checked: theme === 'system', onSelect: () => changeTheme('system') },
               { divider: true },
               { label: 'Sign out', danger: true, onSelect: onSignOut },
             ]}
@@ -418,7 +425,7 @@ function CoverForm({ deck, onSubmit }) {
             const { fill, deep } = deckColorVars(c);
             const label = c === NO_COLOR ? 'No colour' : DECK_COLOR_LABELS[c];
             return (
-              <label key={c} className={`color ${c === NO_COLOR ? 'color--none' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep }}>
+              <label key={c} className={`color ${c === NO_COLOR ? 'color--none' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}>
                 <input type="radio" name="color" value={c} checked={color === c} onChange={() => setColor(c)} />
                 <span className="color__dot" />
                 <span className="visually-hidden">{label}</span>
@@ -479,13 +486,13 @@ function CreateChoices({ onAi, onImport }) {
 
 /** A small deck card that adds a sample deck when tapped. */
 function SampleCard({ title, color, onClick, added = false }) {
-  const { fill, deep } = deckColorVars(color);
+  const { fill, deep, ink, ink2 } = deckColorVars(color);
   const [busy, setBusy] = useState(false);
   return (
     <button
       type="button"
       className={`sample-card ${added ? 'is-added' : ''}`}
-      style={{ '--deck-fill': fill, '--deck-deep': deep }}
+      style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}
       disabled={busy || added}
       aria-label={added ? `${title}, already added` : `Add the sample deck ${title}`}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}

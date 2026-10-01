@@ -39,7 +39,7 @@
   border-radius: var(--radius-pill);
   color: var(--text-primary);
   font-size: var(--font-size-button);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-regular);
   text-align: center;
   transition: background var(--duration-fast);
 }
@@ -369,10 +369,13 @@ select.input { background-image: none; }
   transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
 .choice input { position: absolute; opacity: 0; pointer-events: none; }
-.choice.is-checked { border-color: var(--color-foreground); box-shadow: inset 0 0 0 1px var(--color-foreground); }
+.choice.is-checked {
+  border-color: var(--border-selected);
+  box-shadow: inset 0 0 0 calc(var(--size-border-selected) - 1px) var(--border-selected);
+}
 .choice:has(input:focus-visible) { outline: 2px solid var(--color-foreground); outline-offset: 2px; }
 
-/* Chips */
+/* Chips: beige in both states; the chosen one gets a darker outline */
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chip {
   height: var(--size-tag);
@@ -381,9 +384,13 @@ select.input { background-image: none; }
   background: var(--choice-bg);
   border: 1px solid var(--start-tile-border);
   font-size: var(--font-size-small);
-  transition: background var(--duration-fast), color var(--duration-fast);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
-.chip.is-checked { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
+.chip.is-checked {
+  border-color: var(--border-selected);
+  box-shadow: inset 0 0 0 calc(var(--size-border-selected) - 1px) var(--border-selected);
+}
 
 /* Flipping example card for Column A / Column B */
 .mini-card {
@@ -536,3 +543,17 @@ select.input { background-image: none; }
   background: var(--color-foreground); color: var(--color-background);
   line-height: var(--line-height-body);
 }
+
+/* ---- Text on pastel surfaces ------------------------------------------- */
+/* Pastels stay light in dark mode, so their text keeps dark ink. */
+.deck, .sample-card, .deck--preview {
+  --text-primary: var(--deck-ink, var(--ink));
+  --deck-meta-color: var(--deck-ink-2, var(--ink-2));
+  --deck-count-color: var(--deck-ink-2, var(--ink-2));
+  color: var(--deck-ink, var(--ink));
+}
+.deck__more { color: var(--deck-ink, var(--ink)); }
+.tag, .mark, .quiz-option.is-right, .quiz-option.is-wrong { color: var(--ink); }
+.btn--danger { color: var(--on-danger); }
+/* Menus sit inside deck cards but are not pastel: back to theme text. */
+.menu { --text-primary: var(--color-foreground); color: var(--color-foreground); }
