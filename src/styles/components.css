@@ -545,7 +545,7 @@ select.input { background-image: none; }
 }
 
 /* ---- Text on pastel surfaces ------------------------------------------- */
-/* Pastels stay light in dark mode, so their text keeps dark ink. */
+/* Coloured surfaces use --ink: dark on pastels, light on dark mode's deeper colours. */
 .deck, .sample-card, .deck--preview {
   --text-primary: var(--deck-ink, var(--ink));
   --deck-meta-color: var(--deck-ink-2, var(--ink-2));

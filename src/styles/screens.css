@@ -51,7 +51,10 @@
   background: var(--outer-button-bg);
   overflow: hidden;
   z-index: 1;
+  /* Colours live here (not in JS) so they follow light/dark instantly */
+  transition: background var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out);
 }
+.search-shell.is-open { background: var(--search-field-bg); border-color: var(--search-field-bg); }
 .search-shell > * { position: absolute; inset: 0; }
 
 .search__content {
@@ -208,7 +211,7 @@
 
 /* Letter marks: what went wrong, and what fixes it */
 .mark {
-  color: var(--text-primary);
+  color: var(--ink);
   border-radius: var(--radius-mark);
   padding: 0 1px;
   -webkit-box-decoration-break: clone;

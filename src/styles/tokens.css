@@ -178,7 +178,7 @@
   --duration-base: 260ms;
 
   /* Text on pastel surfaces (deck cards, verdict chips, answer marks) stays
-     dark in both themes, because the pastels stay light. */
+     dark on the light pastels; dark mode swaps both for deeper colours with light text. */
   --ink:   #0C0C0C;
   --ink-2: #585858;
   --on-danger: #FDFDFC;
@@ -210,6 +210,21 @@
 
   --deck-mono:      #26241F;
   --deck-mono-deep: #3A3833;
+
+  /* Deck colours: deeper versions of the same hues. Shapes ("deep") sit a
+     step lighter than the fill, so they still read on a dark card. */
+  --deck-lime:   #3A4210;  --deck-lime-deep:   #535F18;
+  --deck-purple: #34305E;  --deck-purple-deep: #4A4482;
+  --deck-pink:   #5A2A40;  --deck-pink-deep:   #7A3A58;
+  --deck-blue:   #22405E;  --deck-blue-deep:   #305A80;
+  --deck-green:  #23492C;  --deck-green-deep:  #31653D;
+  --deck-yellow: #4D4318;  --deck-yellow-deep: #6B5E23;
+  --deck-red:    #5A2626;  --deck-red-deep:    #7A3434;
+  --deck-beige:  #2D2B27;  --deck-beige-deep:  #44413B;
+
+  /* Text on those colours turns light (tags, marks, quiz feedback too) */
+  --ink:   #F3F1EA;
+  --ink-2: #C4C0B5;
 
   --progress-track: rgb(243 241 234 / 0.2);
   --scrim:          rgb(0 0 0 / 0.55);

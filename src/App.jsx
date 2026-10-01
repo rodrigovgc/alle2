@@ -159,6 +159,12 @@ function Library({ user, onUser }) {
           setDecks((all) => all.filter((d) => d.id !== id));
           setProgress((all) => all.filter((p) => p.deck_id !== id));
         }}
+        onResetProgress={async (id) => {
+          try {
+            await api.resetProgress(id);
+            setProgress((all) => all.filter((p) => p.deck_id !== id));
+          } catch (e) { setError(e.message); }
+        }}
         onSignOut={() => supabase.auth.signOut()}
       />
     );

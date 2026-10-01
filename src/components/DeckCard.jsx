@@ -21,7 +21,7 @@ export function DeckPreview({ deck }) {
   );
 }
 
-export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onRemove }) {
+export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onResetProgress, onRemove }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { fill, deep, ink, ink2 } = deckColorVars(deck.color, mode);
   const count = deck.cards?.length ?? 0;
@@ -29,6 +29,7 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
   const items = [
     { label: 'Update URL', onSelect: onUpdateUrl },
     { label: 'Customize cover', onSelect: onCustomize },
+    { label: 'Reset progress', onSelect: onResetProgress },
     { divider: true },
     { label: 'Remove deck', danger: true, onSelect: onRemove },
   ];

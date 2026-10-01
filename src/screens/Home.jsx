@@ -12,12 +12,12 @@ import { answerMode } from '../lib/srs.js';
 import { getThemePref, setThemePref } from '../lib/theme.js';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
-import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenColor, tokenNumber } from '../styles/tokens.js';
+import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenNumber } from '../styles/tokens.js';
 
 export function Home({
   decks, loading, dueByDeck, colorMode,
   onAddSample, onColorMode, onStudyDeck, onShuffle,
-  onAddDeck, onUpdateDeck, onRemoveDeck, onSignOut,
+  onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onSignOut,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -36,13 +36,6 @@ export function Home({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  // Resolved token colours, so the shell can fade from pill to field colour.
-  const shell = useMemo(() => ({
-    pill: tokenColor('--outer-button-bg'),
-    pillBorder: tokenColor('--border-subtle'),
-    field: tokenColor('--search-field-bg'),
-    fieldBorder: tokenColor('--search-field-bg'),
-  }), []);
 
   function openSearch() { setSearching(true); }
   function closeSearch() { setSearching(false); setQuery(''); }
@@ -104,13 +97,9 @@ export function Home({
         {/* One shell: its real width grows from the pill to the full row. Width
             changes reflow the contents instead of stretching them. */}
         <motion.div
-          className="search-shell"
+          className={`search-shell ${searching ? 'is-open' : ''}`}
           initial={false}
-          animate={{
-            width: searching ? shellFull : shellPill,
-            backgroundColor: searching ? shell.field : shell.pill,
-            borderColor: searching ? shell.field : shell.pillBorder,
-          }}
+          animate={{ width: searching ? shellFull : shellPill }}
           transition={SPRING.morph}
         >
           <AnimatePresence initial={false}>
@@ -205,6 +194,7 @@ export function Home({
                 onOpen={() => onStudyDeck(deck)}
                 onUpdateUrl={() => setSheet({ type: 'url', deck })}
                 onCustomize={() => setSheet({ type: 'cover', deck })}
+                onResetProgress={() => setSheet({ type: 'reset', deck })}
                 onRemove={() => setSheet({ type: 'remove', deck })}
               />
             </motion.div>
@@ -305,6 +295,22 @@ export function Home({
             deck={sheet.deck}
             onSubmit={async (patch) => { await onUpdateDeck(sheet.deck.id, patch); close(); }}
           />
+        )}
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'reset'} onClose={close} title="Reset progress" variant="dialog">
+        {sheet?.deck && (
+          <div className="sheet__body">
+            <p className="sheet__text">
+              Every card in “{sheet.deck.title}” will count as new again, as if you’d never studied it. This can’t be undone.
+            </p>
+            <SheetActions>
+              <Button variant="danger" onClick={async () => { await onResetProgress(sheet.deck.id); close(); }}>
+                Reset progress
+              </Button>
+              <Button variant="secondary" onClick={close}>Keep progress</Button>
+            </SheetActions>
+          </div>
         )}
       </Sheet>
 

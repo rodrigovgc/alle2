@@ -37,6 +37,11 @@ export async function listProgress(deckIds) {
   );
 }
 
+/** Forget every card's box and due date in one deck: all cards count as new again. */
+export async function resetProgress(deckId) {
+  check(await supabase.from('progress').delete().eq('deck_id', deckId));
+}
+
 export async function saveProgress(row) {
   check(await supabase.from('progress').upsert(row, { onConflict: 'user_id,deck_id,card_hash' }));
 }
