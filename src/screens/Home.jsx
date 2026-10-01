@@ -6,6 +6,7 @@ import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
 import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
+import { ReorderList } from '../components/ReorderList.jsx';
 import { Segmented } from '../components/Segmented.jsx';
 import { READY_MADE } from '../lib/sampleDeck.js';
 import { answerMode } from '../lib/srs.js';
@@ -17,7 +18,7 @@ import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColo
 export function Home({
   decks, loading, dueByDeck, colorMode,
   onAddSample, onColorMode, onStudyDeck, onShuffle,
-  onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onSignOut,
+  onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onSignOut,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -48,6 +49,15 @@ export function Home({
   }, [decks, query]);
 
   const close = () => setSheet(null);
+  // Reorder mode: a working copy of the order, saved on Done.
+  const [order, setOrder] = useState(null);
+  const reordering = order !== null;
+  async function finishReorder() {
+    const changed = order.some((d, i) => d.id !== decks[i]?.id);
+    const next = order;
+    setOrder(null);
+    if (changed) await onReorder(next);
+  }
   const [theme, setTheme] = useState(getThemePref);
   const changeTheme = (t) => { setThemePref(t); setTheme(t); };
   // Ready-made decks the user hasn't added yet; added ones are hidden.
@@ -82,6 +92,7 @@ export function Home({
             onClose={() => setMenuOpen(false)}
             className="menu--home"
             items={[
+              ...(decks.length > 1 ? [{ label: 'Reorder decks', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }, { divider: true }] : []),
               { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
               { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
               { divider: true },
@@ -152,7 +163,12 @@ export function Home({
         </motion.div>
       </header>
 
-      {(loading || decks.length > 0) && <h1 className="home__title">My study decks</h1>}
+      {(loading || decks.length > 0) && (
+        <div className="home__title-row">
+          <h1 className="home__title">{reordering ? 'Reorder decks' : 'My study decks'}</h1>
+          {reordering && <button type="button" className="text-btn home__done" onClick={finishReorder}>Done</button>}
+        </div>
+      )}
 
       <section className="deck-list" aria-busy={loading}>
         {loading && !decks.length && <div className="deck deck--skeleton" aria-hidden="true" />}
@@ -177,7 +193,8 @@ export function Home({
         {!!decks.length && !visible.length && (
           <p className="empty__body">No decks match “{query}”.</p>
         )}
-        <AnimatePresence initial={false} mode="popLayout">
+        {reordering && <ReorderList decks={order} mode={colorMode} onChange={setOrder} />}
+        {!reordering && <AnimatePresence initial={false} mode="popLayout">
           {visible.map((deck) => (
             <motion.div
               key={deck.id}
@@ -199,10 +216,10 @@ export function Home({
               />
             </motion.div>
           ))}
-        </AnimatePresence>
+        </AnimatePresence>}
       </section>
 
-      {decks.length > 0 && (
+      {decks.length > 0 && !reordering && (
         <div className="home__cta">
           <Button icon="shuffle" onClick={onShuffle}>Shuffle decks</Button>
         </div>
@@ -428,7 +445,7 @@ function CoverForm({ deck, onSubmit }) {
         <legend className="field__label">Colour</legend>
         <div className="colors">
           {[NO_COLOR, ...DECK_COLORS].map((c) => {
-            const { fill, deep } = deckColorVars(c);
+            const { fill, deep, ink, ink2 } = deckColorVars(c);
             const label = c === NO_COLOR ? 'No colour' : DECK_COLOR_LABELS[c];
             return (
               <label key={c} className={`color ${c === NO_COLOR ? 'color--none' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}>

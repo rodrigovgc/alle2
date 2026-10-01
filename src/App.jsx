@@ -9,6 +9,7 @@ import { Home } from './screens/Home.jsx';
 import { Study } from './screens/Study.jsx';
 import { Done } from './screens/Done.jsx';
 import { Sheet, SheetActions } from './components/Sheet.jsx';
+import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import { Button } from './components/Button.jsx';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -159,6 +160,16 @@ function Library({ user, onUser }) {
           setDecks((all) => all.filter((d) => d.id !== id));
           setProgress((all) => all.filter((p) => p.deck_id !== id));
         }}
+        onReorder={async (ordered) => {
+          setDecks(ordered); // show the new order straight away
+          try {
+            setDecks(await api.saveOrder(ordered));
+          } catch (e) {
+            setError(/position/.test(e.message)
+              ? 'Saving the order needs one database update. Run supabase/004_position.sql in Supabase.'
+              : e.message);
+          }
+        }}
         onResetProgress={async (id) => {
           try {
             await api.resetProgress(id);
@@ -183,7 +194,9 @@ function Library({ user, onUser }) {
           animate={{ opacity: 1, transition: { duration: 0.2, ease: 'easeOut' } }}
           exit={{ opacity: 0, transition: { duration: 0.14, ease: 'easeIn' } }}
         >
-          {view}
+          <ErrorBoundary key={screen.name} onReset={() => setScreen({ name: 'home' })}>
+            {view}
+          </ErrorBoundary>
         </motion.div>
       </AnimatePresence>
 

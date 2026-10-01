@@ -18,6 +18,9 @@
   padding: 0 var(--gutter);
 }
 .home__actions { position: relative; display: flex; align-items: center; gap: var(--space-2); }
+.home__title-row { display: flex; align-items: center; justify-content: space-between; padding-right: var(--space-2); }
+.home__title-row .home__title { flex: 1; }
+.home__done { font-weight: var(--font-weight-semibold); }
 .home__title {
   padding: var(--space-6) var(--gutter) var(--space-4);
   font-size: var(--font-size-small-title);
@@ -368,3 +371,63 @@
   opacity: 1;
 }
 .done { overflow: hidden; }
+
+/* ---- Crash fallback ---------------------------------------------------- */
+.crash {
+  min-height: 60dvh; max-width: var(--screen-max); margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: center; gap: var(--space-3);
+  padding: var(--space-8) var(--gutter);
+}
+.crash__title { font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold); }
+.crash__text { color: var(--text-secondary); line-height: var(--line-height-body); margin-bottom: var(--space-3); }
+
+/* ---- Reorder mode ------------------------------------------------------ */
+.reorder-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.reorder-row {
+  position: relative;
+  display: flex; align-items: center; gap: var(--space-3);
+  min-height: var(--size-reorder-row);
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border-radius: var(--radius-field);
+  background: var(--deck-fill);
+  border: 1px solid var(--deck-deep);
+  color: var(--deck-ink);
+  user-select: none; -webkit-user-select: none;
+}
+.reorder-row.is-dragging { z-index: 2; box-shadow: var(--shadow-menu); }
+.reorder-row__shape { width: var(--size-icon-button); height: var(--size-icon-button); color: var(--deck-deep); flex: none; }
+.reorder-row__shape .deck-shape { position: static; width: 100%; height: 100%; opacity: 1; }
+.reorder-row__title { flex: 1; min-width: 0; font-size: var(--font-size-button); font-weight: var(--font-weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reorder-row__handle {
+  width: var(--size-icon-button); height: var(--size-icon-button);
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill);
+  color: var(--deck-ink);
+  cursor: grab; touch-action: none;
+}
+.reorder-row.is-dragging .reorder-row__handle { cursor: grabbing; }
+
+/* ---- Study on desktop -------------------------------------------------- */
+/* Wide screens with a mouse: content centred in the card with more air
+   between the prompt and the answer, and the controls right under the card
+   instead of at the bottom of a tall window. Phones are unaffected. */
+@media (min-width: 720px) and (pointer: fine) {
+  .study__stage {
+    flex: none;
+    padding-bottom: calc(var(--stack-offset) * var(--stack-depth));
+  }
+  .study__controls { margin-top: var(--space-4); }
+
+  .study-card__body {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-8);
+  }
+  .study-card__body .study-card__text { max-width: 100%; }
+  .study-card__body .study-card__text + .study-card__text { margin-top: calc(var(--space-3) - var(--space-8)); }
+  .study-card__input { margin-top: 0; text-align: center; }
+  .study-card__picture-wrap { flex: none; height: var(--size-card-picture); }
+  .study-card__helper { margin-top: calc(var(--space-2) - var(--space-8)); }
+  .study-card__verdict { margin-top: 0; }
+}

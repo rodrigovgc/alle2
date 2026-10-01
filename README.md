@@ -18,7 +18,7 @@ No Supabase yet? Put `VITE_DEMO=true` in `.env.local` instead. Auth and data the
 ## Supabase
 
 1. Create a project, then run `supabase/schema.sql` in the SQL editor (tables + row-level security).
-   Already set up from an earlier version? Run `supabase/002_shapes.sql` and `supabase/003_answer_mode.sql` once instead.
+   Already set up from an earlier version? Run `supabase/002_shapes.sql`, `003_answer_mode.sql` and `004_position.sql` once instead.
 2. Authentication → Providers → Email: on. Turn off “Confirm email” if you want instant sign-in while testing.
 3. Copy the project URL and anon key into `.env.local` (and into Vercel → Settings → Environment Variables).
 

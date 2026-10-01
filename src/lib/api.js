@@ -9,8 +9,26 @@ function check({ data, error }) {
 
 /* ---- Decks ------------------------------------------------------------- */
 
+/** Decks in the user's order: by position, then oldest first. Decks without a
+ *  position (new ones, or before the 004 migration) go at the end. Sorted here,
+ *  not in the query, so a missing column can't break loading. */
 export async function listDecks() {
-  return check(await supabase.from('decks').select(DECK_FIELDS).order('created_at', { ascending: true }));
+  const rows = check(await supabase.from('decks').select(DECK_FIELDS).order('created_at', { ascending: true }));
+  return sortDecks(rows);
+}
+
+export function sortDecks(rows) {
+  const pos = (d) => (typeof d.position === 'number' ? d.position : Number.POSITIVE_INFINITY);
+  return [...rows].sort((a, b) => pos(a) - pos(b) || String(a.created_at).localeCompare(String(b.created_at)));
+}
+
+/** Save a new order: only decks whose position changed are written. */
+export async function saveOrder(orderedDecks) {
+  const changed = orderedDecks
+    .map((d, i) => ({ d, i }))
+    .filter(({ d, i }) => d.position !== i);
+  await Promise.all(changed.map(({ d, i }) => updateDeck(d.id, { position: i })));
+  return orderedDecks.map((d, i) => ({ ...d, position: i }));
 }
 
 export async function createDeck(deck) {

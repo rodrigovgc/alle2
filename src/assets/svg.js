@@ -12,6 +12,7 @@ export const ICONS = {
   check: { viewBox: '0 0 16 16', d: 'M6.5 11.1 3.4 8l-.94.94L6.5 13l7.5-7.5-.94-.94z' },
   // Stroke icons (drawn with lines, same weight as the set)
   copy: { viewBox: '0 0 16 16', stroke: true, d: 'M5.5 5.5h8v8h-8z M10.5 5.5v-3h-8v8h3' },
+  grip: { viewBox: '0 0 16 16', stroke: true, d: 'M3 5h10 M3 8h10 M3 11h10' },
   swap: { viewBox: '0 0 16 16', stroke: true, d: 'M13 5H3 M6 2 3 5l3 3 M3 11h10 M10 8l3 3-3 3' },
 };
 
