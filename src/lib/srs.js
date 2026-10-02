@@ -1,6 +1,6 @@
 import { hashFront } from './hash.js';
 import { alternatives } from './csv.js';
-import { imageSrc } from './media.js';
+import { imageSrc, clockTime } from './media.js';
 import { LEITNER_INTERVALS_DAYS, SESSION_SIZE, NEW_CARDS_PER_SESSION } from '../styles/tokens.js';
 
 const DAY = 24 * 60 * 60 * 1000;

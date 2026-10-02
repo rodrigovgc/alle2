@@ -55,33 +55,81 @@ function useToken(name) {
   return v;
 }
 
+/*
+ * Screen sizes in points (CSS pixels). iPhone 18 Pro: 2622 × 1206 px at 3x.
+ * iPhone Duo sizes are estimated from Apple's published diagonals (7.6" 4:3
+ * inside, 5.4" outside) until exact values are published.
+ */
 const DEVICES = [
-  { value: 'se', label: 'iPhone SE', w: 375, h: 667, island: false },
-  { value: 'pro', label: 'iPhone 16 Pro', w: 402, h: 874, island: true },
-  { value: 'max', label: 'iPhone 16 Pro Max', w: 440, h: 956, island: true },
+  { value: 'pro', label: 'iPhone 18 Pro', w: 402, h: 874, kind: 'phone', island: true },
+  { value: 'duo', label: 'iPhone Duo', kind: 'duo' },
+  { value: 'ipad', label: 'iPad', w: 820, h: 1180, kind: 'tablet' },
+  { value: 'desktop', label: 'Desktop', w: 1440, h: 900, kind: 'desktop' },
 ];
+const DUO = {
+  closed: { w: 468, h: 676, label: 'Closed · outer display' },
+  open: { w: 930, h: 698, label: 'Open · inner display' },
+};
 
-/** The real app running inside a phone frame. It shares the browser's login. */
+/** The real app running inside a device frame, scaled to fit the page. */
 function PhonePreview() {
   const [device, setDevice] = useState('pro');
+  const [fold, setFold] = useState('open');
   const [key, setKey] = useState(0);
-  const frame = useRef(null);
-  const d = DEVICES.find((x) => x.value === device);
-  const top = d.island ? 54 : 20;      // status bar area
-  const bottom = d.island ? 34 : 0;    // home indicator area
+  const wrap = useRef(null);
+  const [avail, setAvail] = useState(760);
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(() => setAvail(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const base = DEVICES.find((x) => x.value === device);
+  const d = base.kind === 'duo' ? { ...base, ...DUO[fold] } : base;
+  const chrome = { phone: 12, duo: 12, tablet: 16, desktop: 1 }[d.kind];
+  const top = d.kind === 'phone' ? 54 : d.kind === 'desktop' ? 40 : d.kind === 'tablet' ? 24 : 32;
+  const bottom = d.kind === 'phone' || d.kind === 'duo' ? 24 : d.kind === 'tablet' ? 20 : 0;
+  const outerW = d.w + chrome * 2;
+  const outerH = d.h + chrome * 2;
+  const maxH = typeof window !== 'undefined' ? window.innerHeight * 0.85 : 900;
+  const scale = Math.min(1, avail / outerW, maxH / outerH);
+
   return (
-    <div className="ds-phone-wrap">
+    <div className="ds-phone-wrap" ref={wrap}>
       <div className="ds-row">
         <Segmented labelledBy="" options={DEVICES} value={device} onChange={setDevice} />
-        <Button variant="secondary" className="ds-reload" onClick={() => setKey((k) => k + 1)}>Reload</Button>
       </div>
-      <div className="ds-phone" style={{ width: d.w, height: d.h, '--top': `${top}px`, '--bottom': `${bottom}px` }}>
-        <div className="ds-phone__status">
-          <span>9:41</span>
-          {d.island && <span className="ds-phone__island" />}
+      <div className="ds-row">
+        {d.kind === 'duo' && (
+          <Segmented
+            labelledBy=""
+            options={[{ value: 'closed', label: 'Closed' }, { value: 'open', label: 'Open' }]}
+            value={fold}
+            onChange={setFold}
+          />
+        )}
+        <Button variant="secondary" className="ds-reload" onClick={() => setKey((k) => k + 1)}>Reload</Button>
+        <span className="ds-token">{d.w} × {d.h}{d.kind === 'duo' ? ' · approximate' : ''}{scale < 1 ? ` · shown at ${Math.round(scale * 100)}%` : ''}</span>
+      </div>
+      <div className="ds-device-slot" style={{ width: outerW * scale, height: outerH * scale }}>
+        <div
+          className={`ds-device ds-device--${d.kind}`}
+          style={{ width: d.w, height: d.h, borderWidth: chrome, transform: `scale(${scale})`, '--top': `${top}px`, '--bottom': `${bottom}px` }}
+        >
+          {d.kind === 'desktop' ? (
+            <div className="ds-device__bar"><i /><i /><i /><span>alle-app.vercel.app</span></div>
+          ) : (
+            <div className="ds-device__status">
+              <span>9:41</span>
+              {d.island && <span className="ds-device__island" />}
+            </div>
+          )}
+          <iframe key={`${device}-${fold}-${key}`} className="ds-device__screen" src="/" title={`Alle on ${d.label}`} />
+          {d.kind === 'duo' && fold === 'open' && <span className="ds-device__crease" aria-hidden="true" />}
+          {(d.kind === 'phone' || d.kind === 'duo') && <span className="ds-device__home" />}
         </div>
-        <iframe key={`${device}-${key}`} ref={frame} className="ds-phone__screen" src="/" title={`Alle on ${d.label}`} />
-        {d.island && <span className="ds-phone__home" />}
       </div>
       <p className="ds-head__text">The real app, signed in as you. Taps, typing and navigation all work; the appearance switch above applies here too.</p>
     </div>

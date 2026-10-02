@@ -31,7 +31,7 @@ Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `verc
 
 ## Design system
 
-Open `/design` on any running copy (for example `alle-app.vercel.app/design`). It shows every colour, type size, spacing, radius, icon and component, rendered live from `tokens.css` and the real components, with a light/dark switch and a phone preview that runs the real app at iPhone SE, 16 Pro and 16 Pro Max sizes.
+Open `/design` on any running copy (for example `alle-app.vercel.app/design`). It shows every colour, type size, spacing, radius, icon and component, rendered live from `tokens.css` and the real components, with a light/dark switch and a device preview that runs the real app on iPhone 18 Pro, iPhone Duo (closed and open), iPad and desktop.
 
 Dark mode is the `:root[data-theme="dark"]` block at the end of `tokens.css`: the same token names with dark values.
 
@@ -52,5 +52,5 @@ Dark mode is the `:root[data-theme="dark"]` block at the end of `tokens.css`: th
 
 Row 1 names the sides (`English`, `Dutch`). Column A is the front, column B the back.
 `gaan|lopen` accepts either answer. `eerst • dan` shows on two lines.
-A cell can be a picture: a Wikimedia Commons file name (`Flag of Belgium.svg`) or an image link.
+A cell can be a picture: a Wikimedia Commons file name (`Flag of Belgium.svg`) or an image link. A cell like `clock 6:30` shows a drawn analog clock.
 A normal share link also works if the sheet is shared as “Anyone with the link”; it's converted to CSV.

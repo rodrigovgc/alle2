@@ -256,6 +256,14 @@
   user-select: none; -webkit-user-select: none;
 }
 .study-card__picture.is-framed { outline: 1px solid var(--picture-frame); outline-offset: 0; }
+.clock { width: var(--size-card-picture); height: var(--size-card-picture); }
+.clock__face { fill: var(--card-bg); stroke: var(--text-primary); stroke-width: 2; }
+.clock__tick { stroke: var(--text-tertiary); stroke-width: 1.5; stroke-linecap: round; }
+.clock__tick.is-major { stroke: var(--text-primary); stroke-width: 2.5; }
+.clock__hand { stroke: var(--text-primary); stroke-linecap: round; }
+.clock__hand--hour { stroke-width: 4; }
+.clock__hand--minute { stroke-width: 2.5; }
+.clock__pin { fill: var(--text-primary); }
 .study-card__body.has-picture .study-card__input { align-self: stretch; }
 .study-card__picture-missing {
   flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
@@ -408,10 +416,10 @@
 .reorder-row.is-dragging .reorder-row__handle { cursor: grabbing; }
 
 /* ---- Study on desktop -------------------------------------------------- */
-/* Wide screens with a mouse: content centred in the card with more air
+/* Wide screens (desktop, iPad, an open iPhone Duo): content centred in the card with more air
    between the prompt and the answer, and the controls right under the card
    instead of at the bottom of a tall window. Phones are unaffected. */
-@media (min-width: 720px) and (pointer: fine) {
+@media (min-width: 720px) {
   .study__stage {
     flex: none;
     padding-bottom: calc(var(--stack-offset) * var(--stack-depth));

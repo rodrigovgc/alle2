@@ -101,7 +101,7 @@ import { answerMode, makeOptions } from './srs.js';
 import { imageSrc } from './media.js';
 import { SAMPLE_DECKS } from './sampleDeck.js';
 test('answer mode: long answers use multiple choice, short ones typing', () => {
-  assert.equal(answerMode(SAMPLE_DECKS.belgianSigns), 'choice');
+  assert.equal(answerMode(SAMPLE_DECKS.europeanSigns), 'choice');
   assert.equal(answerMode(SAMPLE_DECKS.flagsWorld), 'type');
   assert.equal(answerMode({ ...SAMPLE_DECKS.flagsWorld, answer_mode: 'choice' }), 'choice');
   assert.equal(answerMode({ cards: [{ front: 'a', back: 'a long answer that is long' }], answer_mode: 'choice' }), 'type');
@@ -115,4 +115,28 @@ test('image cells', () => {
   assert.equal(imageSrc('https://example.com/a.png'), 'https://example.com/a.png');
   assert.equal(imageSrc('How do you get to work?'), null);
   assert.equal(imageSrc('3.5'), null);
+});
+
+import { pickDeckLook, DECK_COLORS } from '../styles/tokens.js';
+test('new decks get an unused colour and shape', () => {
+  let decks = [];
+  for (let i = 0; i < 8; i++) decks.push({ id: i, ...pickDeckLook(decks) });
+  assert.equal(new Set(decks.map((d) => d.color)).size, 8);
+  assert.equal(new Set(decks.map((d) => d.shape)).size, 8);
+  // sample keeps its colour when free, moves when taken
+  assert.equal(pickDeckLook([], { color: 'red', shape: 'red' }).color, 'red');
+  assert.notEqual(pickDeckLook([{ color: 'red', shape: 'red' }], { color: 'red', shape: 'red' }).color, 'red');
+  // beyond 8: colour repeats, but never the same colour + shape pair
+  for (let i = 0; i < 40; i++) decks.push({ id: 100 + i, ...pickDeckLook(decks) });
+  const pairs = decks.map((d) => `${d.color}/${d.shape}`);
+  assert.equal(new Set(pairs).size, pairs.length);
+  assert.ok(DECK_COLORS.includes(decks[20].color));
+});
+
+import { clockTime } from './media.js';
+test('clock cells', () => {
+  assert.deepEqual(clockTime('clock 6:30'), { h: 6, m: 30 });
+  assert.deepEqual(clockTime('clock 12:00'), { h: 0, m: 0 });
+  assert.equal(clockTime('6:30'), null);
+  assert.equal(clockTime('clock 6:99'), null);
 });

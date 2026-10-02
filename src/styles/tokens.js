@@ -45,6 +45,30 @@ export function tokenColor(name, fallback = 'transparent') {
 
 export const nextDeckColor = (count) => DECK_COLORS[count % DECK_COLORS.length];
 
+/**
+ * A colour and a shape for a new deck that no existing deck uses. Keeps the
+ * preferred one (e.g. a sample deck's own colour) when it's still free. Once
+ * all 8 are taken, picks the least used, and never repeats an exact
+ * colour + shape pair while one of the 64 is left.
+ */
+export function pickDeckLook(decks, preferred = {}) {
+  const count = (key) => (list) => list.reduce((m, k) => m.set(k, (m.get(k) || 0) + 1), new Map(key.map((k) => [k, 0])));
+  const colorUse = count(DECK_COLORS)(decks.map((d) => d.color).filter((c) => DECK_COLORS.includes(c)));
+  const shapeUse = count(DECK_SHAPES)(decks.map((d) => deckShape(d)));
+  const leastUsed = (use, prefer) => {
+    const min = Math.min(...use.values());
+    if (prefer && use.get(prefer) === min) return prefer;
+    return [...use.keys()].find((k) => use.get(k) === min);
+  };
+  const color = leastUsed(colorUse, preferred.color);
+  // Shape: least used, and not already paired with this colour.
+  const taken = new Set(decks.filter((d) => d.color === color).map((d) => deckShape(d)));
+  const shapeOrder = [...shapeUse.entries()]
+    .sort((a, b) => a[1] - b[1] || (b[0] === (preferred.shape ?? color)) - (a[0] === (preferred.shape ?? color)));
+  const shape = (shapeOrder.find(([k]) => !taken.has(k)) ?? shapeOrder[0])[0];
+  return { color, shape };
+}
+
 export const SPRING = {
   // Card being dealt off / on the table
   deal: { type: 'spring', stiffness: 210, damping: 30, mass: 1 },

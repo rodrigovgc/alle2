@@ -66,6 +66,22 @@ export async function saveProgress(row) {
 
 /* ---- Preferences ------------------------------------------------------ */
 
+export async function changePassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
+/** Remove the account's decks and progress, then sign out. (Deleting the auth
+ *  user itself needs a server function; this clears everything the user made.) */
+export async function deleteAccountData() {
+  const decks = await listDecks();
+  if (decks.length) {
+    check(await supabase.from('progress').delete().in('deck_id', decks.map((d) => d.id)));
+    check(await supabase.from('decks').delete().in('id', decks.map((d) => d.id)));
+  }
+  await supabase.auth.signOut();
+}
+
 export async function updatePrefs(patch) {
   const { data, error } = await supabase.auth.updateUser({ data: patch });
   if (error) throw error;

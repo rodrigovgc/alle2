@@ -15,4 +15,4 @@ export function useMediaQuery(query) {
 }
 
 /** Wide screens get popups instead of bottom sheets. Mobile is untouched. */
-export const DESKTOP_QUERY = '(min-width: 720px) and (pointer: fine)';
+export const DESKTOP_QUERY = '(min-width: 720px)'; // wide screens: desktop, iPad, an open iPhone Duo

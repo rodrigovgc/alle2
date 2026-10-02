@@ -8,17 +8,17 @@ import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
 import { ReorderList } from '../components/ReorderList.jsx';
 import { Segmented } from '../components/Segmented.jsx';
+import { Account } from '../components/Account.jsx';
 import { READY_MADE } from '../lib/sampleDeck.js';
 import { answerMode } from '../lib/srs.js';
-import { getThemePref, setThemePref } from '../lib/theme.js';
 import { fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
-import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, nextDeckColor, tokenNumber } from '../styles/tokens.js';
+import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, pickDeckLook, tokenNumber } from '../styles/tokens.js';
 
 export function Home({
   decks, loading, dueByDeck, colorMode,
   onAddSample, onColorMode, onStudyDeck, onShuffle,
-  onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onSignOut,
+  onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onSignOut, userEmail,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -58,8 +58,6 @@ export function Home({
     setOrder(null);
     if (changed) await onReorder(next);
   }
-  const [theme, setTheme] = useState(getThemePref);
-  const changeTheme = (t) => { setThemePref(t); setTheme(t); };
   // Ready-made decks the user hasn't added yet; added ones are hidden.
   const remainingReadyMade = READY_MADE.filter((r) => !decks.some((d) => d.is_sample && d.title === r.title));
 
@@ -92,15 +90,8 @@ export function Home({
             onClose={() => setMenuOpen(false)}
             className="menu--home"
             items={[
-              ...(decks.length > 1 ? [{ label: 'Reorder decks', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }, { divider: true }] : []),
-              { label: 'Colorful', checked: colorMode === 'colorful', onSelect: () => onColorMode('colorful') },
-              { label: 'Monochrome', checked: colorMode === 'monochrome', onSelect: () => onColorMode('monochrome') },
-              { divider: true },
-              { label: 'Light', checked: theme === 'light', onSelect: () => changeTheme('light') },
-              { label: 'Dark', checked: theme === 'dark', onSelect: () => changeTheme('dark') },
-              { label: 'Automatic', checked: theme === 'system', onSelect: () => changeTheme('system') },
-              { divider: true },
-              { label: 'Sign out', danger: true, onSelect: onSignOut },
+              ...(decks.length > 1 ? [{ label: 'Reorder decks', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }] : []),
+              { label: 'Account', onSelect: () => setSheet({ type: 'account' }) },
             ]}
           />
         </div>
@@ -177,7 +168,7 @@ export function Home({
             <section className="start-tile">
               <h2 className="start-tile__title">Create your own deck</h2>
               <p className="start-tile__text">Import cards from Google Sheets or create a new deck with AI.</p>
-              <CreateChoices onAi={() => setSheet({ type: 'ai' })} onImport={() => setSheet({ type: 'add' })} />
+              <CreateChoices onAi={() => setSheet({ type: 'ai' })} onPaste={() => setSheet({ type: 'paste' })} onImport={() => setSheet({ type: 'add' })} />
             </section>
             <section className="start-tile">
               <h2 className="start-tile__title">Try a sample deck</h2>
@@ -221,7 +212,7 @@ export function Home({
 
       {decks.length > 0 && !reordering && (
         <div className="home__cta">
-          <Button icon="shuffle" onClick={onShuffle}>Shuffle decks</Button>
+          <Button icon="shuffle" onClick={() => decks.length > 1 ? setSheet({ type: 'shuffle' }) : onShuffle(decks.map((d) => d.id))}>Shuffle decks</Button>
         </div>
       )}
 
@@ -229,7 +220,7 @@ export function Home({
         <div className="sheet__body">
           <p className="sheet__text">Import cards from Google Sheets or create a new deck with AI.</p>
           <SheetActions>
-            <CreateChoices onAi={() => setSheet({ type: 'ai' })} onImport={() => setSheet({ type: 'add' })} />
+            <CreateChoices onAi={() => setSheet({ type: 'ai' })} onPaste={() => setSheet({ type: 'paste' })} onImport={() => setSheet({ type: 'add' })} />
             {remainingReadyMade.length > 0 && (
               <button type="button" className="text-btn" onClick={() => setSheet({ type: 'library' })}>
                 Browse ready-made decks
@@ -239,22 +230,52 @@ export function Home({
         </div>
       </Sheet>
 
+      <Sheet open={sheet?.type === 'account'} onClose={close} title="Account">
+        <Account
+          email={userEmail}
+          colorMode={colorMode}
+          onColorMode={onColorMode}
+          onSignOut={onSignOut}
+          onClose={close}
+        />
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'shuffle'} onClose={close} title="Shuffle decks" variant="dialog">
+        <ShufflePicker
+          decks={decks}
+          onStart={(ids) => { close(); onShuffle(ids); }}
+        />
+      </Sheet>
+
       <Sheet open={sheet?.type === 'library'} onClose={close} title="Ready-made decks">
         <div className="sheet__body">
-          {remainingReadyMade.length > 0 && <p className="sheet__text">Tap a deck to add it.</p>}
+          {remainingReadyMade.length > 0 && <p className="sheet__text">Tap a deck to add it. Add as many as you like.</p>}
           {remainingReadyMade.length ? (
             <div className="start-tile__samples library">
-              {remainingReadyMade.map((r) => (
-                <SampleCard
-                  key={r.key}
-                  title={r.title}
-                  color={r.color}
-                  onClick={async () => { await onAddSample(r.key); close(); }}
-                />
-              ))}
+              <AnimatePresence initial={false} mode="popLayout">
+                {remainingReadyMade.map((r) => (
+                  <motion.div
+                    key={r.key}
+                    layout
+                    initial={false}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, x: 40, transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } }}
+                    transition={SPRING.morph}
+                  >
+                    <SampleCard
+                      title={r.title}
+                      color={r.color}
+                      onClick={() => onAddSample(r.key)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ) : (
-            <p className="sheet__text">You’ve added every ready-made deck.</p>
+            <div className="library-done">
+              <p className="sheet__text">You’ve added every ready-made deck.</p>
+              <Button onClick={close}>Done</Button>
+            </div>
           )}
         </div>
       </Sheet>
@@ -269,7 +290,7 @@ export function Home({
               front_label: parsed.frontLabel,
               back_label: parsed.backLabel,
               lang: inferLang(parsed.backLabel),
-              color: nextDeckColor(decks.length),
+              ...pickDeckLook(decks),
               cards: parsed.cards,
             });
             close();
@@ -281,7 +302,17 @@ export function Home({
       <Sheet open={sheet?.type === 'ai'} onClose={close} title="Create with AI">
         <AiBuilder
           onCreate={async (deck) => {
-            await onAddDeck({ ...deck, color: nextDeckColor(decks.length) });
+            await onAddDeck({ ...deck, ...pickDeckLook(decks) });
+            close();
+          }}
+        />
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'paste'} onClose={close} title="Paste AI cards">
+        <AiBuilder
+          pasteOnly
+          onCreate={async (deck) => {
+            await onAddDeck({ ...deck, ...pickDeckLook(decks) });
             close();
           }}
         />
@@ -498,10 +529,51 @@ function CoverForm({ deck, onSubmit }) {
   );
 }
 
-function CreateChoices({ onAi, onImport }) {
+function ShufflePicker({ decks, onStart }) {
+  const [chosen, setChosen] = useState(() => new Set(decks.map((d) => d.id)));
+  const toggle = (id) => setChosen((cur) => {
+    const next = new Set(cur);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const all = chosen.size === decks.length;
+  return (
+    <div className="sheet__body">
+      <div className="shuffle-head">
+        <p className="sheet__text">Pick the decks to mix into one session.</p>
+        <button type="button" className="text-btn" onClick={() => setChosen(all ? new Set() : new Set(decks.map((d) => d.id)))}>
+          {all ? 'Clear all' : 'Select all'}
+        </button>
+      </div>
+      <div className="check-list">
+        {decks.map((deck) => {
+          const { fill, deep } = deckColorVars(deck.color);
+          const on = chosen.has(deck.id);
+          return (
+            <label key={deck.id} className={`check-row ${on ? 'is-on' : ''}`}>
+              <input type="checkbox" checked={on} onChange={() => toggle(deck.id)} />
+              <span className="check-row__dot" style={{ '--deck-fill': fill, '--deck-deep': deep }} />
+              <span className="check-row__title">{deck.title}</span>
+              <span className="check-row__box">{on && <Icon name="check" />}</span>
+            </label>
+          );
+        })}
+      </div>
+      <SheetActions>
+        <Button icon="shuffle" disabled={chosen.size === 0} onClick={() => onStart([...chosen])}>
+          {chosen.size === decks.length ? 'Shuffle all decks'
+            : `Shuffle ${chosen.size} ${chosen.size === 1 ? 'deck' : 'decks'}`}
+        </Button>
+      </SheetActions>
+    </div>
+  );
+}
+
+function CreateChoices({ onAi, onPaste, onImport }) {
   return (
     <div className="create-choices">
       <Button onClick={onAi}>Create with AI</Button>
+      <Button variant="secondary" className="btn--on-tile" onClick={onPaste}>Paste AI cards</Button>
       <Button variant="secondary" className="btn--on-tile" onClick={onImport}>Import from Google Sheets</Button>
     </div>
   );

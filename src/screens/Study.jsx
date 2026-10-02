@@ -7,7 +7,8 @@ import { alternatives, displayLines } from '../lib/csv.js';
 import { canSpeak, speak } from '../lib/speech.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
-import { imageSrc, imageSources, needsFrame } from '../lib/media.js';
+import { imageSrc, imageSources, needsFrame, clockTime } from '../lib/media.js';
+import { ClockFace } from '../components/ClockFace.jsx';
 import { makeOptions } from '../lib/srs.js';
 import { SPRING, tokenNumber } from '../styles/tokens.js';
 
@@ -339,6 +340,7 @@ function CardPicture({ sources, framed, onBroken }) {
 
 function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFocusChange, onSkip, onSubmit, onBroken }) {
   const picture = imageSrc(card.front);
+  const clock = clockTime(card.front);
   const typedMode = card.mode !== 'choice';
   const bodyRef = useRef(null);
   const fit = useFitText(bodyRef, [card.key, typed]);
@@ -361,13 +363,15 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
 
       <div
         ref={bodyRef}
-        className={`study-card__body ${picture ? 'has-picture' : ''}`}
+        className={`study-card__body ${picture || clock ? 'has-picture' : ''}`}
         data-fit={fit}
         onClick={() => interactive && inputRef?.current?.focus()}
       >
-        {picture
-          ? <CardPicture sources={imageSources(card.front)} framed={needsFrame(card.front)} onBroken={onBroken} />
-          : <p className="study-card__text"><Lines text={card.front} /></p>}
+        {clock
+          ? <div className="study-card__picture-wrap"><ClockFace h={clock.h} m={clock.m} /></div>
+          : picture
+            ? <CardPicture sources={imageSources(card.front)} framed={needsFrame(card.front)} onBroken={onBroken} />
+            : <p className="study-card__text"><Lines text={card.front} /></p>}
         {!typedMode ? null : interactive ? (
           <textarea
             ref={inputRef}

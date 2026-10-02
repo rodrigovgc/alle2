@@ -3,6 +3,7 @@ import { supabase, isConfigured } from './lib/supabase.js';
 import * as api from './lib/api.js';
 import { fetchDeckFromUrl } from './lib/csv.js';
 import { SAMPLE_DECKS } from './lib/sampleDeck.js';
+import { pickDeckLook } from './styles/tokens.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
 import { Auth } from './screens/Auth.jsx';
 import { Home } from './screens/Home.jsx';
@@ -140,13 +141,15 @@ function Library({ user, onUser }) {
         colorMode={colorMode}
         onAddSample={async (key) => {
           try {
-            const created = await api.createDeck(SAMPLE_DECKS[key]);
+            const sample = SAMPLE_DECKS[key];
+            // Keep the sample's own colour if it's free; otherwise a free one.
+            const created = await api.createDeck({ ...sample, ...pickDeckLook(decks, sample) });
             setDecks((all) => [...all, created]);
           } catch (e) { setError(e.message); }
         }}
         onColorMode={(mode) => setPrefs({ color_mode: mode })}
         onStudyDeck={(deck) => start([deck.id])}
-        onShuffle={() => start(decks.map((d) => d.id), { mix: true })}
+        onShuffle={(ids) => start(ids && ids.length ? ids : decks.map((d) => d.id), { mix: true })}
         onAddDeck={async (deck) => {
           const created = await api.createDeck(deck);
           setDecks((all) => [...all, created]);
@@ -177,6 +180,7 @@ function Library({ user, onUser }) {
           } catch (e) { setError(e.message); }
         }}
         onSignOut={() => supabase.auth.signOut()}
+        userEmail={user.email}
       />
     );
   }

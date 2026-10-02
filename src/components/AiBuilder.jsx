@@ -25,9 +25,9 @@ const TOPIC_HINTS = {
  * The prompt is a fixed template with the answers filled in, so it runs in
  * the browser at no cost. The last step reads the AI's reply and makes the deck.
  */
-export function AiBuilder({ onCreate }) {
+export function AiBuilder({ onCreate, pasteOnly = false }) {
   const reduce = useReducedMotion();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(pasteOnly ? STEPS.indexOf('paste') : 0);
   const [dir, setDir] = useState(1);
   const [v, setV] = useState({
     subject: null, known: 'English', learning: '', topic: '',
@@ -79,7 +79,7 @@ export function AiBuilder({ onCreate }) {
           {STEPS[step] === 'sides' && <SidesStep v={v} set={set} />}
           {STEPS[step] === 'size' && <SizeStep v={v} set={set} />}
           {STEPS[step] === 'prompt' && <PromptStep v={v} />}
-          {STEPS[step] === 'paste' && <PasteStep v={v} onCreate={onCreate} onBack={() => go(-1)} />}
+          {STEPS[step] === 'paste' && <PasteStep v={v} onCreate={onCreate} onBack={pasteOnly ? null : () => go(-1)} />}
         </motion.div>
       </AnimatePresence>
 
@@ -323,7 +323,7 @@ function PromptStep({ v }) {
 
 function PasteStep({ v, onCreate, onBack }) {
   const [raw, setRaw] = useState('');
-  const [name, setName] = useState(() => (v.subject === 'language' ? v.learning : v.topic || describeTopic(v)));
+  const [name, setName] = useState(() => (v.subject === 'language' ? v.learning : (v.topic || (v.subject ? describeTopic(v) : ''))));
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState('');
 
@@ -391,7 +391,7 @@ function PasteStep({ v, onCreate, onBack }) {
       {saveError && <p className="form-error" role="alert">{saveError}</p>}
       <SheetActions>
         <Button onClick={create} disabled={!parsed?.deck || busy}>{busy ? 'Creating…' : 'Create deck'}</Button>
-        <Button variant="secondary" onClick={onBack}>Back</Button>
+        {onBack && <Button variant="secondary" onClick={onBack}>Back</Button>}
       </SheetActions>
     </>
   );

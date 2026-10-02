@@ -557,3 +557,37 @@ select.input { background-image: none; }
 .btn--danger { color: var(--on-danger); }
 /* Menus sit inside deck cards but are not pastel: back to theme text. */
 .menu { --text-primary: var(--color-foreground); color: var(--color-foreground); }
+
+/* Shuffle picker + library multi-add */
+.shuffle-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.check-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.check-row {
+  display: flex; align-items: center; gap: var(--space-3);
+  min-height: var(--size-field);
+  padding: 0 var(--space-3) 0 var(--space-4);
+  border-radius: var(--radius-field);
+  background: var(--choice-bg);
+  border: 1px solid var(--start-tile-border);
+  cursor: pointer;
+}
+.check-row.is-on { border-color: var(--border-selected); }
+.check-row input { position: absolute; opacity: 0; pointer-events: none; }
+.check-row__dot { width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--deck-fill); border: 1px solid var(--deck-deep); flex: none; }
+.check-row__title { flex: 1; min-width: 0; font-size: var(--font-size-button); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.check-row__box {
+  width: 24px; height: 24px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-mark);
+  border: 1.5px solid var(--grey-300);
+  color: var(--cta-fg); background: transparent;
+}
+.check-row.is-on .check-row__box { background: var(--cta-bg); border-color: var(--cta-bg); }
+.library-done { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* Account sheet */
+.account { gap: var(--space-6); }
+.account__group { display: flex; flex-direction: column; gap: var(--space-3); }
+.account__label { font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.account__email { font-size: var(--font-size-button); }
+.account__delete { color: var(--color-danger); }
+.account__confirm { display: flex; flex-direction: column; gap: var(--space-3); }
