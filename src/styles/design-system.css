@@ -1,0 +1,99 @@
+/* Layout for the /design page only. Values come from tokens.css. */
+.ds { max-width: 760px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + var(--space-8)) var(--gutter) var(--space-10); }
+.ds-head { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-8); }
+.ds-head__title { font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); }
+.ds-head__text { color: var(--text-secondary); line-height: var(--line-height-body); }
+.ds-head code { font-size: var(--font-size-caption); background: var(--color-surface-deep); padding: 1px var(--space-1); border-radius: var(--radius-mark); }
+.ds-section { padding: var(--space-6) 0; border-top: 1px solid var(--color-surface-deep); display: flex; flex-direction: column; gap: var(--space-5); }
+.ds-section__title { font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); }
+.ds-group { display: flex; flex-direction: column; gap: var(--space-3); }
+.ds-group__title { font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.ds-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
+.ds-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); grid-column: span 2; }
+.ds-swatch { display: flex; flex-direction: column; gap: var(--space-1); }
+.ds-swatch__chip { height: var(--size-field); border-radius: var(--radius-field); border: 1px solid var(--border-subtle); }
+.ds-swatch__name { font-size: var(--font-size-caption); font-weight: var(--font-weight-medium); }
+.ds-swatch__value, .ds-token { font-size: var(--font-size-caption); color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.ds-type { display: flex; flex-direction: column; gap: var(--space-1); }
+.ds-type__meta { display: flex; gap: var(--space-3); align-items: baseline; font-size: var(--font-size-caption); color: var(--text-secondary); }
+.ds-space { display: flex; align-items: center; gap: var(--space-3); }
+.ds-space__bar { height: var(--space-3); background: var(--lime-100); border-radius: 2px; }
+.ds-radii { display: flex; flex-wrap: wrap; gap: var(--space-5); }
+.ds-radius { display: flex; flex-direction: column; gap: var(--space-2); }
+.ds-radius__box { width: 72px; height: 72px; background: var(--card-bg); border: 1px solid var(--grey-200); }
+.ds-stack { display: flex; flex-direction: column; gap: var(--space-3); max-width: var(--screen-max); }
+.ds-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.ds-study { position: relative; height: 240px; max-width: var(--screen-max); }
+.ds-shapes { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: var(--space-3); }
+.ds-shape { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; border-radius: var(--radius-field); background: var(--deck-fill); border: 1px solid var(--deck-deep); color: var(--deck-deep); }
+.ds-shape .deck-shape { position: static; width: 60%; height: 60%; opacity: 1; }
+.ds-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: var(--space-3); }
+.ds-icon { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) 0; border-radius: var(--radius-field); background: var(--card-bg); font-size: var(--font-size-caption); color: var(--text-secondary); }
+
+/* Device preview */
+.ds-phone-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); width: 100%; }
+.ds-phone-wrap .tabs { width: 100%; max-width: 420px; }
+.ds-reload { width: auto; padding: 0 var(--space-5); }
+.ds-device-slot { position: relative; }
+.ds-device {
+  position: absolute; left: 0; top: 0; box-sizing: content-box;
+  transform-origin: top left;
+  border: 12px solid #0C0C0C;
+  outline: 1px solid var(--grey-200);
+  background: var(--page-bg);
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.25);
+}
+.ds-device--phone   { border-radius: 56px; }
+.ds-device--duo     { border-radius: 40px; }
+.ds-device--tablet  { border-radius: 36px; }
+.ds-device--desktop { border-radius: 12px; border-color: var(--grey-200); }
+.ds-device__status {
+  position: absolute; left: 0; right: 0; top: 0; height: var(--top);
+  display: flex; align-items: center; padding: 0 var(--space-8);
+  font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); color: var(--text-primary);
+}
+.ds-device__island {
+  position: absolute; left: 50%; top: 11px; transform: translateX(-50%);
+  width: 124px; height: 36px; border-radius: 20px; background: #000;
+}
+.ds-device__bar {
+  position: absolute; left: 0; right: 0; top: 0; height: var(--top);
+  display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-4);
+  background: var(--color-surface-deep); color: var(--text-secondary); font-size: var(--font-size-caption);
+}
+.ds-device__bar i { width: 12px; height: 12px; border-radius: 50%; background: var(--grey-300); }
+.ds-device__bar span { margin: 0 auto; padding: var(--space-1) var(--space-6); border-radius: var(--radius-pill); background: var(--color-background); }
+.ds-device__screen {
+  position: absolute; left: 0; right: 0; top: var(--top); bottom: var(--bottom);
+  width: 100%; height: calc(100% - var(--top) - var(--bottom));
+  border: 0; background: var(--page-bg);
+}
+.ds-device__crease {
+  position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-1px);
+  background: linear-gradient(to right, rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.08), rgb(0 0 0 / 0.06));
+  pointer-events: none;
+}
+
+
+/* ---- Dashboard --------------------------------------------------------- */
+.dash { max-width: 820px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + var(--space-8)) var(--gutter) var(--space-10); display: flex; flex-direction: column; gap: var(--space-5); }
+.dash__title { font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); }
+.dash__muted { color: var(--text-secondary); line-height: var(--line-height-body); }
+.dash__muted code { background: var(--color-surface-deep); padding: 1px 4px; border-radius: var(--radius-mark); }
+.dash__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
+.dash__stat { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-4); border-radius: var(--radius-field); background: var(--card-bg); border: 1px solid var(--border-subtle); }
+.dash__stat-value { font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; }
+.dash__stat-label { font-size: var(--font-size-caption); color: var(--text-secondary); }
+.dash__two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+@media (max-width: 600px) { .dash__two { grid-template-columns: 1fr; } }
+.dash__panel { padding: var(--space-5); border-radius: var(--radius-field); background: var(--card-bg); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: var(--space-3); }
+.dash__panel-title { font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.dash__row { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--font-size-button); }
+.dash__row-n { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.dash__funnel { display: flex; flex-direction: column; gap: var(--space-2); }
+.dash__funnel-head { display: flex; justify-content: space-between; font-size: var(--font-size-small); }
+.dash__track { height: 8px; border-radius: var(--radius-pill); background: var(--color-surface-deep); overflow: hidden; }
+.dash__fill { display: block; height: 100%; background: var(--progress-fill); border-radius: inherit; }
+.dash__spark { display: flex; align-items: flex-end; gap: 4px; height: 90px; }
+.dash__bar { flex: 1; background: var(--progress-fill); border-radius: 2px 2px 0 0; min-height: 4px; }

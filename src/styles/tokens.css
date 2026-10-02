@@ -1,0 +1,244 @@
+/* ==========================================================================
+   Alle — design tokens
+   The single source of truth. Every colour, size, radius, space, shadow and
+   motion value in the app reads from here. Change a value once; it propagates.
+   ========================================================================== */
+
+:root {
+  /* ---- Base palette ------------------------------------------------------ */
+  --color-background: #FDFDFC;   /* white, warm tint — cards, sheets        */
+  --color-surface:    #F6F4EC;   /* beige — tray, rating active, inactive    */
+  --color-surface-deep: #E8E5DA; /* beige-200 — rating container            */
+  --color-foreground: #0C0C0C;   /* near-black — primary text               */
+
+  --grey-500: #0C0C0C;
+  --grey-400: #585858;
+  --grey-300: #9F9F9F;
+  --grey-200: #DDDDDD;
+
+  --lime-100: #DCFB42;
+  --lime-200: #C3DF22;
+
+  --color-danger: #E5484D;
+
+  /* ---- Deck palette (rotates) -------------------------------------------- */
+  --deck-lime:   #E6F7A3;  --deck-lime-deep:   #CBE86F;  /* pastel lime, matches the family */
+  --deck-purple: #CDC9FD;  --deck-purple-deep: #B5B1FC;
+  --deck-pink:   #FEBDDA;  --deck-pink-deep:   #F1ADCA;
+  --deck-blue:   #BDDDFE;  --deck-blue-deep:   #ADCFF1;
+  --deck-green:  #CBFEBD;  --deck-green-deep:  #AEECB6;
+  --deck-yellow: #FFF4AB;  --deck-yellow-deep: #EFDC8F;
+  --deck-red:    #FEBDBD;  --deck-red-deep:    #EFA1A1;
+  --deck-beige:  #F6F4EC;  --deck-beige-deep:  #E8E5DA;
+
+  /* Monochrome mode swaps every deck to these */
+  --deck-mono:      var(--color-background);
+  --deck-mono-deep: var(--grey-200);
+
+  /* ---- Verdict tags ------------------------------------------------------- */
+  --tag-correct-bg: var(--deck-green);   --tag-correct-border: var(--deck-green-deep);
+  --tag-almost-bg:  var(--deck-yellow);  --tag-almost-border:  var(--deck-yellow-deep);
+  --tag-wrong-bg:   var(--deck-red);     --tag-wrong-border:   var(--deck-red-deep);
+
+  /* ---- Semantic roles ---------------------------------------------------- */
+  --page-bg:           var(--color-surface);      /* screen background      */
+  --card-bg:           var(--color-background);   /* study card, sheets     */
+  --text-primary:      var(--color-foreground);
+  --text-secondary:    var(--grey-400);
+  --text-tertiary:     var(--grey-300);
+  --text-placeholder:  var(--grey-200);
+  --deck-meta-color:   var(--grey-400);           /* "Column A → Column B"  */
+  --deck-count-color:  var(--grey-400);
+  --border-subtle:     var(--grey-200);
+  --border-selected:   var(--grey-400);           /* chosen chip / choice */
+  --size-border-selected: 1.5px;
+  --cta-bg:            var(--color-foreground);
+  --cta-fg:            var(--color-background);   /* white on black (dark mode: black on white) */
+  --progress-track:    rgb(12 12 12 / 0.2);
+  --progress-fill:     var(--color-foreground);
+  --scrim:             rgb(12 12 12 / 0.32);
+  --press-overlay:     rgb(12 12 12 / 0.05);
+  --start-tile-bg:     color-mix(in srgb, var(--color-surface-deep) 45%, var(--color-surface)); /* empty-home tiles */
+  --start-tile-border: var(--color-surface-deep);
+  --tab-light-track:   var(--color-surface);      /* segmented control + prompt box on white */
+  --choice-bg:         var(--color-surface);      /* builder choices and chips */
+  --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
+  --inner-button-bg:   var(--color-surface);      /* circle buttons inside a card or sheet */
+  --outer-button-bg:   var(--color-background);   /* circle buttons on the page             */
+  --picture-frame:     var(--grey-200);           /* outline on flags so white edges show */
+  --mark-wrong-bg:     var(--deck-red);           /* letters typed wrong                    */
+  --mark-fix-bg:       var(--deck-green);         /* letters that fix them                  */
+
+  /* ---- Typography -------------------------------------------------------- */
+  --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium:  500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:    700;
+
+  /* Type scale, aligned with iOS text styles (Large Title 34 · Title 1 28 ·
+     Title 3 20 · Body 17 · Subhead 15 · Footnote 13) so Alle reads like a
+     native app. One step below the Figma brief (34/24/18/15), on purpose. */
+  --font-size-display:     64px;  /* Done score                           */
+  --font-size-large-title: 28px;  /* deck names, card text, auth title    */
+  --font-size-small-title: 20px;  /* section, sheet and tile titles       */
+  --font-size-button:      17px;  /* body text, buttons, inputs           */
+  --font-size-small:       15px;  /* secondary text                       */
+  --font-size-caption:     13px;  /* labels, hints, meta                  */
+
+  /* Steps the study card falls back through when text doesn't fit */
+  --font-size-fit-1: 24px;
+  --font-size-fit-2: 21px;
+  --font-size-fit-3: 18px;
+  --font-size-fit-4: 16px;
+  --font-size-fit-5: 14px;
+
+  --line-height-tight: 120%;
+  --line-height-body:  140%;
+  --letter-spacing-title: -0.02em;
+
+  /* ---- Spacing ----------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --gutter:        var(--space-4);   /* screen side margin                 */
+  --card-padding:  var(--space-6);   /* study card + deck card             */
+
+  /* ---- Radii ------------------------------------------------------------- */
+  --radius-button:   25px;
+  --radius-card:     28px;   /* study card                                  */
+  --radius-deck:     24px;   /* deck card on home                           */
+  --radius-tab:      24px;   /* rating container                            */
+  --radius-tab-item: 20px;   /* active segment                              */
+  --radius-tag:      18.5px;
+  --radius-menu:     24px;
+  --radius-field:    16px;
+  --radius-sheet:    28px;
+  --radius-pill:     999px;
+  --radius-mark:     4px;
+  --radius-confetti: 8px;
+
+  /* ---- Component sizes --------------------------------------------------- */
+  --size-button:      50px;
+  --size-tab:         58px;
+  --size-tab-inset:   4px;
+  --size-tag:         37px;
+  --tag-padding-x:    19.5px;
+  --size-icon-button: 44px;
+  --size-icon:        20px;
+  --size-progress:    4px;
+  --size-deck-card:   164px;
+  --size-shape-w:     80px;
+  --size-shape-h:     80px;
+  --shape-opacity:    0.35;
+  --size-field:       50px;
+  --size-header:      56px;
+  --size-card-control: 40px;  /* Skip pill, speaker circle        */
+  --size-icon-small:  18px;
+  --screen-max:       520px;
+  --home-max:         960px;  /* wider home on desktop/iPad/Duo for 2 columns */
+  --size-logo:        32px;
+  --size-menu-min:    250px;
+  --size-controls:    124px;  /* bottom area: tab (58) + gap (16) + button (50) */
+  --size-swatch:      44px;
+  --size-confetti-w:  48px;   /* celebration cards */
+  --size-confetti-h:  64px;
+  --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
+  --size-popup:       480px;  /* desktop popup width */
+  --size-quiz-option: 50px;
+  --size-reorder-row: 64px;
+  --size-card-picture: 120px; /* signs and flags on a study card */
+  --size-sample-card: 112px;
+  --size-sample-shape: 70px;
+  --size-mini-card-w: 220px;
+  --size-mini-card-h: 140px;
+  --size-prompt-box:  220px;
+  --size-toggle-w:    44px;
+  --size-toggle-h:    26px;
+
+  /* ---- Elevation --------------------------------------------------------- */
+  --shadow-card:   0 18px 48px rgb(12 12 12 / 0.10), 0 2px 6px rgb(12 12 12 / 0.04);
+  --shadow-card-behind: 0 8px 24px rgb(12 12 12 / 0.05);
+  --shadow-menu:   0 20px 50px rgb(12 12 12 / 0.16), 0 2px 8px rgb(12 12 12 / 0.06);
+  --shadow-button-soft: 0 1px 2px rgb(12 12 12 / 0.06);
+
+  /* ---- Card stack -------------------------------------------------------- */
+  --stack-scale-step: 0.03;   /* each card behind is ~3% smaller           */
+  --stack-offset:     8px;    /* and peeks this far below the one above    */
+  --stack-depth:      3;
+  --card-perspective: 1400px; /* depth for the card flip */
+  --card-ratio:       1.25;   /* width ÷ height — card + stack fit above the keyboard on iPhone SE */
+  --card-max-h:       560px;  /* cap on very short/wide screens (open Duo) */
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-base: 260ms;
+
+  /* Text on pastel surfaces (deck cards, verdict chips, answer marks) stays
+     dark on the light pastels; dark mode swaps both for deeper colours with light text. */
+  --ink:   #0C0C0C;
+  --ink-2: #585858;
+  --on-danger: #FDFDFC;
+
+  color-scheme: light;
+
+  /* ---- Layers ------------------------------------------------------------ */
+  --z-sticky: 10;
+  --z-menu:   40;
+  --z-sheet:  50;
+}
+
+/* ==========================================================================
+   Dark theme — the same token names with dark values. Set by lib/theme.js
+   as <html data-theme="dark">. Cards sit lighter than the page, as in iOS.
+   ========================================================================== */
+:root[data-theme="dark"] {
+  --color-background:   #1F1E1B;   /* cards, sheets, inputs (raised)     */
+  --color-surface:      #141311;   /* page                               */
+  --color-surface-deep: #2D2B27;
+  --color-foreground:   #F3F1EA;
+
+  --grey-500: #F3F1EA;
+  --grey-400: #B3AFA5;
+  --grey-300: #7E7B73;
+  --grey-200: #3A3833;
+
+  --color-danger: #F2555A;
+
+  --deck-mono:      #26241F;
+  --deck-mono-deep: #3A3833;
+
+  /* Deck colours: deeper versions of the same hues. Shapes ("deep") sit a
+     step lighter than the fill, so they still read on a dark card. */
+  --deck-lime:   #3A4210;  --deck-lime-deep:   #535F18;
+  --deck-purple: #34305E;  --deck-purple-deep: #4A4482;
+  --deck-pink:   #5A2A40;  --deck-pink-deep:   #7A3A58;
+  --deck-blue:   #22405E;  --deck-blue-deep:   #305A80;
+  --deck-green:  #23492C;  --deck-green-deep:  #31653D;
+  --deck-yellow: #4D4318;  --deck-yellow-deep: #6B5E23;
+  --deck-red:    #5A2626;  --deck-red-deep:    #7A3434;
+  --deck-beige:  #2D2B27;  --deck-beige-deep:  #44413B;
+
+  /* Text on those colours turns light (tags, marks, quiz feedback too) */
+  --ink:   #F3F1EA;
+  --ink-2: #C4C0B5;
+
+  --progress-track: rgb(243 241 234 / 0.2);
+  --scrim:          rgb(0 0 0 / 0.55);
+  --press-overlay:  rgb(255 255 255 / 0.06);
+
+  --shadow-card:   0 18px 48px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.3);
+  --shadow-card-behind: 0 8px 24px rgb(0 0 0 / 0.3);
+  --shadow-menu:   0 20px 50px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.35);
+  --shadow-button-soft: 0 1px 2px rgb(0 0 0 / 0.5);
+
+  color-scheme: dark;
+}
