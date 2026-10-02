@@ -18,7 +18,7 @@ No Supabase yet? Put `VITE_DEMO=true` in `.env.local` instead. Auth and data the
 ## Supabase
 
 1. Create a project, then run `supabase/schema.sql` in the SQL editor (tables + row-level security).
-   Already set up from an earlier version? Run `supabase/002_shapes.sql`, `003_answer_mode.sql` and `004_position.sql` once instead.
+   Already set up from an earlier version? Run the numbered files in `supabase/` (002–005) once each.
 2. Authentication → Providers → Email: on. Turn off “Confirm email” if you want instant sign-in while testing.
 3. Copy the project URL and anon key into `.env.local` (and into Vercel → Settings → Environment Variables).
 
@@ -28,6 +28,10 @@ there is no profiles table.
 ## Deploy
 
 Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `vercel.json` handles SPA routing.
+
+## Dashboard
+
+Owner-only usage at `/dashboard` (e.g. `alle-app.vercel.app/dashboard`). Run `supabase/005_analytics.sql` first and set your email as the owner inside it. All figures are aggregates; no per-user data is exposed.
 
 ## Design system
 

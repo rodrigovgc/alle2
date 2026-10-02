@@ -4,6 +4,7 @@ import * as api from './lib/api.js';
 import { fetchDeckFromUrl } from './lib/csv.js';
 import { SAMPLE_DECKS } from './lib/sampleDeck.js';
 import { pickDeckLook } from './styles/tokens.js';
+import { track } from './lib/analytics.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
 import { Auth } from './screens/Auth.jsx';
 import { Home } from './screens/Home.jsx';
@@ -127,7 +128,7 @@ function Library({ user, onUser }) {
         cards={screen.cards}
         onReview={review}
         onExit={() => setScreen({ name: 'home' })}
-        onFinish={(score) => setScreen({ name: 'done', ...score })}
+        onFinish={(score) => { track('session_finished', { total: score.total }); setScreen({ name: 'done', ...score }); }}
       />
     );
   } else if (screen.name === 'done') {
@@ -144,6 +145,7 @@ function Library({ user, onUser }) {
             const sample = SAMPLE_DECKS[key];
             // Keep the sample's own colour if it's free; otherwise a free one.
             const created = await api.createDeck({ ...sample, ...pickDeckLook(decks, sample) });
+            track('deck_added', { source: 'ready_made', title: sample.title });
             setDecks((all) => [...all, created]);
           } catch (e) { setError(e.message); }
         }}
@@ -153,6 +155,10 @@ function Library({ user, onUser }) {
         onAddDeck={async (deck) => {
           const created = await api.createDeck(deck);
           setDecks((all) => [...all, created]);
+          track('deck_added', {
+            source: deck.csv_url ? 'sheet' : 'ai_or_paste',
+            lang: deck.lang,
+          });
         }}
         onUpdateDeck={async (id, patch) => {
           const updated = await api.updateDeck(id, patch);

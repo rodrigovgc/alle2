@@ -16,12 +16,14 @@ export function imageSources(cell = '') {
     return IMAGE_EXT.test(path) || /upload\.wikimedia\.org/i.test(v) ? [v] : [];
   }
   if (IMAGE_EXT.test(v) && !/[\\/]/.test(v)) {
-    const file = encodeURIComponent(v.replace(/ /g, '_'));
-    const base = `https://commons.wikimedia.org/wiki/Special:FilePath/${file}`;
-    // SVGs render to PNG via ?width (some browsers refuse raw Wikimedia SVGs);
-    // fall back to a larger PNG, then the original file.
-    if (/\.svg$/i.test(v)) return [`${base}?width=320`, `${base}?width=640`, base];
-    return [`${base}?width=320`, base];
+    const file = v.replace(/ /g, '_');
+    const enc = encodeURIComponent(file);
+    // Wikimedia's thumbnail renderer returns a PNG of any SVG with CORS headers,
+    // which works where the raw SVG (via Special:FilePath) is blocked.
+    const thumb = (w) => `https://commons.wikimedia.org/w/thumb.php?f=${enc}&width=${w}`;
+    const filePath = `https://commons.wikimedia.org/wiki/Special:FilePath/${enc}`;
+    if (/\.svg$/i.test(v)) return [thumb(320), `${filePath}?width=320`, filePath];
+    return [thumb(320), `${filePath}?width=320`, filePath];
   }
   return [];
 }

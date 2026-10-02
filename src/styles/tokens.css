@@ -22,7 +22,7 @@
   --color-danger: #E5484D;
 
   /* ---- Deck palette (rotates) -------------------------------------------- */
-  --deck-lime:   #DCFB42;  --deck-lime-deep:   #C3DF22;
+  --deck-lime:   #E6F7A3;  --deck-lime-deep:   #CBE86F;  /* pastel lime, matches the family */
   --deck-purple: #CDC9FD;  --deck-purple-deep: #B5B1FC;
   --deck-pink:   #FEBDDA;  --deck-pink-deep:   #F1ADCA;
   --deck-blue:   #BDDDFE;  --deck-blue-deep:   #ADCFF1;
@@ -145,8 +145,8 @@
   --size-menu-min:    250px;
   --size-controls:    124px;  /* bottom area: tab (58) + gap (16) + button (50) */
   --size-swatch:      44px;
-  --size-confetti-w:  40px;   /* celebration cards */
-  --size-confetti-h:  54px;
+  --size-confetti-w:  48px;   /* celebration cards */
+  --size-confetti-h:  64px;
   --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
   --size-popup:       480px;  /* desktop popup width */
   --size-quiz-option: 50px;
@@ -172,6 +172,7 @@
   --stack-depth:      3;
   --card-perspective: 1400px; /* depth for the card flip */
   --card-ratio:       1.25;   /* width ÷ height — card + stack fit above the keyboard on iPhone SE */
+  --card-max-h:       560px;  /* cap on very short/wide screens (open Duo) */
 
   /* ---- Motion ------------------------------------------------------------ */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

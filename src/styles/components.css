@@ -75,8 +75,10 @@
 }
 .tabs__item {
   position: relative;
+  display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-tab-item);
-  font-size: var(--font-size-button);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-tight);
   color: var(--text-secondary);
   font-weight: var(--font-weight-regular);
   transition: color var(--duration-fast);
@@ -86,13 +88,14 @@
 /* Light variant for white surfaces (builder): beige track, white segment */
 .tabs--light { background: var(--tab-light-track); }
 .tabs--light .tabs__thumb { background: var(--card-bg); box-shadow: var(--shadow-button-soft); }
-.tabs--light .tabs__item { font-size: var(--font-size-button); }
+.tabs--light .tabs__item { font-size: var(--font-size-small); }
 
 /* ---- Tag (verdict pill) ------------------------------------------------ */
 .tag {
   display: inline-flex; align-items: center;
-  height: var(--size-tag);
-  padding: 0 var(--tag-padding-x);
+  min-height: var(--size-tag);
+  padding: var(--space-1) var(--tag-padding-x);
+  line-height: var(--line-height-tight);
   border-radius: var(--radius-tag);
   border: 1px solid;
   font-size: var(--font-size-small);
@@ -128,6 +131,8 @@
 .menu__item:active { background: var(--press-overlay); }
 .menu__item--danger { color: var(--color-danger); }
 .menu__check { width: var(--size-icon); display: inline-flex; }
+.menu__icon { width: var(--size-icon); display: inline-flex; color: var(--text-secondary); }
+.menu__item--danger .menu__icon { color: var(--color-danger); }
 .menu__divider { border: 0; border-top: 1px solid var(--border-subtle); margin: var(--space-2) var(--space-5); }
 .menu--home { top: calc(100% + var(--space-2)); right: 0; }
 .menu--deck { top: 0; right: 0; }
@@ -198,7 +203,7 @@
   overflow: hidden;                      /* keeps the pinned Save bar inside the corners */
   pointer-events: auto;
 }
-.sheet--popup .sheet__scroll { padding-bottom: 0; }
+.sheet--popup .sheet__scroll { padding-bottom: var(--space-6); }
 .sheet--popup .sheet__body,
 .sheet--popup .sheet__scroll > form,
 .sheet--popup .sheet__scroll > .sheet__body { min-height: 0; }
@@ -206,6 +211,7 @@
   position: sticky; bottom: 0;          /* Save stays in view when a popup scrolls */
   padding-bottom: var(--space-5);
   margin-top: var(--space-2);
+  margin-bottom: calc(var(--space-6) * -1); /* cancel the scroll area's bottom pad */
 }
 
 /* ---- Fields ------------------------------------------------------------ */
@@ -378,12 +384,14 @@ select.input { background-image: none; }
 /* Chips: beige in both states; the chosen one gets a darker outline */
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chip {
-  height: var(--size-tag);
-  padding: 0 var(--tag-padding-x);
+  min-height: var(--size-tag);
+  display: inline-flex; align-items: center;
+  padding: var(--space-2) var(--tag-padding-x);
   border-radius: var(--radius-tag);
   background: var(--choice-bg);
   border: 1px solid var(--start-tile-border);
   font-size: var(--font-size-small);
+  line-height: var(--line-height-tight);
   color: var(--text-primary);
   transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
@@ -559,8 +567,14 @@ select.input { background-image: none; }
 .menu { --text-primary: var(--color-foreground); color: var(--color-foreground); }
 
 /* Shuffle picker + library multi-add */
-.shuffle-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.shuffle-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.shuffle-head .sheet__text { white-space: nowrap; }
+.shuffle-head__all { white-space: nowrap; padding: 0 var(--space-2); }
 .check-list { display: flex; flex-direction: column; gap: var(--space-2); }
+/* Shuffle picker: the list scrolls, the Shuffle button stays pinned below */
+.shuffle-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.shuffle-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: var(--space-2); }
+.shuffle-body .sheet__actions { position: sticky; bottom: 0; }
 .check-row {
   display: flex; align-items: center; gap: var(--space-3);
   min-height: var(--size-field);

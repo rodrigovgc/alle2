@@ -84,6 +84,6 @@ export const SPRING = {
   flip: { type: 'spring', stiffness: 260, damping: 28 },
 };
 
-export const SESSION_SIZE = 20;
-export const NEW_CARDS_PER_SESSION = 6;
+export const SESSION_SIZE = 10;
+export const NEW_CARDS_PER_SESSION = 10;
 export const LEITNER_INTERVALS_DAYS = [1, 2, 4, 8, 16];

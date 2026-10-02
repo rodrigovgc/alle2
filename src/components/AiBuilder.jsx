@@ -6,6 +6,7 @@ import { Field, SheetActions } from './Sheet.jsx';
 import { Segmented } from './Segmented.jsx';
 import { DeckImportError, parseLooseTable } from '../lib/csv.js';
 import { inferLang } from '../lib/speech.js';
+import { track } from '../lib/analytics.js';
 import { imageSrc, needsFrame } from '../lib/media.js';
 import {
   LEVELS, SIZES, SUBJECTS, buildPrompt, describeTopic, presetFor,
@@ -339,6 +340,7 @@ function PasteStep({ v, onCreate, onBack }) {
     setBusy(true); setSaveError('');
     try {
       const d = parsed.deck;
+      track('ai_deck_created', { subject: v.subject, learning: v.subject === 'language' ? v.learning : undefined });
       await onCreate({
         title: name.trim() || d.backLabel,
         csv_url: null,

@@ -90,8 +90,8 @@ export function Home({
             onClose={() => setMenuOpen(false)}
             className="menu--home"
             items={[
-              ...(decks.length > 1 ? [{ label: 'Reorder decks', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }] : []),
-              { label: 'Account', onSelect: () => setSheet({ type: 'account' }) },
+              ...(decks.length > 1 ? [{ label: 'Reorder decks', icon: 'list', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }] : []),
+              { label: 'Account', icon: 'person', onSelect: () => setSheet({ type: 'account' }) },
             ]}
           />
         </div>
@@ -308,7 +308,7 @@ export function Home({
         />
       </Sheet>
 
-      <Sheet open={sheet?.type === 'paste'} onClose={close} title="Paste AI cards">
+      <Sheet open={sheet?.type === 'paste'} onClose={close} title="Paste AI deck prompt">
         <AiBuilder
           pasteOnly
           onCreate={async (deck) => {
@@ -538,14 +538,14 @@ function ShufflePicker({ decks, onStart }) {
   });
   const all = chosen.size === decks.length;
   return (
-    <div className="sheet__body">
+    <div className="sheet__body shuffle-body">
       <div className="shuffle-head">
-        <p className="sheet__text">Pick the decks to mix into one session.</p>
-        <button type="button" className="text-btn" onClick={() => setChosen(all ? new Set() : new Set(decks.map((d) => d.id)))}>
+        <p className="sheet__text">Pick decks to shuffle</p>
+        <button type="button" className="text-btn shuffle-head__all" onClick={() => setChosen(all ? new Set() : new Set(decks.map((d) => d.id)))}>
           {all ? 'Clear all' : 'Select all'}
         </button>
       </div>
-      <div className="check-list">
+      <div className="check-list shuffle-scroll">
         {decks.map((deck) => {
           const { fill, deep } = deckColorVars(deck.color);
           const on = chosen.has(deck.id);
@@ -573,7 +573,7 @@ function CreateChoices({ onAi, onPaste, onImport }) {
   return (
     <div className="create-choices">
       <Button onClick={onAi}>Create with AI</Button>
-      <Button variant="secondary" className="btn--on-tile" onClick={onPaste}>Paste AI cards</Button>
+      <Button variant="secondary" className="btn--on-tile" onClick={onPaste}>Paste AI deck prompt</Button>
       <Button variant="secondary" className="btn--on-tile" onClick={onImport}>Import from Google Sheets</Button>
     </div>
   );

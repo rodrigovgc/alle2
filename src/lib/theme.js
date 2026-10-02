@@ -22,6 +22,7 @@ export function setThemePref(pref) {
   try { localStorage.setItem(KEY, pref); } catch { /* private mode */ }
   applyTheme(pref);
   window.dispatchEvent(new CustomEvent('alle-theme', { detail: pref }));
+  import('./analytics.js').then((m) => m.track('theme_set', { pref })).catch(() => {});
 }
 
 /** Call once at startup. */

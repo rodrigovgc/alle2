@@ -27,11 +27,11 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
   const count = deck.cards?.length ?? 0;
 
   const items = [
-    { label: 'Update URL', onSelect: onUpdateUrl },
-    { label: 'Customize cover', onSelect: onCustomize },
-    { label: 'Reset progress', onSelect: onResetProgress },
+    { label: 'Update URL', icon: 'link', onSelect: onUpdateUrl },
+    { label: 'Customize cover', icon: 'sliders', onSelect: onCustomize },
+    { label: 'Reset progress', icon: 'reset', onSelect: onResetProgress },
     { divider: true },
-    { label: 'Remove deck', danger: true, onSelect: onRemove },
+    { label: 'Remove deck', icon: 'trash', danger: true, onSelect: onRemove },
   ];
 
   return (

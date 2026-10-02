@@ -31,7 +31,7 @@ test('leitner boxes follow the verdict', () => {
   assert.equal(s.due_at, new Date('2026-01-05').toISOString());
 });
 
-test('session: due first oldest-first, then up to 6 new', () => {
+test('session: due first oldest-first, then up to 10 new', () => {
   const now = new Date('2026-06-01');
   const due = Array.from({ length: 3 }, (_, i) => ({
     key: `d${i}`, progress: { due_at: new Date(now - (i + 1) * 864e5).toISOString() },
@@ -40,10 +40,10 @@ test('session: due first oldest-first, then up to 6 new', () => {
   const fresh = Array.from({ length: 10 }, (_, i) => ({ key: `n${i}`, progress: null }));
   const s = buildSession([...due, ...later, ...fresh], { now });
   assert.deepEqual(s.slice(0, 3).map((c) => c.key), ['d2', 'd1', 'd0']);
-  assert.equal(s.length, 9);
+  assert.equal(s.length, 3 + 7); // 3 due + 7 new to fill 10
   assert.ok(!s.some((c) => c.key === 'l'));
   const many = Array.from({ length: 25 }, (_, i) => ({ key: `x${i}`, progress: { due_at: new Date(now - i * 1000).toISOString() } }));
-  assert.equal(buildSession([...many, ...fresh], { now }).length, 20);
+  assert.equal(buildSession([...many, ...fresh], { now }).length, 10);
 });
 
 test('csv parsing', () => {
@@ -111,7 +111,7 @@ test('answer mode: long answers use multiple choice, short ones typing', () => {
   assert.equal(new Set(opts).size, 4);
 });
 test('image cells', () => {
-  assert.match(imageSrc('Flag of Belgium.svg'), /Special:FilePath\/Flag_of_Belgium\.svg/);
+  assert.match(imageSrc('Flag of Belgium.svg'), /thumb\.php\?f=Flag_of_Belgium\.svg/);
   assert.equal(imageSrc('https://example.com/a.png'), 'https://example.com/a.png');
   assert.equal(imageSrc('How do you get to work?'), null);
   assert.equal(imageSrc('3.5'), null);

@@ -18,23 +18,25 @@ export function Celebrate({ ratio = 1 }) {
     const vh = typeof window !== 'undefined' ? window.innerHeight : 844;
     const pw = tokenNumber('--size-confetti-w', 40);
     const ph = tokenNumber('--size-confetti-h', 54);
-    const roomX = Math.max(60, vw / 2 - pw);            // to each side
-    const roomUp = Math.max(120, vh / 2 - ph - 60);      // below the status bar
-    const roomDown = Math.max(120, vh / 2 - ph - 90);    // above the Done button
-    const count = Math.round(14 + ratio * 22);
+    // Spread across (and a little past) the screen. Phones overflow the edges;
+    // wide screens fill more of the canvas.
+    const roomX = vw * 0.62;
+    const roomUp = vh * 0.55;
+    const roomDown = vh * 0.5;
+    const count = Math.round(20 + ratio * 30);
     return Array.from({ length: count }, (_, i) => {
       const color = DECK_COLORS[i % DECK_COLORS.length];
       const side = rand(-1, 1);
       return {
         id: i,
         color,
-        x: side * roomX,
-        peak: -rand(0.45, 1) * roomUp,
-        fall: rand(0.2, 0.9) * roomDown,
-        rotate: rand(-360, 360),
-        delay: rand(0, 0.2),
-        duration: rand(1.5, 2.1),
-        scale: rand(0.75, 1.05),
+        x: side * roomX * rand(0.5, 1),
+        peak: -rand(0.4, 1) * roomUp,
+        fall: rand(0.3, 1) * roomDown,
+        rotate: rand(-420, 420),
+        delay: rand(0, 0.25),
+        duration: rand(1.6, 2.3),
+        scale: rand(0.9, 1.4),
       };
     });
   }, [ratio]);

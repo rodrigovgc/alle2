@@ -13,6 +13,16 @@ export function Account({ email, colorMode, onColorMode, onSignOut, onClose }) {
   const [theme, setTheme] = useState(getThemePref);
   const changeTheme = (t) => { setThemePref(t); setTheme(t); };
 
+  const [emailValue, setEmailValue] = useState(email);
+  const [emailState, setEmailState] = useState(null);
+  async function saveEmail(e) {
+    e.preventDefault();
+    if (!emailValue || emailValue === email) return;
+    setEmailState('saving');
+    try { await api.changeEmail(emailValue); setEmailState('done'); }
+    catch (err) { setEmailState(err.message); }
+  }
+
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
   const [pwState, setPwState] = useState(null); // null | 'saving' | 'done' | error string
@@ -29,10 +39,20 @@ export function Account({ email, colorMode, onColorMode, onSignOut, onClose }) {
 
   return (
     <div className="sheet__body account">
-      <section className="account__group">
-        <h3 className="account__label">Signed in as</h3>
-        <p className="account__email">{email}</p>
-      </section>
+      <form className="account__group" onSubmit={saveEmail}>
+        <h3 className="account__label">Email</h3>
+        <Field label="Email address" hint="We’ll send a confirmation link to the new address.">
+          <input className="input" type="email" autoComplete="email" value={emailValue}
+            onChange={(e) => { setEmailValue(e.target.value); setEmailState(null); }} />
+        </Field>
+        {typeof emailState === 'string' && emailState !== 'saving' && emailState !== 'done' && (
+          <p className="form-error" role="alert">{emailState}</p>
+        )}
+        {emailState === 'done' && <p className="form-notice" role="status">Check your new inbox to confirm the change.</p>}
+        <Button type="submit" variant="secondary" disabled={!emailValue || emailValue === email || emailState === 'saving'}>
+          {emailState === 'saving' ? 'Saving…' : 'Update email'}
+        </Button>
+      </form>
 
       <section className="account__group">
         <h3 className="account__label" id="acc-theme">Appearance</h3>

@@ -7,12 +7,20 @@ import './styles/screens.css';
 import App from './App.jsx';
 import { initTheme } from './lib/theme.js';
 import { DesignSystem } from './screens/DesignSystem.jsx';
+import { Dashboard } from './screens/Dashboard.jsx';
 import './styles/design-system.css';
 
 initTheme();
 
+function route(path) {
+  const p = path.replace(/\/$/, '');
+  if (p === '/design') return <DesignSystem />;
+  if (p === '/dashboard') return <Dashboard />;
+  return <App />;
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {window.location.pathname.replace(/\/$/, '') === '/design' ? <DesignSystem /> : <App />}
+    {route(window.location.pathname)}
   </React.StrictMode>,
 );

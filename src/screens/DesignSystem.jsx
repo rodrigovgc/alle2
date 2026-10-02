@@ -90,7 +90,7 @@ function PhonePreview() {
   const d = base.kind === 'duo' ? { ...base, ...DUO[fold] } : base;
   const chrome = { phone: 12, duo: 12, tablet: 16, desktop: 1 }[d.kind];
   const top = d.kind === 'phone' ? 54 : d.kind === 'desktop' ? 40 : d.kind === 'tablet' ? 24 : 32;
-  const bottom = d.kind === 'phone' || d.kind === 'duo' ? 24 : d.kind === 'tablet' ? 20 : 0;
+  const bottom = 0;
   const outerW = d.w + chrome * 2;
   const outerH = d.h + chrome * 2;
   const maxH = typeof window !== 'undefined' ? window.innerHeight * 0.85 : 900;
@@ -128,7 +128,7 @@ function PhonePreview() {
           )}
           <iframe key={`${device}-${fold}-${key}`} className="ds-device__screen" src="/" title={`Alle on ${d.label}`} />
           {d.kind === 'duo' && fold === 'open' && <span className="ds-device__crease" aria-hidden="true" />}
-          {(d.kind === 'phone' || d.kind === 'duo') && <span className="ds-device__home" />}
+
         </div>
       </div>
       <p className="ds-head__text">The real app, signed in as you. Taps, typing and navigation all work; the appearance switch above applies here too.</p>
@@ -181,7 +181,7 @@ export function DesignSystem() {
         />
       </header>
 
-      <Section title="Phone preview">
+      <Section title="Preview">
         <PhonePreview />
       </Section>
 

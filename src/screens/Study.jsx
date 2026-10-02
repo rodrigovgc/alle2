@@ -63,9 +63,11 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
       return list.filter((c) => c.key !== key);
     });
   }
+  const ended = useRef(false);
   useEffect(() => {
-    if (cards.length === 0) onExit();
-    else if (index >= cards.length) onFinish({ correct: correctRef.current, total: cards.length });
+    if (ended.current) return;
+    if (cards.length === 0) { ended.current = true; onExit(); }
+    else if (index >= cards.length) { ended.current = true; onFinish({ correct: correctRef.current, total: cards.length }); }
   }, [cards.length, index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = cards.length;
@@ -102,7 +104,8 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const cardH = cardW / t.ratio;
+  const maxH = tokenNumber('--card-max-h', 560);
+  const cardH = Math.min(cardW / t.ratio, maxH);
   // From the card's spot to fully past the left edge, with margin for the tilt.
   const throwDistance = () => {
     const left = stageRef.current?.getBoundingClientRect().left ?? 0;
@@ -165,17 +168,15 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
     busy.current = true;
     const newCorrect = correctCount + (result.verdict === 'correct' ? 1 : 0);
     onReview(card, result.verdict);
-    if (index + 1 >= total) {
-      onFinish({ correct: newCorrect, total });
-      return;
-    }
-    setCorrectCount(newCorrect);
     correctRef.current = newCorrect;
-    setIndex(index + 1);
+    setCorrectCount(newCorrect);
+    // Always advance the index; the effect above turns the last step into the
+    // Done screen. One path, so finishing can't get stuck.
     setPhase('question');
     setTyped('');
     setResult(null);
     setPicked(null);
+    setIndex((i) => i + 1);
     busy.current = false;
   }
 
@@ -246,7 +247,7 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
                       animate={{ rotateY: flipped ? 180 : 0 }}
                       transition={reduce ? { duration: 0 } : SPRING.flip}
                     >
-                      <div className="study-card__face">
+                      <div className={`study-card__face ${flipped ? 'is-hidden' : ''}`}>
                         <FrontFace
                           card={c}
                           canSkip={!flipped}
@@ -260,7 +261,7 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
                           onSubmit={() => reveal()}
                         />
                       </div>
-                      <div className="study-card__face study-card__face--back" aria-hidden={!flipped}>
+                      <div className={`study-card__face study-card__face--back ${flipped ? '' : 'is-hidden'}`} aria-hidden={!flipped}>
                         {result && <BackFace card={c} typed={typed} result={result} />}
                       </div>
                     </motion.div>

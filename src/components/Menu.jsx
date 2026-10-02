@@ -42,9 +42,11 @@ export function Menu({ open, onClose, items, className = '', style, tint }) {
                   className={`menu__item ${item.danger ? 'menu__item--danger' : ''}`}
                   onClick={() => { onClose(); item.onSelect(); }}
                 >
-                  {hasChecks && (
+                  {hasChecks ? (
                     <span className="menu__check">{item.checked && <Icon name="check" />}</span>
-                  )}
+                  ) : item.icon ? (
+                    <span className="menu__icon"><Icon name={item.icon} /></span>
+                  ) : null}
                   {item.label}
                 </button>
               ),

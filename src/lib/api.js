@@ -66,6 +66,11 @@ export async function saveProgress(row) {
 
 /* ---- Preferences ------------------------------------------------------ */
 
+export async function changeEmail(email) {
+  const { error } = await supabase.auth.updateUser({ email });
+  if (error) throw error;
+}
+
 export async function changePassword(password) {
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
