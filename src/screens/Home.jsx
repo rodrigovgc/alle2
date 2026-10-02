@@ -90,7 +90,7 @@ export function Home({
             onClose={() => setMenuOpen(false)}
             className="menu--home"
             items={[
-              ...(decks.length > 1 ? [{ label: 'Reorder decks', icon: 'list', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }] : []),
+              ...(decks.length > 1 ? [{ label: 'Reorder decks', icon: 'sort', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }] : []),
               { label: 'Account', icon: 'person', onSelect: () => setSheet({ type: 'account' }) },
             ]}
           />

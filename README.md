@@ -56,5 +56,5 @@ Dark mode is the `:root[data-theme="dark"]` block at the end of `tokens.css`: th
 
 Row 1 names the sides (`English`, `Dutch`). Column A is the front, column B the back.
 `gaan|lopen` accepts either answer. `eerst • dan` shows on two lines.
-A cell can be a picture: a Wikimedia Commons file name (`Flag of Belgium.svg`) or an image link. A cell like `clock 6:30` shows a drawn analog clock.
+A cell can be a picture: a Wikimedia Commons file name (`Flag of Belgium.svg`, resolved via the Commons API for reliable loading) or a direct image link. A cell like `clock 6:30` shows a drawn analog clock.
 A normal share link also works if the sheet is shared as “Anyone with the link”; it's converted to CSV.

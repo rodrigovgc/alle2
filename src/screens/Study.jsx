@@ -7,7 +7,7 @@ import { alternatives, displayLines } from '../lib/csv.js';
 import { canSpeak, speak } from '../lib/speech.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
-import { imageSrc, imageSources, needsFrame, clockTime } from '../lib/media.js';
+import { imageSrc, imageSources, needsFrame, clockTime, wikimediaFile, resolveImage } from '../lib/media.js';
 import { ClockFace } from '../components/ClockFace.jsx';
 import { makeOptions } from '../lib/srs.js';
 import { SPRING, tokenNumber } from '../styles/tokens.js';
@@ -319,21 +319,37 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
  * A picture on the card. Tries each source in turn; if none loads, reports it
  * so the session can drop the card (a question without its picture can't be answered).
  */
-function CardPicture({ sources, framed, onBroken }) {
+function CardPicture({ cell, sources, framed, onBroken }) {
+  // Try the quick guesses first; if they all fail, ask Wikimedia's API for the
+  // real URL before giving up. A plain broken card is dropped from the session.
+  const file = wikimediaFile(cell);
+  const [list, setList] = useState(sources);
   const [i, setI] = useState(0);
-  const failed = i >= sources.length;
-  useEffect(() => { if (failed) onBroken?.(); }, [failed]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (failed) return <div className="study-card__picture-wrap" />;
+  const triedApi = useRef(false);
+
+  useEffect(() => { setList(sources); setI(0); triedApi.current = false; }, [cell]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function onError() {
+    if (i + 1 < list.length) { setI(i + 1); return; }
+    if (file && !triedApi.current) {
+      triedApi.current = true;
+      const url = await resolveImage(file);
+      if (url) { setList([url]); setI(0); return; }
+    }
+    onBroken?.();
+  }
+
+  if (i >= list.length) return <div className="study-card__picture-wrap" />;
   return (
     <div className="study-card__picture-wrap">
       <img
-        key={sources[i]}
+        key={list[i]}
         className={`study-card__picture ${framed ? 'is-framed' : ''}`}
-        src={sources[i]}
+        src={list[i]}
         alt="Picture to identify"
         decoding="async"
         draggable={false}
-        onError={() => setI((n) => n + 1)}
+        onError={onError}
       />
     </div>
   );
@@ -371,7 +387,7 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
         {clock
           ? <div className="study-card__picture-wrap"><ClockFace h={clock.h} m={clock.m} /></div>
           : picture
-            ? <CardPicture sources={imageSources(card.front)} framed={needsFrame(card.front)} onBroken={onBroken} />
+            ? <CardPicture cell={card.front} sources={imageSources(card.front)} framed={needsFrame(card.front)} onBroken={onBroken} />
             : <p className="study-card__text"><Lines text={card.front} /></p>}
         {!typedMode ? null : interactive ? (
           <textarea

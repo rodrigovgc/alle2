@@ -13,7 +13,7 @@ import { Done } from './screens/Done.jsx';
 import { Sheet, SheetActions } from './components/Sheet.jsx';
 import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import { Button } from './components/Button.jsx';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 
 export default function App() {
@@ -193,22 +193,20 @@ function Library({ user, onUser }) {
 
   return (
     <>
-      {/* Screens cross-fade. The new one mounts straight away (so the study
-          screen can still open the keyboard within the tap); the old one fades
-          out on top without taking up space. */}
-      <AnimatePresence initial={false} mode="popLayout">
-        <motion.div
-          key={screen.name === 'study' ? `study-${screen.id}` : screen.name}
-          className="screen"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { duration: 0.2, ease: 'easeOut' } }}
-          exit={{ opacity: 0, transition: { duration: 0.14, ease: 'easeIn' } }}
-        >
-          <ErrorBoundary key={screen.name} onReset={() => setScreen({ name: 'home' })}>
-            {view}
-          </ErrorBoundary>
-        </motion.div>
-      </AnimatePresence>
+      {/* One screen mounted at a time. It fades in on change; the previous one
+          is never kept around, so finishing a session can't leave two screens
+          fighting (which wedged the Done button). */}
+      <motion.div
+        key={screen.name === 'study' ? `study-${screen.id}` : screen.name}
+        className="screen"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+      >
+        <ErrorBoundary key={screen.name} onReset={() => setScreen({ name: 'home' })}>
+          {view}
+        </ErrorBoundary>
+      </motion.div>
 
       <Sheet open={!!caughtUp} onClose={() => setCaughtUp(null)} title="All caught up" variant="dialog">
         <div className="sheet__body">

@@ -23,7 +23,7 @@ create policy "insert own events" on public.events
 --    Replace the email with the account you want to be the owner.
 create or replace function public.is_owner() returns boolean
 language sql stable as $$
-  select auth.jwt() ->> 'email' = 'rodrigovarejao@gmail.com'   -- ← change to your email
+  select auth.jwt() ->> 'email' = 'rodrigovgc@example.com'   -- ← change to your email
 $$;
 
 -- 3. Aggregate views. These expose only counts, never who did what.

@@ -89,8 +89,10 @@
 
   /* Steps the study card falls back through when text doesn't fit */
   --font-size-fit-1: 24px;
-  --font-size-fit-2: 20px;
-  --font-size-fit-3: 17px;
+  --font-size-fit-2: 21px;
+  --font-size-fit-3: 18px;
+  --font-size-fit-4: 16px;
+  --font-size-fit-5: 14px;
 
   --line-height-tight: 120%;
   --line-height-body:  140%;

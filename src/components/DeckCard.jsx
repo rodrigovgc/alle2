@@ -28,7 +28,7 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
 
   const items = [
     { label: 'Update URL', icon: 'link', onSelect: onUpdateUrl },
-    { label: 'Customize cover', icon: 'sliders', onSelect: onCustomize },
+    { label: 'Customize cover', icon: 'palette', onSelect: onCustomize },
     { label: 'Reset progress', icon: 'reset', onSelect: onResetProgress },
     { divider: true },
     { label: 'Remove deck', icon: 'trash', danger: true, onSelect: onRemove },

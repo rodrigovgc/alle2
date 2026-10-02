@@ -101,7 +101,14 @@ import { answerMode, makeOptions } from './srs.js';
 import { imageSrc } from './media.js';
 import { SAMPLE_DECKS } from './sampleDeck.js';
 test('answer mode: long answers use multiple choice, short ones typing', () => {
-  assert.equal(answerMode(SAMPLE_DECKS.europeanSigns), 'choice');
+  const signs = { cards: [
+    { front: 'Belgian road sign A13.svg', back: 'Uneven road' },
+    { front: 'Belgian road sign B5.svg', back: 'Stop' },
+    { front: 'Belgian road sign C1.svg', back: 'No entry for all vehicles' },
+    { front: 'Belgian road sign D5.svg', back: 'Roundabout' },
+    { front: 'Belgian road sign A23.svg', back: 'Children crossing ahead here' },
+  ] };
+  assert.equal(answerMode(signs), 'choice');
   assert.equal(answerMode(SAMPLE_DECKS.flagsWorld), 'type');
   assert.equal(answerMode({ ...SAMPLE_DECKS.flagsWorld, answer_mode: 'choice' }), 'choice');
   assert.equal(answerMode({ cards: [{ front: 'a', back: 'a long answer that is long' }], answer_mode: 'choice' }), 'type');

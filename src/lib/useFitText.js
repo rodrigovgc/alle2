@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
 
-const MAX_LEVEL = 3;
+const MAX_LEVEL = 5;
 
 /**
  * Steps text down through the --font-size-fit-* tokens until the element's

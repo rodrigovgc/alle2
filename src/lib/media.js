@@ -4,9 +4,19 @@
 const IMAGE_EXT = /\.(svg|png|jpe?g|gif|webp)$/i;
 
 /**
+ * Several candidate URLs for a Wikimedia file name, best first. These are the
+ * fast guesses; resolveImage() below gets the guaranteed one from the API.
+ */
+function wikimediaGuesses(fileName) {
+  const enc = encodeURIComponent(fileName.replace(/ /g, '_'));
+  const thumb = (w) => `https://commons.wikimedia.org/w/thumb.php?f=${enc}&width=${w}`;
+  const filePath = `https://commons.wikimedia.org/wiki/Special:FilePath/${enc}`;
+  return [thumb(400), `${filePath}?width=400`, filePath];
+}
+
+/**
  * Image URLs to try for a cell, best first, or [] when the cell is plain text.
- * For Wikimedia file names: a resized copy first (small and fast), then the
- * original file, because resizing occasionally fails for some files.
+ * A direct link is used as-is; a bare Wikimedia file name gets guesses.
  */
 export function imageSources(cell = '') {
   const v = cell.trim();
@@ -15,17 +25,43 @@ export function imageSources(cell = '') {
     const path = v.split(/[?#]/)[0];
     return IMAGE_EXT.test(path) || /upload\.wikimedia\.org/i.test(v) ? [v] : [];
   }
-  if (IMAGE_EXT.test(v) && !/[\\/]/.test(v)) {
-    const file = v.replace(/ /g, '_');
-    const enc = encodeURIComponent(file);
-    // Wikimedia's thumbnail renderer returns a PNG of any SVG with CORS headers,
-    // which works where the raw SVG (via Special:FilePath) is blocked.
-    const thumb = (w) => `https://commons.wikimedia.org/w/thumb.php?f=${enc}&width=${w}`;
-    const filePath = `https://commons.wikimedia.org/wiki/Special:FilePath/${enc}`;
-    if (/\.svg$/i.test(v)) return [thumb(320), `${filePath}?width=320`, filePath];
-    return [thumb(320), `${filePath}?width=320`, filePath];
-  }
+  if (IMAGE_EXT.test(v) && !/[\\/]/.test(v)) return wikimediaGuesses(v);
   return [];
+}
+
+/** Bare Wikimedia file name in a cell (not a direct link), else null. */
+export function wikimediaFile(cell = '') {
+  const v = cell.trim();
+  if (!v || v.includes('|') || /^https?:\/\//i.test(v)) return null;
+  return IMAGE_EXT.test(v) && !/[\\/]/.test(v) ? v : null;
+}
+
+const _resolved = new Map();
+
+/**
+ * Ask Wikimedia's API for the real thumbnail URL of a file. The API sends CORS
+ * headers and returns the exact upload.wikimedia.org path, so it loads where a
+ * guessed URL is blocked or 404s. Cached per file; returns null if not found.
+ */
+export async function resolveImage(fileName, width = 400) {
+  const key = `${fileName}@${width}`;
+  if (_resolved.has(key)) return _resolved.get(key);
+  const title = `File:${fileName.replace(/ /g, '_')}`;
+  const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*`
+    + `&prop=imageinfo&iiprop=url&iiurlwidth=${width}&titles=${encodeURIComponent(title)}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const pages = data?.query?.pages || {};
+    const page = Object.values(pages)[0];
+    const info = page?.imageinfo?.[0];
+    const out = info?.thumburl || info?.url || null;
+    _resolved.set(key, out);
+    return out;
+  } catch {
+    _resolved.set(key, null);
+    return null;
+  }
 }
 
 /** First URL to try, or null when the cell is plain text. */

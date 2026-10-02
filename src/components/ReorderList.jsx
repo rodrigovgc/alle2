@@ -39,7 +39,7 @@ function Row({ deck, mode }) {
         aria-label={`Drag to move ${deck.title}`}
         onPointerDown={(e) => { e.preventDefault(); controls.start(e); }}
       >
-        <Icon name="grip" />
+        <Icon name="draggable" />
       </button>
     </Reorder.Item>
   );
