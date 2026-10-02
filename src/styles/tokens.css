@@ -143,6 +143,7 @@
   --size-card-control: 40px;  /* Skip pill, speaker circle        */
   --size-icon-small:  18px;
   --screen-max:       520px;
+  --home-max:         960px;  /* wider home on desktop/iPad/Duo for 2 columns */
   --size-logo:        32px;
   --size-menu-min:    250px;
   --size-controls:    124px;  /* bottom area: tab (58) + gap (16) + button (50) */

@@ -428,10 +428,15 @@
    between the prompt and the answer, and the controls right under the card
    instead of at the bottom of a tall window. Phones are unaffected. */
 @media (min-width: 720px) {
-  /* Decks in two columns on iPad, desktop and an open Duo */
-  .deck-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
+  /* Give the home screen room, then lay decks out in two columns. */
+  .home { max-width: var(--home-max); }
+  .deck-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: start; }
   .deck-list > .empty, .deck-list > .deck--skeleton, .deck-list > .start, .deck-list .reorder-list { grid-column: 1 / -1; }
-  .home__cta { max-width: var(--screen-max); }
+  /* The start tiles (empty state) also read better side by side */
+  .start { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
+  .home__cta { max-width: var(--home-max); }
+  /* Deck cards get a bit more height on large screens, like the mockups */
+  .deck__surface { min-height: 184px; }
 
   .study__stage {
     flex: none;
