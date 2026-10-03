@@ -220,24 +220,18 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
 
   if (stage === 'fix') {
     return (
-      <div className="study">
-        <nav className="study__nav">
-          <IconButton icon="close" label="Close deck" onClick={onExit} />
-          <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={1} aria-valuenow={1}>
-            <span className="progress__fill" style={{ '--progress': 1 }} />
-          </div>
-          <span className="study__count" />
-        </nav>
-        <FixUp
-          cards={wrongCards.current}
-          onDone={({ fixed }) => {
-            ended.current = true;
-            // Fixed cards count toward the celebration score (but the schedule
-            // already marked them wrong, so they still return sooner).
-            onFinish({ correct: Math.min(sessionTotal.current, correctRef.current + fixed), total: Math.max(1, sessionTotal.current) });
-          }}
-        />
-      </div>
+      <FixUp
+        cards={wrongCards.current}
+        sessionTotal={sessionTotal.current}
+        baseCorrect={correctRef.current}
+        onExit={onExit}
+        onDone={({ fixed }) => {
+          ended.current = true;
+          // Fixed cards count toward the celebration score (but the schedule
+          // already marked them wrong, so they still return sooner).
+          onFinish({ correct: Math.min(sessionTotal.current, correctRef.current + fixed), total: Math.max(1, sessionTotal.current) });
+        }}
+      />
     );
   }
 
@@ -398,17 +392,18 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
   const picture = imageSrc(card.front);
   const clock = clockTime(card.front);
   const typedMode = card.mode !== 'choice';
-  const bodyRef = useRef(null);
-  const fit = useFitText(bodyRef, [card.key, typed]);
+  const promptRef = useRef(null);
+  // Fit only the PROMPT, and only when the card changes — not on every keystroke.
+  // This stops the title from jumping around as you type a long answer.
+  const fit = useFitText(promptRef, [card.key]);
 
-  // Grow the answer box with its text, so the font shrinks to fit instead of
-  // the box scrolling and hiding the start of what was typed.
+  // The answer grows with its text up to a cap, then scrolls inside itself.
   useLayoutEffect(() => {
     const ta = inputRef?.current;
     if (!ta || !interactive) return;
     ta.style.height = 'auto';
-    ta.style.height = `${ta.scrollHeight}px`;
-  }, [typed, fit, interactive, inputRef]);
+    ta.style.height = `${Math.min(ta.scrollHeight, ta.offsetParent ? 9999 : ta.scrollHeight)}px`;
+  }, [typed, interactive, inputRef]);
 
   return (
     <>
@@ -417,17 +412,18 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
         <button type="button" className="skip" onClick={onSkip} tabIndex={canSkip ? 0 : -1}>Skip</button>
       </header>
 
-      <div
-        ref={bodyRef}
-        className={`study-card__body ${picture || clock ? 'has-picture' : ''}`}
-        data-fit={fit}
-        onClick={() => interactive && inputRef?.current?.focus()}
-      >
-        {clock
-          ? <div className="study-card__picture-wrap"><ClockFace h={clock.h} m={clock.m} /></div>
-          : picture
-            ? <CardPicture cell={card.front} sources={imageSources(card.front)} framed={needsFrame(card.front)} onBroken={onBroken} />
-            : <p className="study-card__text"><Lines text={card.front} /></p>}
+      <div className="study-card__body" onClick={() => interactive && inputRef?.current?.focus()}>
+        <div
+          ref={promptRef}
+          className={`study-card__prompt ${picture || clock ? 'has-picture' : ''}`}
+          data-fit={fit}
+        >
+          {clock
+            ? <div className="study-card__picture-wrap"><ClockFace h={clock.h} m={clock.m} /></div>
+            : picture
+              ? <CardPicture cell={card.front} sources={imageSources(card.front)} framed={needsFrame(card.front)} onBroken={onBroken} />
+              : <p className="study-card__text"><Lines text={card.front} /></p>}
+        </div>
         {!typedMode ? null : interactive ? (
           <textarea
             ref={inputRef}
@@ -448,7 +444,6 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
             onFocus={() => onFocusChange?.(true)}
             onBlur={() => onFocusChange?.(false)}
             onKeyDown={(e) => {
-              // Enter answers (desktop and the phone's Go key). Shift+Enter adds a line.
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 onSubmit();
@@ -459,7 +454,6 @@ function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFo
           <span className="study-card__input study-card__input--static">{typed || 'Type answer…'}</span>
         )}
       </div>
-
     </>
   );
 }

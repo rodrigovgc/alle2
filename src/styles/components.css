@@ -499,13 +499,32 @@ select.input { background-image: none; }
   padding: var(--card-padding);
   padding-right: calc(var(--card-padding) + var(--size-shape-w) + var(--space-3));
   border-radius: var(--radius-deck);
-  background: var(--deck-fill);
-  border: 1px solid var(--deck-deep);
   text-align: left;
   overflow: hidden;
-  transition: transform var(--duration-fast) var(--ease-out);
+  /* Living colour: a slow gradient drift in the deck's own colour */
+  background: linear-gradient(130deg, var(--deck-fill), color-mix(in srgb, var(--deck-fill) 82%, #fff) 50%, var(--deck-fill));
+  background-size: 200% 200%;
+  border: 1px solid var(--deck-deep);
+  animation: deckDrift 9s ease-in-out infinite;
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--deck-deep) 55%, transparent);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out);
 }
-.deck__surface:active { transform: scale(0.985); }
+.deck__surface .deck-shape { transition: transform 0.4s var(--ease-out), opacity 0.4s; }
+@keyframes deckDrift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@media (hover: hover) {
+  .deck__surface:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 22px 40px -16px color-mix(in srgb, var(--deck-deep) 70%, transparent);
+    animation-duration: 4s;
+  }
+  .deck__surface:hover .deck-shape { transform: translate(-6px, -10px) scale(1.12) rotate(-4deg); opacity: 0.5; }
+}
+.deck__surface:active { transform: translateY(-1px) scale(0.985); transition-duration: 0.12s; }
+@media (prefers-reduced-motion: reduce) {
+  .deck__surface { animation: none; background: var(--deck-fill); }
+}
+/* Reorder preview rows shouldn't drift */
+.reorder-row { animation: none; }
 .deck__meta {
   display: inline-flex; align-items: center; gap: var(--space-1);
   font-size: var(--font-size-caption);

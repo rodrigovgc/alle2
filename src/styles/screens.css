@@ -197,6 +197,14 @@
   display: flex; flex-direction: column;
   overflow: hidden;
 }
+/* The prompt sizes to fit; the answer area below takes the rest and scrolls. */
+.study-card__prompt { flex: none; display: flex; flex-direction: column; max-height: 55%; overflow: hidden; }
+.study-card__prompt.has-picture { flex: 1; align-items: center; justify-content: center; max-height: none; }
+.study-card__prompt[data-fit='1'] { --fs: var(--font-size-fit-1); }
+.study-card__prompt[data-fit='2'] { --fs: var(--font-size-fit-2); }
+.study-card__prompt[data-fit='3'] { --fs: var(--font-size-fit-3); }
+.study-card__prompt[data-fit='4'] { --fs: var(--font-size-fit-4); }
+.study-card__prompt[data-fit='5'] { --fs: var(--font-size-fit-5); }
 /* On the answer side the text can be long; let it use the fitted size too */
 .study-card__text { font-size: var(--fs); }
 .study-card__body[data-fit='1'] { --fs: var(--font-size-fit-1); }
@@ -208,7 +216,7 @@
 .study-card__text {
   font-size: var(--fs);
   font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-tight);
+  line-height: 1.22;
   letter-spacing: var(--letter-spacing-title);
   color: var(--text-primary);
   white-space: pre-wrap;
@@ -236,8 +244,8 @@
 .mark--fix   { background: var(--mark-fix-bg); }
 
 .study-card__input {
-  flex: none; min-height: calc(var(--fs) * 1.2);
-  overflow: hidden;
+  flex: 1; min-height: calc(var(--fs) * 1.2);
+  overflow-y: auto;
   width: 100%;
   margin: var(--space-4) 0 0; padding: 0;
   border: 0; outline: none; resize: none;
@@ -489,35 +497,42 @@
 }
 
 /* ---- Fix-up round (word ordering) -------------------------------------- */
-.fixup { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--space-4); }
-.fixup__head { display: flex; align-items: baseline; justify-content: space-between; }
-.fixup__kicker { font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); color: var(--lime-200); }
+.fixup { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fixup__kicker { font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); color: var(--lime-200); margin: 0 0 var(--space-3); }
 :root[data-theme="dark"] .fixup__kicker { color: var(--deck-lime-deep); }
-.fixup__count { font-size: var(--font-size-small); color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 .fixup__card {
   flex: 1; min-height: 0;
-  display: flex; flex-direction: column; gap: var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-3);
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--card-bg);
   box-shadow: var(--shadow-card);
 }
-.fixup__prompt-label { font-size: var(--font-size-caption); color: var(--text-tertiary); }
-.fixup__prompt { font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); }
+.fixup__col { font-size: var(--font-size-caption); color: var(--text-tertiary); }
+.fixup__prompt { font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); line-height: 1.25; }
 .fixup__hint { font-size: var(--font-size-caption); color: var(--text-tertiary); }
+
+/* Answer: two notepad lines the chips rest on (no filled box) */
 .fixup__answer {
-  min-height: 56px;
-  display: flex; flex-wrap: wrap; gap: var(--space-2); align-content: flex-start;
-  padding: var(--space-3);
-  border-radius: var(--radius-field);
-  background: var(--color-surface);
-  border-bottom: 2px solid var(--border-subtle);
+  display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-2); align-content: flex-start;
+  min-height: 96px;
+  padding: var(--space-2) 0;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0, transparent 43px, var(--border-subtle) 43px, var(--border-subtle) 45px);
 }
-.fixup__answer.right { border-bottom-color: var(--tag-correct-border); }
-.fixup__answer.wrong { border-bottom-color: var(--tag-wrong-border); }
-.fixup__placeholder { color: var(--text-placeholder); align-self: center; }
-.fixup__bank { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: auto; }
-.chip--placed { background: var(--card-bg); }
+.fixup__answer.right { background: none; }
+.fixup__answer.wrong { background: none; }
+
+/* Word bank: centered, chips keep their place (ghost slot when lifted) */
+.fixup__bank {
+  margin-top: auto;
+  display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center;
+  padding-top: var(--space-4);
+}
+.chip--placed { background: var(--card-bg); border: 1px solid var(--border-subtle); }
+.chip--ghost { visibility: hidden; }  /* holds the slot so the row never shifts */
+
 .fixup__verdict { display: flex; flex-direction: column; gap: var(--space-2); }
 .fixup__correct { font-size: var(--font-size-button); font-weight: var(--font-weight-bold); }
-.fixup__controls { flex: none; }
+.fixup__controls { flex: none; padding-top: var(--space-4); }
+

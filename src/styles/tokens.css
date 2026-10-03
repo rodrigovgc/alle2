@@ -63,9 +63,9 @@
   --tab-light-track:   var(--color-surface);      /* segmented control + prompt box on white */
   --choice-bg:         var(--color-surface);      /* builder choices and chips */
   --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
-  --inner-button-bg:   var(--color-surface-deep); /* icon buttons inside a card or sheet, no border */
-  --outer-button-bg:   var(--color-surface-deep); /* icon buttons on the page, no border             */
-  --secondary-bg:      var(--color-surface-deep); /* secondary buttons: fill, not a border           */
+  --inner-button-bg:   var(--color-surface);      /* icon buttons inside a card/sheet (on white)     */
+  --outer-button-bg:   var(--color-surface);      /* icon buttons on the page                        */
+  --secondary-bg:      var(--color-surface);      /* secondary buttons                               */
   --picture-frame:     var(--grey-200);           /* outline on flags so white edges show */
   --mark-wrong-bg:     var(--deck-red);           /* letters typed wrong                    */
   --mark-fix-bg:       var(--deck-green);         /* letters that fix them                  */
