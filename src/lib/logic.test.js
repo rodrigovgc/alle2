@@ -109,8 +109,11 @@ test('answer mode: long answers use multiple choice, short ones typing', () => {
     { front: 'Belgian road sign A23.svg', back: 'Children crossing ahead here' },
   ] };
   assert.equal(answerMode(signs), 'choice');
-  assert.equal(answerMode(SAMPLE_DECKS.flagsWorld), 'type');
-  assert.equal(answerMode({ ...SAMPLE_DECKS.flagsWorld, answer_mode: 'choice' }), 'choice');
+  // Flags deck is explicitly multiple choice.
+  assert.equal(answerMode(SAMPLE_DECKS.flagsWorld), 'choice');
+  // A deck of short answers with no override stays typed.
+  assert.equal(answerMode({ cards: [{ front: 'a', back: 'um' }, { front: 'b', back: 'dois' }, { front: 'c', back: 'tres' }, { front: 'd', back: 'vier' }] }), 'type');
+  assert.equal(answerMode({ ...SAMPLE_DECKS.flagsWorld, answer_mode: 'type' }), 'type');
   assert.equal(answerMode({ cards: [{ front: 'a', back: 'a long answer that is long' }], answer_mode: 'choice' }), 'type');
   const opts = makeOptions('Stop', ['Stop', 'Yield', 'No parking', 'Roundabout', 'Dead end']);
   assert.equal(opts.length, 4);

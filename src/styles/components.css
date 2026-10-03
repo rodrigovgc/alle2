@@ -305,7 +305,7 @@ select.input { background-image: none; }
   color: var(--text-secondary); letter-spacing: 0;
 }
 .sample-card__added .icon { width: var(--size-icon-small); height: var(--size-icon-small); }
-.btn--on-tile { background: var(--outer-button-bg); }
+.btn--on-tile { background: var(--color-surface-deep); }
 
 /* Sample deck: a small deck card; tapping adds it */
 .sample-card {

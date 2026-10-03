@@ -503,34 +503,32 @@
 .fixup__card {
   flex: 1; min-height: 0;
   display: flex; flex-direction: column; gap: var(--space-3);
+  text-align: center;
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--card-bg);
   box-shadow: var(--shadow-card);
 }
-.fixup__col { font-size: var(--font-size-caption); color: var(--text-tertiary); }
+.fixup__card .fixup__col, .fixup__card .fixup__prompt, .fixup__card .fixup__hint { align-self: center; }
+.fixup__col { font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); color: var(--lime-200); }
+:root[data-theme="dark"] .fixup__col { color: var(--deck-lime-deep); }
 .fixup__prompt { font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); line-height: 1.25; }
 .fixup__hint { font-size: var(--font-size-caption); color: var(--text-tertiary); }
 
 /* Answer: two notepad lines the chips rest on (no filled box) */
 .fixup__answer {
-  display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-2); align-content: flex-start;
-  min-height: 96px;
-  padding: var(--space-2) 0;
-  background:
-    repeating-linear-gradient(to bottom, transparent 0, transparent 43px, var(--border-subtle) 43px, var(--border-subtle) 45px);
+  flex: 1; min-height: 72px;
+  display: flex; flex-wrap: wrap; gap: var(--space-2); align-content: center; justify-content: center;
 }
-.fixup__answer.right { background: none; }
-.fixup__answer.wrong { background: none; }
 
 /* Word bank: centered, chips keep their place (ghost slot when lifted) */
 .fixup__bank {
   margin-top: auto;
   display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center;
-  padding-top: var(--space-4);
+  padding-top: var(--space-5);
 }
-.chip--placed { background: var(--card-bg); border: 1px solid var(--border-subtle); }
-.chip--ghost { visibility: hidden; }  /* holds the slot so the row never shifts */
+.chip--placed { background: var(--color-surface); border: 1px solid var(--border-subtle); }
+.chip--ghost { background: color-mix(in srgb, var(--color-surface) 60%, transparent); color: transparent; border: 1px solid transparent; }
 
 .fixup__verdict { display: flex; flex-direction: column; gap: var(--space-2); }
 .fixup__correct { font-size: var(--font-size-button); font-weight: var(--font-weight-bold); }

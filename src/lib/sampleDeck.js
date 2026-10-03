@@ -35,6 +35,7 @@ export const SAMPLE_DECKS = {
     lang: 'en-US',
     color: 'blue',
     shape: 'blue',
+    answer_mode: 'choice',
     is_sample: true,
     csv_url: null,
     // All 193 UN member states. Images: Wikimedia Commons "Flag of ….svg".

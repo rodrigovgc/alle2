@@ -79,7 +79,6 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
         </div>
         <span className="study__count">{shownNum}/{denom}</span>
       </nav>
-      <p className="fixup__kicker">Let’s fix these</p>
       <div className="fixup">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -90,7 +89,7 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
           exit={reduce ? { opacity: 0 } : { opacity: 0, x: -24, transition: { duration: 0.12 } }}
           transition={SPRING.flip}
         >
-          <span className="fixup__col">{card.frontLabel}</span>
+          <span className="fixup__col">Let’s fix these</span>
           <p className="fixup__prompt">{card.front}</p>
           <p className="fixup__hint">Tap the words in the right order</p>
 
