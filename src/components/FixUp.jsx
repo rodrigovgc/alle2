@@ -2,16 +2,19 @@ import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button, IconButton } from './Button.jsx';
 import { Tag } from './Tag.jsx';
+import { CardPicture } from './CardPicture.jsx';
+import { ClockFace } from './ClockFace.jsx';
 import { alternatives } from '../lib/csv.js';
 import { normalise } from '../lib/evaluate.js';
+import { imageSrc, imageSources, needsFrame, clockTime } from '../lib/media.js';
 import { SPRING } from '../styles/tokens.js';
 
 /*
- * The "let's fix these" round. Missed cards return as a word-ordering exercise:
- * tap the chips in order to rebuild the answer. Like Duolingo, a lifted chip
- * leaves its slot behind so the bank never reflows. Getting it right teaches the
- * wording and counts toward the celebration score, but doesn't change the
- * card's schedule (a miss still comes back sooner).
+ * "Let's fix these": missed cards come back as word ordering. Same card as the
+ * study screen (with its stack); the prompt or picture sits in the middle with
+ * the placed words under it, and the word bank waits below the card. A lifted
+ * word leaves its slot behind so the bank never reflows. Getting it right
+ * counts toward the celebration but doesn't change the card's schedule.
  */
 
 const shuffle = (a) => {
@@ -25,12 +28,12 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
   const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [fixedCount, setFixedCount] = useState(0);
+  const [placed, setPlaced] = useState([]);   // chip ids in order
+  const [checked, setChecked] = useState(null); // null | 'right' | 'wrong'
 
   const card = cards[index];
   const answer = useMemo(() => alternatives(card.back)[0], [card.key]); // eslint-disable-line react-hooks/exhaustive-deps
   const target = useMemo(() => wordsOf(answer), [answer]);
-
-  // Build the bank once per card: answer words + a couple of distractors.
   const bank = useMemo(() => {
     const distractors = shuffle(
       cards.filter((c) => c.key !== card.key)
@@ -40,11 +43,16 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
     return shuffle(target.concat(distractors)).map((w, i) => ({ id: `${w}-${i}`, w }));
   }, [card.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [placed, setPlaced] = useState([]); // chip ids, in order
-  const [checked, setChecked] = useState(null); // null | 'right' | 'wrong'
-
   const placedSet = new Set(placed);
   const placedChips = placed.map((id) => bank.find((c) => c.id === id));
+  const attempt = placedChips.map((c) => c.w).join(' ');
+
+  const picture = imageSrc(card.front);
+  const clock = clockTime(card.front);
+  const long = !picture && !clock && card.front.length > 48;
+
+  const denom = Math.max(1, sessionTotal || cards.length);
+  const shownNum = Math.min(denom, baseCorrect + index);
 
   function place(chip) {
     if (checked || placedSet.has(chip.id)) return;
@@ -55,11 +63,11 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
     setPlaced((p) => p.filter((_, k) => k !== i));
   }
   function check() {
-    const built = normalise(placedChips.map((c) => c.w).join(' '));
-    const ok = alternatives(card.back).some((alt) => normalise(alt) === built);
+    const ok = alternatives(card.back).some((alt) => normalise(alt) === normalise(attempt));
     setChecked(ok ? 'right' : 'wrong');
     if (ok) setFixedCount((n) => n + 1);
   }
+  function skip() { if (!checked) setChecked('wrong'); }
   function nextCard() {
     if (index + 1 >= cards.length) { onDone({ fixed: fixedCount, total: cards.length }); return; }
     setIndex(index + 1);
@@ -67,11 +75,8 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
     setChecked(null);
   }
 
-  const denom = Math.max(1, sessionTotal || cards.length);
-  const shownNum = Math.min(denom, baseCorrect + index);
-
   return (
-    <div className="study">
+    <div className="study fixup">
       <nav className="study__nav">
         <IconButton icon="close" label="Close deck" onClick={onExit} />
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={denom} aria-valuenow={shownNum}>
@@ -79,57 +84,61 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
         </div>
         <span className="study__count">{shownNum}/{denom}</span>
       </nav>
-      <div className="fixup">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={card.key}
-          className="fixup__card"
-          initial={reduce ? { opacity: 0 } : { opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={reduce ? { opacity: 0 } : { opacity: 0, x: -24, transition: { duration: 0.12 } }}
-          transition={SPRING.flip}
-        >
-          <span className="fixup__col">Let’s fix these</span>
-          <p className="fixup__prompt">{card.front}</p>
-          <p className="fixup__hint">Tap the words in the right order</p>
 
-          {/* Answer: lined notepad rows the chips land on */}
-          <div className={`fixup__answer ${checked || ''}`}>
-            {placedChips.map((chip, i) => (
-              <button key={chip.id} type="button" className="chip chip--placed" onClick={() => removeAt(i)} disabled={!!checked}>
-                {chip.w}
-              </button>
-            ))}
-          </div>
+      <div className="fixup__deck">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.section
+            key={card.key}
+            className="fixup__card"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, x: -24, transition: { duration: 0.12 } }}
+            transition={SPRING.flip}
+          >
+            <header className="study-card__header">
+              <span className="study-card__label">Let’s fix these</span>
+              {!checked && <button type="button" className="skip" onClick={skip}>Skip</button>}
+            </header>
 
-          {checked === 'right' && <div className="fixup__verdict"><Tag verdict="correct" /></div>}
-          {checked === 'wrong' && (
-            <div className="fixup__verdict">
-              <Tag verdict="wrong" />
-              <p className="fixup__correct">{answer}</p>
+            <div className="fixup__body">
+              {!checked ? (
+                <>
+                  {clock
+                    ? <div className="fixup__picture"><ClockFace h={clock.h} m={clock.m} /></div>
+                    : picture
+                      ? <div className="fixup__picture"><CardPicture cell={card.front} sources={imageSources(card.front)} framed={needsFrame(card.front)} /></div>
+                      : <p className={`fixup__prompt ${long ? 'is-long' : ''}`}>{card.front}</p>}
+                  <div className="fixup__answer">
+                    {placedChips.map((chip, i) => (
+                      <button key={chip.id} type="button" className="chip" onClick={() => removeAt(i)}>{chip.w}</button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {checked === 'wrong' && attempt && <p className="fixup__attempt">{attempt}</p>}
+                  <p className="fixup__solution">{answer}</p>
+                  <Tag verdict={checked === 'right' ? 'correct' : 'wrong'} />
+                </>
+              )}
             </div>
-          )}
+          </motion.section>
+        </AnimatePresence>
+      </div>
 
-          {/* Word bank: a lifted chip leaves an empty slot so nothing reflows */}
-          {!checked && (
-            <div className="fixup__bank">
-              {bank.map((chip) => (
-                placedSet.has(chip.id)
-                  ? <span key={chip.id} className="chip chip--ghost" aria-hidden="true">{chip.w}</span>
-                  : <button key={chip.id} type="button" className="chip" onClick={() => place(chip)}>{chip.w}</button>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+      {/* Word bank below the card; a lifted word leaves its slot behind */}
+      <div className="fixup__bank">
+        {!checked && bank.map((chip) => (
+          placedSet.has(chip.id)
+            ? <span key={chip.id} className="chip chip--ghost" aria-hidden="true">{chip.w}</span>
+            : <button key={chip.id} type="button" className="chip chip--bank" onClick={() => place(chip)}>{chip.w}</button>
+        ))}
+      </div>
 
       <div className="fixup__controls">
-        {!checked ? (
-          <Button disabled={placed.length === 0} onClick={check}>Check</Button>
-        ) : (
-          <Button onClick={nextCard}>{index + 1 >= cards.length ? 'See results' : 'Next'}</Button>
-        )}
-      </div>
+        {!checked
+          ? <Button disabled={placed.length === 0} onClick={check}>Check</Button>
+          : <Button onClick={nextCard}>{index + 1 >= cards.length ? 'See results' : 'Next'}</Button>}
       </div>
     </div>
   );

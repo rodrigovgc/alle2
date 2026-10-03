@@ -8,6 +8,7 @@ import { canSpeak, speak } from '../lib/speech.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
 import { FixUp } from '../components/FixUp.jsx';
+import { CardPicture } from '../components/CardPicture.jsx';
 import { imageSrc, imageSources, needsFrame, clockTime, wikimediaFile, resolveImage } from '../lib/media.js';
 import { ClockFace } from '../components/ClockFace.jsx';
 import { makeOptions } from '../lib/srs.js';
@@ -348,46 +349,6 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
 }
 
 /** A picture on the card. If it can't load, say so instead of showing a broken image. */
-/**
- * A picture on the card. Tries each source in turn; if none loads, reports it
- * so the session can drop the card (a question without its picture can't be answered).
- */
-function CardPicture({ cell, sources, framed, onBroken }) {
-  // Try the quick guesses first; if they all fail, ask Wikimedia's API for the
-  // real URL before giving up. A plain broken card is dropped from the session.
-  const file = wikimediaFile(cell);
-  const [list, setList] = useState(sources);
-  const [i, setI] = useState(0);
-  const triedApi = useRef(false);
-
-  useEffect(() => { setList(sources); setI(0); triedApi.current = false; }, [cell]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function onError() {
-    if (i + 1 < list.length) { setI(i + 1); return; }
-    if (file && !triedApi.current) {
-      triedApi.current = true;
-      const url = await resolveImage(file);
-      if (url) { setList([url]); setI(0); return; }
-    }
-    onBroken?.();
-  }
-
-  if (i >= list.length) return <div className="study-card__picture-wrap" />;
-  return (
-    <div className="study-card__picture-wrap">
-      <img
-        key={list[i]}
-        className={`study-card__picture ${framed ? 'is-framed' : ''}`}
-        src={list[i]}
-        alt="Picture to identify"
-        decoding="async"
-        draggable={false}
-        onError={onError}
-      />
-    </div>
-  );
-}
-
 function FrontFace({ card, interactive, canSkip, typed, setTyped, inputRef, onFocusChange, onSkip, onSubmit, onBroken }) {
   const picture = imageSrc(card.front);
   const clock = clockTime(card.front);

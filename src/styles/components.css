@@ -534,7 +534,7 @@ select.input { background-image: none; }
 }
 .deck__arrow { width: var(--size-icon-small); height: var(--size-icon-small); }
 .deck__title {
-  font-size: var(--font-size-large-title);
+  font-size: var(--font-size-deck-title);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-title);

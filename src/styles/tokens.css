@@ -64,7 +64,7 @@
   --choice-bg:         var(--color-surface);      /* builder choices and chips */
   --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
   --inner-button-bg:   var(--color-surface);      /* icon buttons inside a card/sheet (on white)     */
-  --outer-button-bg:   var(--color-surface);      /* icon buttons on the page                        */
+  --outer-button-bg:   var(--color-surface-deep); /* icon buttons on the beige page: darker beige   */
   --secondary-bg:      var(--color-surface);      /* secondary buttons                               */
   --picture-frame:     var(--grey-200);           /* outline on flags so white edges show */
   --mark-wrong-bg:     var(--deck-red);           /* letters typed wrong                    */
@@ -84,6 +84,7 @@
   --font-size-display:     64px;  /* Done score                           */
   --font-size-large-title: 28px;  /* deck names, card text, auth title    */
   --font-size-small-title: 20px;  /* section, sheet and tile titles       */
+  --font-size-deck-title:  24px;  /* deck names on the home cards         */
   --font-size-button:      17px;  /* body text, buttons, inputs           */
   --font-size-small:       15px;  /* secondary text                       */
   --font-size-caption:     13px;  /* labels, hints, meta                  */
