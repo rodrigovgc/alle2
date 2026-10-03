@@ -23,6 +23,13 @@ const shuffle = (a) => {
   return b;
 };
 const wordsOf = (answer) => answer.replace(/\s*•\s*/g, ' ').trim().split(/\s+/);
+const LETTERS = 'abcdefghijklmnoprstuvwz';
+
+/** Pieces to rebuild: words for a phrase, letters for a single word. */
+function piecesOf(answer) {
+  const words = wordsOf(answer);
+  return words.length > 1 ? { pieces: words, joiner: ' ' } : { pieces: [...words[0]], joiner: '' };
+}
 
 export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) {
   const reduce = useReducedMotion();
@@ -33,19 +40,27 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
 
   const card = cards[index];
   const answer = useMemo(() => alternatives(card.back)[0], [card.key]); // eslint-disable-line react-hooks/exhaustive-deps
-  const target = useMemo(() => wordsOf(answer), [answer]);
+  const { pieces: target, joiner } = useMemo(() => piecesOf(answer), [answer]);
   const bank = useMemo(() => {
-    const distractors = shuffle(
-      cards.filter((c) => c.key !== card.key)
-        .flatMap((c) => wordsOf(alternatives(c.back)[0]))
-        .filter((w) => !target.includes(w)),
-    ).slice(0, Math.min(2, Math.max(0, 6 - target.length)));
+    let distractors;
+    if (joiner === ' ') {
+      // Phrase: a couple of words from other missed cards
+      distractors = shuffle(
+        cards.filter((c) => c.key !== card.key)
+          .flatMap((c) => wordsOf(alternatives(c.back)[0]))
+          .filter((w) => !target.includes(w)),
+      ).slice(0, Math.min(2, Math.max(0, 6 - target.length)));
+    } else {
+      // Single word: a couple of extra letters (or digits, for numbers)
+      const pool = /^\d+$/.test(answer) ? '0123456789' : LETTERS;
+      distractors = shuffle([...pool].filter((ch) => !target.includes(ch))).slice(0, target.length > 8 ? 1 : 2);
+    }
     return shuffle(target.concat(distractors)).map((w, i) => ({ id: `${w}-${i}`, w }));
   }, [card.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const placedSet = new Set(placed);
   const placedChips = placed.map((id) => bank.find((c) => c.id === id));
-  const attempt = placedChips.map((c) => c.w).join(' ');
+  const attempt = placedChips.map((c) => c.w).join(joiner);
 
   const picture = imageSrc(card.front);
   const clock = clockTime(card.front);
@@ -110,7 +125,7 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
                       : <p className={`fixup__prompt ${long ? 'is-long' : ''}`}>{card.front}</p>}
                   <div className="fixup__answer">
                     {placedChips.map((chip, i) => (
-                      <button key={chip.id} type="button" className="chip" onClick={() => removeAt(i)}>{chip.w}</button>
+                      <button key={chip.id} type="button" className={`chip ${joiner ? '' : 'chip--letter'}`} onClick={() => removeAt(i)}>{chip.w}</button>
                     ))}
                   </div>
                 </>
@@ -130,8 +145,8 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
       <div className="fixup__bank">
         {!checked && bank.map((chip) => (
           placedSet.has(chip.id)
-            ? <span key={chip.id} className="chip chip--ghost" aria-hidden="true">{chip.w}</span>
-            : <button key={chip.id} type="button" className="chip chip--bank" onClick={() => place(chip)}>{chip.w}</button>
+            ? <span key={chip.id} className={`chip chip--ghost ${joiner ? '' : 'chip--letter'}`} aria-hidden="true">{chip.w}</span>
+            : <button key={chip.id} type="button" className={`chip chip--bank ${joiner ? '' : 'chip--letter'}`} onClick={() => place(chip)}>{chip.w}</button>
         ))}
       </div>
 

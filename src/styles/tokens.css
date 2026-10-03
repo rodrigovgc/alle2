@@ -155,6 +155,7 @@
   --size-search-pill: 98px;   /* [search ···] pill: 2 × 44 + padding + border */
   --size-popup:       480px;  /* desktop popup width */
   --size-quiz-option: 50px;
+  --size-edge-fade:   28px;  /* blur fade where sheet content meets header/buttons */
   --size-reorder-row: 64px;
   --size-card-picture: 120px; /* signs and flags on a study card */
   --size-sample-card: 112px;

@@ -180,6 +180,7 @@
 .sheet__scroll > form, .sheet__scroll > .sheet__body { min-height: 100%; }
 .sheet__text { font-size: var(--font-size-button); line-height: var(--line-height-body); color: var(--text-secondary); }
 .sheet__actions {
+  position: relative;
   margin-top: auto;   /* sits at the bottom of the space above the keyboard */
   display: flex; flex-direction: column; gap: var(--space-3);
   padding: var(--space-3) 0 calc(var(--space-4) + var(--vv-bottom-inset, env(safe-area-inset-bottom)));
@@ -316,7 +317,7 @@ select.input { background-image: none; }
   padding-right: calc(var(--card-padding) + var(--size-shape-w) + var(--space-3));
   border-radius: var(--radius-deck);
   background: var(--deck-fill);
-  border: 1px solid var(--deck-deep);
+  border: 0;
   text-align: left;
   overflow: hidden;
   transition: transform var(--duration-fast) var(--ease-out);
@@ -504,7 +505,7 @@ select.input { background-image: none; }
   /* Living colour: a slow gradient drift in the deck's own colour */
   background: linear-gradient(130deg, var(--deck-fill), color-mix(in srgb, var(--deck-fill) 82%, #fff) 50%, var(--deck-fill));
   background-size: 200% 200%;
-  border: 1px solid var(--deck-deep);
+  border: 0;
   animation: deckDrift 9s ease-in-out infinite;
   box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--deck-deep) 55%, transparent);
   transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out);
@@ -622,3 +623,34 @@ select.input { background-image: none; }
 .account__email { font-size: var(--font-size-button); }
 .account__delete { color: var(--color-danger); }
 .account__confirm { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* Desktop drag-to-reorder */
+.sortable-deck { touch-action: manipulation; cursor: grab; }
+.sortable-deck.is-dragging { position: relative; z-index: 5; cursor: grabbing; }
+.sortable-deck.is-dragging .deck__surface { transform: scale(1.03); box-shadow: var(--shadow-menu); }
+
+/* ---- See-through blur at sheet edges ----------------------------------- */
+/* Content scrolling up under the header fades and blurs instead of being cut. */
+.sheet__scroll::before,
+.shuffle-scroll::before {
+  content: ""; display: block;
+  position: sticky; top: 0; z-index: 3;
+  height: var(--size-edge-fade); margin-bottom: calc(var(--size-edge-fade) * -1);
+  background: linear-gradient(to bottom, var(--card-bg), color-mix(in srgb, var(--card-bg) 0%, transparent));
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent);
+  mask-image: linear-gradient(to bottom, #000 30%, transparent);
+  pointer-events: none;
+}
+/* Content passing behind the button area blurs and fades into it. */
+.sheet__actions { isolation: isolate; background: transparent; }
+.sheet__actions::before {
+  content: ""; position: absolute; z-index: -1;
+  left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1);
+  top: calc(var(--size-edge-fade) * -1.5); bottom: 0;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--card-bg) 0%, transparent), var(--card-bg) 45%);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40%);
+  mask-image: linear-gradient(to bottom, transparent, #000 40%);
+  pointer-events: none;
+}

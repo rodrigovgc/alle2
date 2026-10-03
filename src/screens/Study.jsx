@@ -179,11 +179,8 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
     busy.current = true;
     const newCorrect = correctCount + (result.verdict === 'correct' ? 1 : 0);
     onReview(card, result.verdict);
-    if (result.verdict !== 'correct') {
-      const words = alternatives(card.back)[0].replace(/\s*•\s*/g, ' ').trim().split(/\s+/);
-      if (words.length >= 2 && !wrongCards.current.some((c) => c.key === card.key)) {
-        wrongCards.current.push(card);
-      }
+    if (result.verdict !== 'correct' && !wrongCards.current.some((c) => c.key === card.key)) {
+      wrongCards.current.push(card); // every miss comes back in "Let's fix these"
     }
     correctRef.current = newCorrect;
     setCorrectCount(newCorrect);

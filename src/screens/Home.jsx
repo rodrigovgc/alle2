@@ -8,6 +8,8 @@ import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
 import { useScrollShrink } from '../lib/useScrollShrink.js';
 import { ReorderList } from '../components/ReorderList.jsx';
+import { SortableDecks } from '../components/SortableDecks.jsx';
+import { useMediaQuery } from '../lib/useMediaQuery.js';
 import { Segmented } from '../components/Segmented.jsx';
 import { Account } from '../components/Account.jsx';
 import { READY_MADE } from '../lib/sampleDeck.js';
@@ -51,6 +53,8 @@ export function Home({
 
   const close = () => setSheet(null);
   const ctaCompact = useScrollShrink();
+  // A mouse or trackpad: decks can be dragged into place directly.
+  const canDrag = useMediaQuery('(hover: hover) and (pointer: fine)');
   // Reorder mode: a working copy of the order, saved on Done.
   const [order, setOrder] = useState(null);
   const reordering = order !== null;
@@ -187,16 +191,8 @@ export function Home({
           <p className="empty__body">No decks match “{query}”.</p>
         )}
         {reordering && <ReorderList decks={order} mode={colorMode} onChange={setOrder} />}
-        {!reordering && <AnimatePresence initial={false} mode="popLayout">
-          {visible.map((deck) => (
-            <motion.div
-              key={deck.id}
-              layout="position"
-              initial={query ? { opacity: 0, scale: 0.94 } : false}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } }}
-              transition={SPRING.morph}
-            >
+        {!reordering && canDrag && !query && (
+          <SortableDecks decks={decks} onReorder={onReorder} renderDeck={(deck) => (
               <DeckCard
                 deck={deck}
                 mode={colorMode}
@@ -207,6 +203,30 @@ export function Home({
                 onResetProgress={() => setSheet({ type: 'reset', deck })}
                 onRemove={() => setSheet({ type: 'remove', deck })}
               />
+            )} />
+        )}
+        {!reordering && !(canDrag && !query) && <AnimatePresence initial={false} mode="popLayout">
+          {visible.map((deck) => (
+            <motion.div
+              key={deck.id}
+              layout="position"
+              initial={query ? { opacity: 0, scale: 0.94 } : false}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } }}
+              transition={SPRING.morph}
+            >
+              {((deck) => (
+              <DeckCard
+                deck={deck}
+                mode={colorMode}
+                due={dueByDeck[deck.id] || 0}
+                onOpen={() => onStudyDeck(deck)}
+                onUpdateUrl={() => setSheet({ type: 'url', deck })}
+                onCustomize={() => setSheet({ type: 'cover', deck })}
+                onResetProgress={() => setSheet({ type: 'reset', deck })}
+                onRemove={() => setSheet({ type: 'remove', deck })}
+              />
+            ))(deck)}
             </motion.div>
           ))}
         </AnimatePresence>}

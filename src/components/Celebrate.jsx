@@ -18,11 +18,10 @@ export function Celebrate({ ratio = 1 }) {
     const vh = typeof window !== 'undefined' ? window.innerHeight : 844;
     const pw = tokenNumber('--size-confetti-w', 40);
     const ph = tokenNumber('--size-confetti-h', 54);
-    // Spread across (and a little past) the screen. Phones overflow the edges;
-    // wide screens fill more of the canvas.
-    const roomX = vw * 0.62;
-    const roomUp = vh * 0.55;
-    const roomDown = vh * 0.5;
+    // Spread over the whole screen and past its edges.
+    const roomX = vw * 0.75;
+    const roomUp = vh * 0.6;
+    const roomDown = vh * 0.65;
     const count = Math.round(20 + ratio * 30);
     return Array.from({ length: count }, (_, i) => {
       const color = DECK_COLORS[i % DECK_COLORS.length];

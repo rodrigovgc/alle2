@@ -378,7 +378,8 @@
 .done__center { position: relative; }
 .done__score, .done__message { position: relative; z-index: 1; }
 .celebrate {
-  position: absolute; left: 50%; top: 50%;
+  /* A full-screen layer: cards fly across (and off) the whole screen */
+  position: fixed; left: 50%; top: 45%;
   width: 0; height: 0;
   pointer-events: none;
   z-index: 0;
@@ -398,7 +399,7 @@
   width: 70%; height: 70%;
   opacity: 1;
 }
-.done { overflow: hidden; }
+.done { overflow: visible; }
 
 /* ---- Crash fallback ---------------------------------------------------- */
 .crash {
@@ -547,4 +548,7 @@
 .chip--bank { background: var(--card-bg); border-color: transparent; }
 .chip--ghost { background: var(--color-surface-deep); border-color: transparent; color: transparent; }
 .fixup__controls { flex: none; }
+/* Single words are rebuilt letter by letter: square-ish tiles */
+.chip--letter { min-width: var(--size-tag); justify-content: center; padding-left: var(--space-3); padding-right: var(--space-3); }
+.fixup__answer:has(.chip--letter) { gap: var(--space-1); }
 
