@@ -7,6 +7,7 @@ import { alternatives, displayLines } from '../lib/csv.js';
 import { canSpeak, speak } from '../lib/speech.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFitText } from '../lib/useFitText.js';
+import { FixUp } from '../components/FixUp.jsx';
 import { imageSrc, imageSources, needsFrame, clockTime, wikimediaFile, resolveImage } from '../lib/media.js';
 import { ClockFace } from '../components/ClockFace.jsx';
 import { makeOptions } from '../lib/srs.js';
@@ -46,6 +47,7 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
   // The session can shrink: a card whose picture can't load is taken out
   // before (or as) it reaches the top, since it couldn't be answered.
   const [cards, setCards] = useState(sessionCards);
+  const sessionTotal = useRef(sessionCards.length);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState('question');
   const [typed, setTyped] = useState('');
@@ -54,6 +56,8 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
   const inputRef = useRef(null);
   const busy = useRef(false);
   const correctRef = useRef(0);
+  const [stage, setStage] = useState('study'); // 'study' | 'fix'
+  const wrongCards = useRef([]);
 
   function dropCard(key) {
     setCards((list) => {
@@ -64,11 +68,17 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
     });
   }
   const ended = useRef(false);
-  useEffect(() => {
+  function finishStudy() {
     if (ended.current) return;
+    if (wrongCards.current.length) { setStage('fix'); return; }
+    ended.current = true;
+    onFinish({ correct: correctRef.current, total: Math.max(1, sessionTotal.current) });
+  }
+  useEffect(() => {
+    if (ended.current || stage !== 'study') return;
     if (cards.length === 0) { ended.current = true; onExit(); }
-    else if (index >= cards.length) { ended.current = true; onFinish({ correct: correctRef.current, total: cards.length }); }
-  }, [cards.length, index]); // eslint-disable-line react-hooks/exhaustive-deps
+    else if (index >= cards.length) finishStudy();
+  }, [cards.length, index, stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = cards.length;
   const card = cards[Math.min(index, Math.max(0, total - 1))];
@@ -168,6 +178,12 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
     busy.current = true;
     const newCorrect = correctCount + (result.verdict === 'correct' ? 1 : 0);
     onReview(card, result.verdict);
+    if (result.verdict !== 'correct') {
+      const words = alternatives(card.back)[0].replace(/\s*•\s*/g, ' ').trim().split(/\s+/);
+      if (words.length >= 2 && !wrongCards.current.some((c) => c.key === card.key)) {
+        wrongCards.current.push(card);
+      }
+    }
     correctRef.current = newCorrect;
     setCorrectCount(newCorrect);
     // Always advance the index; the effect above turns the last step into the
@@ -201,6 +217,29 @@ export function Study({ cards: sessionCards, onReview, onExit, onFinish }) {
   const controls = flipped ? 'rate'
     : isChoice ? 'choice'
     : (revealing || (coarse && inputFocused)) ? null : 'answer';
+
+  if (stage === 'fix') {
+    return (
+      <div className="study">
+        <nav className="study__nav">
+          <IconButton icon="close" label="Close deck" onClick={onExit} />
+          <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={1} aria-valuenow={1}>
+            <span className="progress__fill" style={{ '--progress': 1 }} />
+          </div>
+          <span className="study__count" />
+        </nav>
+        <FixUp
+          cards={wrongCards.current}
+          onDone={({ fixed }) => {
+            ended.current = true;
+            // Fixed cards count toward the celebration score (but the schedule
+            // already marked them wrong, so they still return sooner).
+            onFinish({ correct: Math.min(sessionTotal.current, correctRef.current + fixed), total: Math.max(1, sessionTotal.current) });
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="study">

@@ -6,6 +6,7 @@ import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
 import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
+import { useScrollShrink } from '../lib/useScrollShrink.js';
 import { ReorderList } from '../components/ReorderList.jsx';
 import { Segmented } from '../components/Segmented.jsx';
 import { Account } from '../components/Account.jsx';
@@ -49,6 +50,7 @@ export function Home({
   }, [decks, query]);
 
   const close = () => setSheet(null);
+  const ctaCompact = useScrollShrink();
   // Reorder mode: a working copy of the order, saved on Done.
   const [order, setOrder] = useState(null);
   const reordering = order !== null;
@@ -211,7 +213,7 @@ export function Home({
       </section>
 
       {decks.length > 0 && !reordering && (
-        <div className="home__cta">
+        <div className={`home__cta ${ctaCompact ? 'is-compact' : ''}`}>
           <Button icon="shuffle" onClick={() => decks.length > 1 ? setSheet({ type: 'shuffle' }) : onShuffle(decks.map((d) => d.id))}>Shuffle decks</Button>
         </div>
       )}

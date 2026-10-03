@@ -15,7 +15,7 @@
 .btn:active:not(:disabled) { transform: scale(0.98); }
 .btn:disabled { opacity: 0.4; }
 .btn--primary { background: var(--cta-bg); color: var(--cta-fg); }
-.btn--secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-subtle); }
+.btn--secondary { background: var(--secondary-bg); color: var(--text-primary); border: 0; }
 .btn--danger { background: var(--color-danger); color: var(--color-background); }
 .btn__icon { color: currentColor; }
 
@@ -24,14 +24,14 @@
   width: var(--size-icon-button); height: var(--size-icon-button);
   border-radius: var(--radius-pill);
   background: var(--outer-button-bg);
-  border: 1px solid var(--border-subtle);
+  border: 0;
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--text-primary);
   flex: none;
   transition: transform var(--duration-fast) var(--ease-out);
 }
 .icon-btn:active { transform: scale(0.94); }
-.icon-btn--inner { background: var(--inner-button-bg); border-color: transparent; }
+.icon-btn--inner { background: var(--inner-button-bg); }
 
 .text-btn {
   min-height: var(--size-icon-button);
@@ -581,21 +581,19 @@ select.input { background-image: none; }
   padding: 0 var(--space-3) 0 var(--space-4);
   border-radius: var(--radius-field);
   background: var(--choice-bg);
-  border: 1px solid var(--start-tile-border);
+  border: 0;
   cursor: pointer;
 }
-.check-row.is-on { border-color: var(--border-selected); }
+.check-row.is-on { background: color-mix(in srgb, var(--cta-bg) 8%, var(--choice-bg)); }
 .check-row input { position: absolute; opacity: 0; pointer-events: none; }
-.check-row__dot { width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--deck-fill); border: 1px solid var(--deck-deep); flex: none; }
+.check-row__dot { width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--deck-fill); flex: none; }
 .check-row__title { flex: 1; min-width: 0; font-size: var(--font-size-button); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .check-row__box {
   width: 24px; height: 24px; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-mark);
-  border: 1.5px solid var(--grey-300);
-  color: var(--cta-fg); background: transparent;
+  color: var(--text-tertiary); background: transparent;
 }
-.check-row.is-on .check-row__box { background: var(--cta-bg); border-color: var(--cta-bg); }
+.check-row.is-on .check-row__box { color: var(--text-primary); }
 .library-done { display: flex; flex-direction: column; gap: var(--space-4); }
 
 /* Account sheet */

@@ -52,7 +52,7 @@
   --border-subtle:     var(--grey-200);
   --border-selected:   var(--grey-400);           /* chosen chip / choice */
   --size-border-selected: 1.5px;
-  --cta-bg:            var(--color-foreground);
+  --cta-bg:            var(--color-foreground);   /* primary button fill */
   --cta-fg:            var(--color-background);   /* white on black (dark mode: black on white) */
   --progress-track:    rgb(12 12 12 / 0.2);
   --progress-fill:     var(--color-foreground);
@@ -63,8 +63,9 @@
   --tab-light-track:   var(--color-surface);      /* segmented control + prompt box on white */
   --choice-bg:         var(--color-surface);      /* builder choices and chips */
   --search-field-bg:   var(--color-surface-deep);  /* expanded search: reads as an input */
-  --inner-button-bg:   var(--color-surface);      /* circle buttons inside a card or sheet */
-  --outer-button-bg:   var(--color-background);   /* circle buttons on the page             */
+  --inner-button-bg:   var(--color-surface-deep); /* icon buttons inside a card or sheet, no border */
+  --outer-button-bg:   var(--color-surface-deep); /* icon buttons on the page, no border             */
+  --secondary-bg:      var(--color-surface-deep); /* secondary buttons: fill, not a border           */
   --picture-frame:     var(--grey-200);           /* outline on flags so white edges show */
   --mark-wrong-bg:     var(--deck-red);           /* letters typed wrong                    */
   --mark-fix-bg:       var(--deck-green);         /* letters that fix them                  */
@@ -239,6 +240,13 @@
   --shadow-card-behind: 0 8px 24px rgb(0 0 0 / 0.3);
   --shadow-menu:   0 20px 50px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.35);
   --shadow-button-soft: 0 1px 2px rgb(0 0 0 / 0.5);
+
+  /* Buttons in dark mode: a raised grey, not bright white (see reference). */
+  --cta-bg:            #38352F;   /* primary button: dark raised grey        */
+  --cta-fg:            #F3F1EA;   /* light label                             */
+  --inner-button-bg:   #38352F;
+  --outer-button-bg:   #2A2824;
+  --secondary-bg:      #2A2824;
 
   color-scheme: dark;
 }
