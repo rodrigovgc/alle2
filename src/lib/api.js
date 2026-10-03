@@ -1,3 +1,4 @@
+import { SAMPLE_DECKS } from './sampleDeck.js';
 import { supabase } from './supabase.js';
 
 const DECK_FIELDS = '*'; // tolerant of optional columns added by later migrations
@@ -14,7 +15,19 @@ function check({ data, error }) {
  *  not in the query, so a missing column can't break loading. */
 export async function listDecks() {
   const rows = check(await supabase.from('decks').select(DECK_FIELDS).order('created_at', { ascending: true }));
-  return sortDecks(rows);
+  return sortDecks(rows.map(refreshReadyMade));
+}
+
+/** A ready-made deck added earlier picks up the latest cards and settings. */
+function refreshReadyMade(deck) {
+  if (!deck.is_sample) return deck;
+  const latest = Object.values(SAMPLE_DECKS).find((d) => d.title === deck.title);
+  if (!latest) return deck;
+  return {
+    ...deck,
+    cards: latest.cards,
+    answer_mode: deck.answer_mode ?? latest.answer_mode ?? null,
+  };
 }
 
 export function sortDecks(rows) {

@@ -276,7 +276,7 @@
   user-select: none; -webkit-user-select: none;
 }
 .study-card__picture.is-framed { outline: 1px solid var(--picture-frame); outline-offset: 0; }
-.clock { width: var(--size-card-picture); height: var(--size-card-picture); }
+.clock { height: 100%; max-height: var(--size-card-picture); width: auto; aspect-ratio: 1; }
 .clock__face { fill: var(--card-bg); stroke: var(--text-primary); stroke-width: 2; }
 .clock__tick { stroke: var(--text-tertiary); stroke-width: 1.5; stroke-linecap: round; }
 .clock__tick.is-major { stroke: var(--text-primary); stroke-width: 2.5; }

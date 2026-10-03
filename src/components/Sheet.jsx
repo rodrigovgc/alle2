@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { IconButton } from './Button.jsx';
 import { SPRING } from '../styles/tokens.js';
@@ -72,11 +72,25 @@ export function Sheet({ open, onClose, title, children, variant = 'page' }) {
 }
 
 function SheetFrame({ title, onClose, children }) {
+  // The header floats over the content (which scrolls underneath and blurs).
+  // Publish its height so the content starts just below it.
+  const headRef = useRef(null);
+  useLayoutEffect(() => {
+    const head = headRef.current;
+    const sheet = head?.parentElement;
+    if (!head || !sheet) return undefined;
+    const set = () => sheet.style.setProperty('--sheet-head-h', `${head.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(head);
+    return () => ro.disconnect();
+  }, []);
+
   const scrollRef = useRef(null);
   useFocusIntoView(scrollRef);
   return (
     <>
-      <header className="sheet__header">
+      <header className="sheet__header" ref={headRef}>
         <h2 className="sheet__title">{title}</h2>
         <IconButton icon="close" label="Close" onClick={onClose} className="icon-btn--inner" />
       </header>
