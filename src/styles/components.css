@@ -325,6 +325,7 @@ select.input { background-image: none; }
 /* Sample deck: a small deck card; tapping adds it */
 .sample-card {
   position: relative;
+  width: 100%;
   display: flex; align-items: center;
   min-height: var(--size-sample-card);
   padding: var(--space-5) var(--card-padding);
