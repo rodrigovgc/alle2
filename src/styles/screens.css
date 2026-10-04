@@ -552,3 +552,14 @@
 .chip--letter { min-width: var(--size-tag); justify-content: center; padding-left: var(--space-3); padding-right: var(--space-3); }
 .fixup__answer:has(.chip--letter) { gap: var(--space-1); }
 
+
+/* Waiting for email confirmation */
+.auth__waiting { display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--font-size-small); }
+.auth__dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--text-secondary);
+  animation: authPulse 1.4s ease-in-out infinite;
+}
+@keyframes authPulse { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .auth__dot { animation: none; } }
+/* Secondary buttons on the beige page (sign-in screens) use the darker beige */
+.auth .btn--secondary { background: var(--color-surface-deep); }

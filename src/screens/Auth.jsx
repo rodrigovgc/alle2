@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFocusIntoView } from '../lib/useFocusIntoView.js';
 import { supabase, isConfigured } from '../lib/supabase.js';
@@ -26,7 +26,7 @@ export function Auth() {
       if (isSignUp) {
         const { data, error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
-        if (!data.session) setNotice(`Check ${email} and confirm your account, then sign in.`);
+        if (!data.session) setMode('confirm'); // waits here until the email is confirmed
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
@@ -40,6 +40,63 @@ export function Auth() {
     } finally {
       setBusy(false);
     }
+  }
+
+  // Waiting for the email confirmation. The link may be opened on another
+  // device (it signs in whichever browser opens it), so this tab keeps trying
+  // to sign in with what was just typed and continues on its own once the
+  // account is confirmed. The password only lives in memory, never stored.
+  const [resent, setResent] = useState(false);
+  useEffect(() => {
+    if (mode !== 'confirm') return undefined;
+    let stopped = false;
+    const started = Date.now();
+    async function attempt() {
+      if (stopped || document.hidden) return;
+      const { data } = await supabase.auth.signInWithPassword({ email, password });
+      if (data?.session) stopped = true; // the app takes over from here
+    }
+    const timer = setInterval(() => {
+      if (Date.now() - started > 30 * 60 * 1000) { clearInterval(timer); return; }
+      attempt();
+    }, 4000);
+    const onBack = () => attempt(); // back on this tab: check straight away
+    window.addEventListener('focus', onBack);
+    document.addEventListener('visibilitychange', onBack);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+      window.removeEventListener('focus', onBack);
+      document.removeEventListener('visibilitychange', onBack);
+    };
+  }, [mode, email, password]);
+
+  async function resend() {
+    setError('');
+    const { error: err } = await supabase.auth.resend({ type: 'signup', email });
+    if (err) setError(err.message); else setResent(true);
+  }
+
+  if (mode === 'confirm') {
+    return (
+      <main className="auth" ref={rootRef}>
+        <div className="auth__brand"><Logo /></div>
+        <div className="auth__form">
+          <h1 className="auth__title">Check your email</h1>
+          <p className="auth__lead">
+            We sent a confirmation link to <strong>{email}</strong>. Open it on any device,
+            even your phone. This screen continues on its own once you’ve confirmed.
+          </p>
+          <p className="auth__waiting" role="status"><span className="auth__dot" aria-hidden="true" />Waiting for confirmation…</p>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          {resent && <p className="form-notice" role="status">Sent again. Check your inbox and spam folder.</p>}
+          <Button variant="secondary" onClick={resend} disabled={resent}>{resent ? 'Email sent' : 'Resend email'}</Button>
+          <button type="button" className="text-btn" onClick={() => { setMode('signup'); setResent(false); setError(''); }}>
+            Use a different email
+          </button>
+        </div>
+      </main>
+    );
   }
 
   if (!isConfigured) {

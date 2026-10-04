@@ -74,15 +74,21 @@ export const demoClient = {
       const db = load();
       if (db.users[email]) return { data: {}, error: { message: 'An account with this email already exists.' } };
       const user = { id: uid(), email, user_metadata: {} };
-      db.users[email] = { password, user };
+      // Demo only: an address containing "+confirm" behaves like a real
+      // account that must confirm its email before it can sign in.
+      const needsConfirm = email.includes('+confirm');
+      db.users[email] = { password, user, confirmed: !needsConfirm };
+      if (needsConfirm) { save(db); return { data: { session: null, user }, error: null }; }
       db.session = { user };
       save(db); emit(db.session);
       return { data: { session: db.session, user }, error: null };
     },
+    async resend() { return { data: {}, error: null }; },
     async signInWithPassword({ email, password }) {
       const db = load();
       const u = db.users[email];
       if (!u || u.password !== password) return { data: {}, error: { message: 'Invalid login credentials' } };
+      if (u.confirmed === false) return { data: {}, error: { message: 'Email not confirmed' } };
       db.session = { user: u.user };
       save(db); emit(db.session);
       return { data: { session: db.session }, error: null };
