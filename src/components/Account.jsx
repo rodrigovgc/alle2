@@ -36,6 +36,7 @@ export function Account({ email, colorMode, onColorMode, onSignOut, onClose }) {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   return (
     <div className="sheet__body account">
@@ -102,10 +103,11 @@ export function Account({ email, colorMode, onColorMode, onSignOut, onClose }) {
           </button>
         ) : (
           <div className="account__confirm">
-            <p className="sheet__text">This removes all your decks and progress for good.</p>
+            <p className="sheet__text">This deletes your account, decks and progress for good. You can sign up again with the same email later.</p>
+            {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
             <Button variant="danger" disabled={deleting} onClick={async () => {
-              setDeleting(true);
-              try { await api.deleteAccountData(); } catch { setDeleting(false); }
+              setDeleting(true); setDeleteError('');
+              try { await api.deleteAccount(); } catch (err) { setDeleteError(err.message); setDeleting(false); }
             }}>
               {deleting ? 'Deleting…' : 'Delete everything'}
             </Button>

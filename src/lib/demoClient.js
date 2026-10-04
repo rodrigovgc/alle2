@@ -106,4 +106,18 @@ export const demoClient = {
       return { error: null };
     },
   },
+  // Database functions (demo stand-ins)
+  async rpc(name) {
+    const db = load();
+    if (name === 'delete_own_account') {
+      const user = db.session?.user;
+      if (!user) return { data: null, error: { message: 'Not signed in' } };
+      db.decks = db.decks.filter((d) => d.user_id !== user.id);
+      db.progress = db.progress.filter((p) => p.user_id !== user.id);
+      delete db.users[user.email];
+      save(db);
+      return { data: null, error: null };
+    }
+    return { data: [], error: null };
+  },
 };

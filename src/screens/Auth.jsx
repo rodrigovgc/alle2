@@ -26,6 +26,13 @@ export function Auth() {
       if (isSignUp) {
         const { data, error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
+        // Already registered: Supabase sends no email and gives no error, but the
+        // returned user has no identities. Say so and offer to sign in instead.
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setMode('signin');
+          setNotice('There’s already an account with this email. Sign in instead.');
+          return;
+        }
         if (!data.session) setMode('confirm'); // waits here until the email is confirmed
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
@@ -33,9 +40,10 @@ export function Auth() {
       }
     } catch (err) {
       setError(
-        /invalid login/i.test(err.message)
-          ? 'That email and password don’t match an account.'
-          : err.message,
+        /invalid login/i.test(err.message) ? 'That email and password don’t match an account.'
+          : /already (exists|registered)/i.test(err.message) ? 'There’s already an account with this email. Sign in instead.'
+            : /not confirmed/i.test(err.message) ? 'Confirm your email first: check your inbox for the link.'
+              : err.message,
       );
     } finally {
       setBusy(false);

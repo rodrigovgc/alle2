@@ -89,13 +89,17 @@ export async function changePassword(password) {
   if (error) throw error;
 }
 
-/** Remove the account's decks and progress, then sign out. (Deleting the auth
- *  user itself needs a server function; this clears everything the user made.) */
-export async function deleteAccountData() {
-  const decks = await listDecks();
-  if (decks.length) {
-    check(await supabase.from('progress').delete().in('deck_id', decks.map((d) => d.id)));
-    check(await supabase.from('decks').delete().in('id', decks.map((d) => d.id)));
+/**
+ * Delete the account completely: the login, decks, progress and events.
+ * Uses the delete_own_account() function from supabase/006_delete_account.sql.
+ */
+export async function deleteAccount() {
+  const { error } = await supabase.rpc('delete_own_account');
+  if (error) {
+    if (/delete_own_account|function/i.test(error.message)) {
+      throw new Error('Deleting accounts needs one database update. Run supabase/006_delete_account.sql in Supabase.');
+    }
+    throw error;
   }
   await supabase.auth.signOut();
 }
