@@ -656,3 +656,29 @@ select.input { background-image: none; }
   mask-image: linear-gradient(to bottom, transparent, #000 40%);
   pointer-events: none;
 }
+
+/* ---- New version banner ------------------------------------------------- */
+.update-banner {
+  position: fixed; z-index: calc(var(--z-sheet) + 10);
+  top: calc(env(safe-area-inset-top) + var(--space-3));
+  left: 50%; translate: -50% 0;
+  width: max-content; max-width: calc(100vw - var(--gutter) * 2);
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--cta-bg); color: var(--cta-fg);
+  box-shadow: var(--shadow-menu);
+  font-size: var(--font-size-small);
+}
+.update-banner__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.update-banner__refresh {
+  height: 32px; padding: 0 var(--space-4); border-radius: var(--radius-pill);
+  background: var(--cta-fg); color: var(--cta-bg);
+  font-size: var(--font-size-small); font-weight: var(--font-weight-semibold);
+}
+.update-banner__close {
+  width: 32px; height: 32px; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--cta-fg); opacity: 0.7;
+}
+.update-banner__close .icon { width: var(--size-icon-small); height: var(--size-icon-small); }

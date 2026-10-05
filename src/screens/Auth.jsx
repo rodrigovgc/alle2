@@ -7,7 +7,19 @@ import { Button } from '../components/Button.jsx';
 import { Field } from '../components/Sheet.jsx';
 
 export function Auth() {
-  const [mode, setMode] = useState('signin');
+  // The marketing site links here with ?auth=signup or ?auth=signin (or login).
+  const [mode, setMode] = useState(() => {
+    const auth = new URLSearchParams(window.location.search).get('auth');
+    return auth === 'signup' ? 'signup' : 'signin';
+  });
+  // Tidy the address once read, so a later refresh doesn't force the mode.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('auth')) {
+      url.searchParams.delete('auth');
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
