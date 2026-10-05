@@ -125,3 +125,20 @@ export function parseLooseTable(input) {
 
   return rowsToDeck(rows);
 }
+
+/**
+ * The sheet's own name, via the /api/sheet-name function (browsers can't read
+ * it directly). Resolves to null when it can't be found; never throws.
+ */
+export async function fetchSheetName(input) {
+  const url = toCsvUrl(input || '');
+  if (!/^https:\/\/docs\.google\.com\/spreadsheets\//.test(url)) return null;
+  try {
+    const res = await fetch(`/api/sheet-name?url=${encodeURIComponent(url)}`);
+    if (!res.ok) return null;
+    const { name } = await res.json();
+    return typeof name === 'string' && name.trim() ? name.trim() : null;
+  } catch {
+    return null;
+  }
+}

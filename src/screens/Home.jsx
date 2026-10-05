@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo, Icon, DeckShape } from '../components/Icon.jsx';
 import { Button, IconButton } from '../components/Button.jsx';
@@ -14,7 +14,7 @@ import { Segmented } from '../components/Segmented.jsx';
 import { Account } from '../components/Account.jsx';
 import { READY_MADE } from '../lib/sampleDeck.js';
 import { answerMode } from '../lib/srs.js';
-import { fetchDeckFromUrl } from '../lib/csv.js';
+import { fetchSheetName, fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
 import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, pickDeckLook, tokenNumber } from '../styles/tokens.js';
 
@@ -411,6 +411,23 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Prefill the deck name from the sheet's own name once a link is pasted.
+  // Stops as soon as the person types their own name.
+  const [nameEdited, setNameEdited] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
+  useEffect(() => {
+    if (!withTitle || nameEdited || !/docs\.google\.com\/spreadsheets\//.test(url)) return undefined;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      setLookingUp(true);
+      const name = await fetchSheetName(url);
+      if (cancelled) return;
+      setLookingUp(false);
+      if (name) { setTitle(name); setPrefilled(true); }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [url, withTitle, nameEdited]);
 
   async function submit(e) {
     e.preventDefault();
@@ -444,14 +461,19 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
         />
       </Field>
       {withTitle && (
-        <Field label="Deck name" hint="Leave empty to use the back column’s name.">
+        <Field
+          label="Deck name"
+          hint={lookingUp ? 'Looking up the sheet’s name…'
+            : prefilled && !nameEdited ? 'Taken from your sheet. Change it if you like.'
+              : 'Leave empty to use the back column’s name.'}
+        >
           <input
             className="input"
             name="alle-deck-name"
             autoComplete="off"
             enterKeyHint="go"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); setNameEdited(true); }}
           />
         </Field>
       )}
