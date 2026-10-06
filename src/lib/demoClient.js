@@ -70,10 +70,10 @@ export const demoClient = {
       listeners.add(fn);
       return { data: { subscription: { unsubscribe: () => listeners.delete(fn) } } };
     },
-    async signUp({ email, password }) {
+    async signUp({ email, password, options }) {
       const db = load();
       if (db.users[email]) return { data: {}, error: { message: 'An account with this email already exists.' } };
-      const user = { id: uid(), email, user_metadata: {} };
+      const user = { id: uid(), email, user_metadata: { ...(options?.data || {}) } };
       // Demo only: an address containing "+confirm" behaves like a real
       // account that must confirm its email before it can sign in.
       const needsConfirm = email.includes('+confirm');
@@ -84,6 +84,18 @@ export const demoClient = {
       return { data: { session: db.session, user }, error: null };
     },
     async resend() { return { data: {}, error: null }; },
+    async resetPasswordForEmail() { return { data: {}, error: null }; },
+    // Demo: "demo-<email>" is a valid token that signs that person in.
+    async verifyOtp({ token_hash }) {
+      const db = load();
+      const email = token_hash.startsWith('demo-') ? token_hash.slice(5) : null;
+      const u = email && db.users[email];
+      if (!u) return { data: {}, error: { message: 'Token has expired or is invalid' } };
+      u.confirmed = true;
+      db.session = { user: u.user };
+      save(db); emit(db.session);
+      return { data: { session: db.session }, error: null };
+    },
     async signInWithPassword({ email, password }) {
       const db = load();
       const u = db.users[email];
@@ -93,8 +105,9 @@ export const demoClient = {
       save(db); emit(db.session);
       return { data: { session: db.session }, error: null };
     },
-    async updateUser({ data: meta }) {
+    async updateUser({ data: meta, password }) {
       const db = load();
+      if (password) { db.users[db.session.user.email].password = password; save(db); return { data: { user: db.session.user }, error: null }; }
       const user = { ...db.session.user, user_metadata: { ...db.session.user.user_metadata, ...meta } };
       db.session.user = user;
       db.users[user.email].user = user;

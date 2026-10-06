@@ -7,6 +7,8 @@ import { Menu } from '../components/Menu.jsx';
 import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
 import { useScrollShrink } from '../lib/useScrollShrink.js';
+import { usePullToRefresh } from '../lib/usePullToRefresh.js';
+import { initials, fullName } from '../lib/person.js';
 import { ReorderList } from '../components/ReorderList.jsx';
 import { SortableDecks } from '../components/SortableDecks.jsx';
 import { useMediaQuery } from '../lib/useMediaQuery.js';
@@ -21,7 +23,7 @@ import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColo
 export function Home({
   decks, loading, dueByDeck, colorMode,
   onAddSample, onColorMode, onStudyDeck, onShuffle,
-  onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onSignOut, userEmail,
+  onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onRainbow, onRefresh, onSignOut, user, onUserUpdated,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -58,6 +60,7 @@ export function Home({
   // Reorder mode: a working copy of the order, saved on Done.
   const [order, setOrder] = useState(null);
   const reordering = order !== null;
+  const ptr = usePullToRefresh(onRefresh, !sheet && !reordering);
   async function finishReorder() {
     const changed = order.some((d, i) => d.id !== decks[i]?.id);
     const next = order;
@@ -68,7 +71,13 @@ export function Home({
   const remainingReadyMade = READY_MADE.filter((r) => !decks.some((d) => d.is_sample && d.title === r.title));
 
   return (
-    <main className="home">
+    <main className="home" style={ptr.pull ? { transform: `translateY(${ptr.pull}px)`, transition: 'none' } : undefined}>
+      {(ptr.pull > 0 || ptr.refreshing) && (
+        <div className="ptr" style={{ top: `${-ptr.pull + 12}px`, opacity: ptr.progress }} aria-live="polite">
+          <span className={`ptr__spinner ${ptr.refreshing ? 'is-spinning' : ''}`} style={{ transform: `rotate(${ptr.progress * 270}deg)` }} />
+          {ptr.refreshing && <span className="visually-hidden">Refreshing</span>}
+        </div>
+      )}
       <header className="home__header" ref={headerRef}>
         {/* Logo and + only fade: nothing is scaled or moved, so nothing distorts */}
         <motion.div
@@ -96,7 +105,10 @@ export function Home({
             onClose={() => setMenuOpen(false)}
             className="menu--home"
             items={[
-              ...(decks.length > 1 ? [{ label: 'Reorder decks', icon: 'sort', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } }] : []),
+              ...(decks.length > 1 ? [
+                { label: 'Reorder decks', icon: 'sort', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } },
+                { label: 'Rainbow colours', icon: 'palette', onSelect: () => { setSearching(false); setQuery(''); onRainbow(); } },
+              ] : []),
               { label: 'Account', icon: 'person', onSelect: () => setSheet({ type: 'account' }) },
             ]}
           />
@@ -146,13 +158,14 @@ export function Home({
                 </button>
                 <button
                   type="button"
-                  className="pill__btn"
-                  aria-label="More options"
+                  className="pill__btn pill__avatar"
+                  aria-label={`Menu for ${fullName(user) || user.email}`}
+                  title={fullName(user) ? `${fullName(user)} · ${user.email}` : user.email}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   onClick={() => setMenuOpen(true)}
                 >
-                  <Icon name="more" />
+                  <span className="avatar" aria-hidden="true">{initials(user)}</span>
                 </button>
               </motion.div>
             )}
@@ -254,7 +267,8 @@ export function Home({
 
       <Sheet open={sheet?.type === 'account'} onClose={close} title="Account">
         <Account
-          email={userEmail}
+          user={user}
+          onUserUpdated={onUserUpdated}
           colorMode={colorMode}
           onColorMode={onColorMode}
           onSignOut={onSignOut}
@@ -359,11 +373,11 @@ export function Home({
         )}
       </Sheet>
 
-      <Sheet open={sheet?.type === 'cover'} onClose={close} title="Customize cover">
+      <Sheet open={sheet?.type === 'cover'} onClose={close} title="Edit deck">
         {sheet?.deck && (
           <CoverForm
             deck={sheet.deck}
-            onSubmit={async (patch) => { await onUpdateDeck(sheet.deck.id, patch); close(); }}
+            onSave={(patch) => onUpdateDeck(sheet.deck.id, patch)}
           />
         )}
       </Sheet>
@@ -485,35 +499,47 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
   );
 }
 
-function CoverForm({ deck, onSubmit }) {
+function CoverForm({ deck, onSave }) {
   const [title, setTitle] = useState(deck.title);
   const [color, setColor] = useState(deck.color);
   const [shape, setShape] = useState(deckShape(deck));
   const [lang, setLang] = useState(deck.lang);
   const [mode, setMode] = useState(answerMode(deck));
   const canChoose = answerMode({ ...deck, answer_mode: 'choice' }) === 'choice';
-  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState(''); // '' | 'saving' | 'saved'
   const [error, setError] = useState('');
   const current = deckColorVars(color);
 
+  // Changes save on their own: taps right away, the name once typing pauses.
+  async function save(patch) {
+    setStatus('saving'); setError('');
+    try {
+      await onSave(patch);
+      setStatus('saved');
+    } catch (err) {
+      setStatus('');
+      setError(/answer_mode/.test(err.message)
+        ? 'Answer settings need one database update. Run supabase/003_answer_mode.sql in Supabase.'
+        : /shape/.test(err.message)
+          ? 'Shapes need one database update. Run supabase/002_shapes.sql in Supabase.'
+          : 'Couldn’t save that change. Check your connection and try again.');
+    }
+  }
+  const pick = (setter, key) => (value) => { setter(value); save({ [key]: value }); };
+  useEffect(() => {
+    const name = title.trim();
+    if (!name || name === deck.title) return undefined;
+    const t = setTimeout(() => save({ title: name }), 600);
+    return () => clearTimeout(t);
+  }, [title]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (status !== 'saved') return undefined;
+    const t = setTimeout(() => setStatus(''), 1800);
+    return () => clearTimeout(t);
+  }, [status]);
+
   return (
-    <form
-      className="sheet__body"
-      onSubmit={async (e) => {
-        e.preventDefault(); setBusy(true); setError('');
-        try {
-          const patch = { title: title.trim() || deck.title, color, shape, lang };
-          if (mode !== answerMode(deck)) patch.answer_mode = mode; // only send when changed
-          await onSubmit(patch);
-        } catch (err) {
-          setError(/answer_mode/.test(err.message)
-            ? 'Answer settings need one database update. Run supabase/003_answer_mode.sql in Supabase, then save again.'
-            : /shape/.test(err.message)
-              ? 'Shapes need one database update. Run supabase/002_shapes.sql in Supabase, then save again.'
-              : err.message);
-        } finally { setBusy(false); }
-      }}
-    >
+    <div className="sheet__body">
       <DeckPreview deck={{ ...deck, title, color, shape }} />
 
       <fieldset className="picker">
@@ -524,7 +550,7 @@ function CoverForm({ deck, onSubmit }) {
             const label = c === NO_COLOR ? 'No colour' : DECK_COLOR_LABELS[c];
             return (
               <label key={c} className={`color ${c === NO_COLOR ? 'color--none' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}>
-                <input type="radio" name="color" value={c} checked={color === c} onChange={() => setColor(c)} />
+                <input type="radio" name="color" value={c} checked={color === c} onChange={() => pick(setColor, 'color')(c)} />
                 <span className="color__dot" />
                 <span className="visually-hidden">{label}</span>
               </label>
@@ -538,7 +564,7 @@ function CoverForm({ deck, onSubmit }) {
         <div className="shapes" style={{ '--deck-fill': current.fill, '--deck-deep': current.deep }}>
           {DECK_SHAPES.map((sh, i) => (
             <label key={sh} className="shape">
-              <input type="radio" name="shape" value={sh} checked={shape === sh} onChange={() => setShape(sh)} />
+              <input type="radio" name="shape" value={sh} checked={shape === sh} onChange={() => pick(setShape, 'shape')(sh)} />
               <span className="shape__tile"><DeckShape shape={sh} /></span>
               <span className="visually-hidden">Shape {i + 1}</span>
             </label>
@@ -556,20 +582,20 @@ function CoverForm({ deck, onSubmit }) {
             labelledBy="answer-label"
             options={[{ value: 'type', label: 'Typing' }, { value: 'choice', label: 'Multiple choice' }]}
             value={mode}
-            onChange={setMode}
+            onChange={pick(setMode, 'answer_mode')}
           />
         </div>
       )}
       <Field label="Read-aloud language" hint={`Used for the speaker on the ${deck.back_label} side.`}>
-        <select className="input" value={lang} onChange={(e) => setLang(e.target.value)}>
+        <select className="input" value={lang} onChange={(e) => pick(setLang, 'lang')(e.target.value)}>
           {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
       </Field>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <SheetActions>
-        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save cover'}</Button>
-      </SheetActions>
-    </form>
+      <p className={`autosave ${status ? 'is-visible' : ''}`} role="status" aria-live="polite">
+        {status === 'saving' ? 'Saving…' : status === 'saved' ? '✓ Saved' : ''}
+      </p>
+    </div>
   );
 }
 
@@ -630,15 +656,17 @@ function SampleCard({ title, color, onClick, added = false }) {
   return (
     <button
       type="button"
-      className={`sample-card ${added ? 'is-added' : ''}`}
+      className={`sample-card ${added ? 'is-added' : ''} ${busy ? 'is-busy' : ''}`}
       style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}
       disabled={busy || added}
+      aria-busy={busy}
       aria-label={added ? `${title}, already added` : `Add the sample deck ${title}`}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
     >
       <span className="sample-card__title">
         {title}
         {added && <span className="sample-card__added"><Icon name="check" /> Added</span>}
+        {busy && <span className="sample-card__added"><span className="mini-spinner" aria-hidden="true" /> Adding…</span>}
       </span>
       <DeckShape shape={color} />
     </button>

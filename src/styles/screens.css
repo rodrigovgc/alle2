@@ -476,7 +476,7 @@
    The prompt/picture sits on the left page, the answer and controls on the
    right (where the Duo keeps its home indicator and nav). Nothing lands on
    the crease down the middle. Based on Apple's iPhone Duo guidance. */
-@media (min-width: 720px) and (max-height: 820px) and (min-aspect-ratio: 11/10) {
+@media (min-width: 720px) and (max-height: 820px) and (min-aspect-ratio: 11/10) and (pointer: coarse) {
   .study {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -563,3 +563,13 @@
 @media (prefers-reduced-motion: reduce) { .auth__dot { animation: none; } }
 /* Secondary buttons on the beige page (sign-in screens) use the darker beige */
 .auth .btn--secondary { background: var(--color-surface-deep); }
+
+/* Pull to refresh (home-screen app only) */
+.home { position: relative; transition: transform 0.3s var(--ease-out); }
+.ptr { position: absolute; left: 50%; translate: -50% 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+.ptr__spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2.5px solid var(--color-surface-deep); border-top-color: var(--text-primary);
+}
+.ptr__spinner.is-spinning { animation: ptrSpin 0.7s linear infinite; }
+@keyframes ptrSpin { to { transform: rotate(360deg); } }

@@ -44,8 +44,27 @@ export async function saveOrder(orderedDecks) {
   return orderedDecks.map((d, i) => ({ ...d, position: i }));
 }
 
+/** "Failed to fetch" and friends: the request never reached the server. */
+export const isNetworkError = (e) => /failed to fetch|networkerror|load failed|network request failed/i.test(e?.message || '');
+
+/** A message people can act on, instead of the browser's raw wording. */
+export function friendlyError(e) {
+  return isNetworkError(e)
+    ? 'Couldn’t reach Alle. Check your connection and try again.'
+    : (e?.message || 'Something went wrong. Please try again.');
+}
+
+/** Try once more after a short pause if the network blipped. */
+async function retryOnce(fn) {
+  try { return await fn(); } catch (e) {
+    if (!isNetworkError(e)) throw e;
+    await new Promise((r) => setTimeout(r, 900));
+    return fn();
+  }
+}
+
 export async function createDeck(deck) {
-  return check(await supabase.from('decks').insert(deck).select(DECK_FIELDS).single());
+  return retryOnce(async () => check(await supabase.from('decks').insert(deck).select(DECK_FIELDS).single()));
 }
 
 export async function updateDeck(id, patch) {

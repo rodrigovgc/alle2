@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DeckShape, Icon } from './Icon.jsx';
 import { Menu } from './Menu.jsx';
 import { deckColorVars, deckShape } from '../styles/tokens.js';
 
-/** Non-interactive copy of a deck card, used as the live preview in Customize cover. */
+/** Non-interactive copy of a deck card, used as the live preview in Edit deck. */
 export function DeckPreview({ deck }) {
   const { fill, deep, ink, ink2 } = deckColorVars(deck.color);
   const count = deck.cards?.length ?? 0;
@@ -24,18 +24,28 @@ export function DeckPreview({ deck }) {
 export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onResetProgress, onRemove }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { fill, deep, ink, ink2 } = deckColorVars(deck.color, mode);
+  // Bounce when the colour changes (e.g. Rainbow colours), not on first show.
+  const [repaint, setRepaint] = useState(false);
+  const firstColor = useRef(deck.color);
+  useEffect(() => {
+    if (deck.color === firstColor.current) return undefined;
+    firstColor.current = deck.color;
+    setRepaint(true);
+    const t = setTimeout(() => setRepaint(false), 600);
+    return () => clearTimeout(t);
+  }, [deck.color]);
   const count = deck.cards?.length ?? 0;
 
   const items = [
     { label: 'Update URL', icon: 'link', onSelect: onUpdateUrl },
-    { label: 'Customize cover', icon: 'palette', onSelect: onCustomize },
+    { label: 'Edit deck', icon: 'palette', onSelect: onCustomize },
     { label: 'Reset progress', icon: 'reset', onSelect: onResetProgress },
     { divider: true },
     { label: 'Remove deck', icon: 'trash', danger: true, onSelect: onRemove },
   ];
 
   return (
-    <article className={`deck ${menuOpen ? 'is-raised' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}>
+    <article className={`deck ${menuOpen ? 'is-raised' : ''} ${repaint ? 'is-repainted' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}>
       <button type="button" className="deck__surface" onClick={onOpen} aria-label={`Study ${deck.title}`}>
         <span className="deck__meta">
           {deck.front_label}

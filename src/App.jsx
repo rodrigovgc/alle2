@@ -6,7 +6,8 @@ import { SAMPLE_DECKS } from './lib/sampleDeck.js';
 import { pickDeckLook } from './styles/tokens.js';
 import { track } from './lib/analytics.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
-import { Auth } from './screens/Auth.jsx';
+import { Auth, NewPassword } from './screens/Auth.jsx';
+import { handleEmailLink } from './lib/emailLink.js';
 import { Home } from './screens/Home.jsx';
 import { Study } from './screens/Study.jsx';
 import { Done } from './screens/Done.jsx';
@@ -18,16 +19,31 @@ import { motion } from 'framer-motion';
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking
+  const [linkNotice, setLinkNotice] = useState('');
+  const [choosingPassword, setChoosingPassword] = useState(false);
 
   useEffect(() => {
     if (!isConfigured) { setUser(null); return undefined; }
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    let alive = true;
+    (async () => {
+      // An email link? Finish it first (confirm, change email or reset password).
+      const link = await handleEmailLink();
+      if (!alive) return;
+      if (link?.error) {
+        setLinkNotice('That link has expired or was already used. Sign in, or ask for a new email.');
+      } else if (link?.type === 'recovery') {
+        setChoosingPassword(true);
+      }
+      const { data } = await supabase.auth.getSession();
+      if (alive) setUser(data.session?.user ?? null);
+    })();
     const { data } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
-    return () => data.subscription.unsubscribe();
+    return () => { alive = false; data.subscription.unsubscribe(); };
   }, []);
 
   if (user === undefined) return <div className="boot" aria-busy="true" />;
-  if (!user) return <Auth />;
+  if (!user) return <Auth notice={linkNotice} />;
+  if (choosingPassword) return <NewPassword onDone={() => setChoosingPassword(false)} />;
   return <Library key={user.id} user={user} onUser={setUser} />;
 }
 
@@ -52,7 +68,7 @@ function Library({ user, onUser }) {
       setProgress(await api.listProgress(d.map((x) => x.id)));
       return d;
     } catch (e) {
-      setError(e.message);
+      setError(api.friendlyError(e));
       return [];
     } finally {
       setLoading(false);
@@ -117,7 +133,7 @@ function Library({ user, onUser }) {
 
   async function setPrefs(patch) {
     onUser({ ...user, user_metadata: { ...prefs, ...patch } }); // optimistic
-    try { onUser(await api.updatePrefs(patch)); } catch (e) { setError(e.message); }
+    try { onUser(await api.updatePrefs(patch)); } catch (e) { setError(api.friendlyError(e)); }
   }
 
 
@@ -147,7 +163,7 @@ function Library({ user, onUser }) {
             const created = await api.createDeck({ ...sample, ...pickDeckLook(decks, sample) });
             track('deck_added', { source: 'ready_made', title: sample.title });
             setDecks((all) => [...all, created]);
-          } catch (e) { setError(e.message); }
+          } catch (e) { setError(api.friendlyError(e)); }
         }}
         onColorMode={(mode) => setPrefs({ color_mode: mode })}
         onStudyDeck={(deck) => start([deck.id])}
@@ -161,13 +177,29 @@ function Library({ user, onUser }) {
           });
         }}
         onUpdateDeck={async (id, patch) => {
-          const updated = await api.updateDeck(id, patch);
-          setDecks((all) => all.map((d) => (d.id === id ? updated : d)));
+          await api.updateDeck(id, patch);
+          // Merge the change into what's on screen (keeps ready-made decks current).
+          setDecks((all) => all.map((d) => (d.id === id ? { ...d, ...patch } : d)));
         }}
         onRemoveDeck={async (id) => {
           await api.removeDeck(id);
           setDecks((all) => all.filter((d) => d.id !== id));
           setProgress((all) => all.filter((p) => p.deck_id !== id));
+        }}
+        onRefresh={load}
+        onRainbow={() => {
+          // Repaint decks in order, one after another, so it ripples down the list.
+          const RAINBOW = ['yellow', 'green', 'blue', 'red', 'purple', 'lime', 'pink'];
+          if (colorMode === 'monochrome') setPrefs({ color_mode: 'colorful' });
+          decks.forEach((deck, i) => {
+            const color = RAINBOW[i % RAINBOW.length];
+            if (deck.color === color) return;
+            setTimeout(() => {
+              setDecks((all) => all.map((d) => (d.id === deck.id ? { ...d, color } : d)));
+            }, i * 90);
+            api.updateDeck(deck.id, { color }).catch(() => {});
+          });
+          track('rainbow_used', {});
         }}
         onReorder={async (ordered) => {
           setDecks(ordered); // show the new order straight away
@@ -183,10 +215,11 @@ function Library({ user, onUser }) {
           try {
             await api.resetProgress(id);
             setProgress((all) => all.filter((p) => p.deck_id !== id));
-          } catch (e) { setError(e.message); }
+          } catch (e) { setError(api.friendlyError(e)); }
         }}
         onSignOut={() => supabase.auth.signOut()}
-        userEmail={user.email}
+        user={user}
+        onUserUpdated={onUser}
       />
     );
   }

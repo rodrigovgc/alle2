@@ -3,13 +3,28 @@ import { Button } from './Button.jsx';
 import { Field, SheetActions } from './Sheet.jsx';
 import { Segmented } from './Segmented.jsx';
 import * as api from '../lib/api.js';
+import { supabase } from '../lib/supabase.js';
 import { getThemePref, setThemePref } from '../lib/theme.js';
 
 /*
  * Account settings: appearance, deck colour mode, password, sign out and a
  * clearly separated delete option. Shown in a sheet from the ··· menu.
  */
-export function Account({ email, colorMode, onColorMode, onSignOut, onClose }) {
+export function Account({ user, onUserUpdated, colorMode, onColorMode, onSignOut, onClose }) {
+  const email = user.email;
+  const meta = user.user_metadata || {};
+  const [first, setFirst] = useState(meta.first_name || '');
+  const [last, setLast] = useState(meta.last_name || '');
+  const [nameState, setNameState] = useState(null);
+  const nameChanged = first.trim() !== (meta.first_name || '') || last.trim() !== (meta.last_name || '');
+  async function saveName(e) {
+    e.preventDefault();
+    setNameState('saving');
+    const { data, error } = await supabase.auth.updateUser({ data: { first_name: first.trim(), last_name: last.trim() } });
+    if (error) { setNameState(error.message); return; }
+    setNameState('done');
+    if (data?.user) onUserUpdated?.(data.user);
+  }
   const [theme, setTheme] = useState(getThemePref);
   const changeTheme = (t) => { setThemePref(t); setTheme(t); };
 
@@ -40,6 +55,22 @@ export function Account({ email, colorMode, onColorMode, onSignOut, onClose }) {
 
   return (
     <div className="sheet__body account">
+      <form className="account__group" onSubmit={saveName}>
+        <h3 className="account__label">Name</h3>
+        <div className="name-row">
+          <Field label="First name">
+            <input className="input" autoComplete="given-name" value={first} onChange={(e) => { setFirst(e.target.value); setNameState(null); }} />
+          </Field>
+          <Field label="Last name">
+            <input className="input" autoComplete="family-name" value={last} onChange={(e) => { setLast(e.target.value); setNameState(null); }} />
+          </Field>
+        </div>
+        {typeof nameState === 'string' && !['saving', 'done'].includes(nameState) && <p className="form-error" role="alert">{nameState}</p>}
+        {nameState === 'done' && <p className="form-notice" role="status">Name saved.</p>}
+        <Button type="submit" variant="secondary" disabled={!nameChanged || nameState === 'saving'}>
+          {nameState === 'saving' ? 'Saving…' : 'Save name'}
+        </Button>
+      </form>
       <form className="account__group" onSubmit={saveEmail}>
         <h3 className="account__label">Email</h3>
         <Field label="Email address" hint="We’ll send a confirmation link to the new address.">
