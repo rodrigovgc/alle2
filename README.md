@@ -31,11 +31,11 @@ Push to GitHub, import in Vercel, add the two `VITE_SUPABASE_*` variables. `verc
 
 ## Dashboard
 
-Owner-only usage at `/dashboard` (e.g. `alle-app.vercel.app/dashboard`). Run `supabase/005_analytics.sql` first and set your email as the owner inside it. All figures are aggregates; no per-user data is exposed.
+Owner-only usage at `/dashboard` (e.g. `my.allecards.app/dashboard`). Run `supabase/005_analytics.sql` first and set your email as the owner inside it. All figures are aggregates; no per-user data is exposed.
 
 ## Design system
 
-Open `/design` on any running copy (for example `alle-app.vercel.app/design`). It shows every colour, type size, spacing, radius, icon and component, rendered live from `tokens.css` and the real components, with a light/dark switch and a device preview that runs the real app on iPhone 18 Pro, iPhone Duo (closed and open), iPad and desktop.
+Open `/design` on any running copy (for example `my.allecards.app/design`). It shows every colour, type size, spacing, radius, icon and component, rendered live from `tokens.css` and the real components, with a light/dark switch and a device preview that runs the real app on iPhone 18 Pro, iPhone Duo (closed and open), iPad and desktop.
 
 Dark mode is the `:root[data-theme="dark"]` block at the end of `tokens.css`: the same token names with dark values.
 

@@ -119,7 +119,7 @@ function PhonePreview() {
           style={{ width: d.w, height: d.h, borderWidth: chrome, transform: `scale(${scale})`, '--top': `${top}px`, '--bottom': `${bottom}px` }}
         >
           {d.kind === 'desktop' ? (
-            <div className="ds-device__bar"><i /><i /><i /><span>alle-app.vercel.app</span></div>
+            <div className="ds-device__bar"><i /><i /><i /><span>my.allecards.app</span></div>
           ) : (
             <div className="ds-device__status">
               <span>9:41</span>
