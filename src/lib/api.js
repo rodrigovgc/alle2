@@ -63,8 +63,25 @@ async function retryOnce(fn) {
   }
 }
 
+/** The database refused because the request wasn't signed in (sign-in lapsed). */
+export const isAuthLapse = (e) => /row-level security|jwt expired|invalid jwt|not authenticated|auth session missing/i.test(e?.message || '');
+
+export class SignedOutError extends Error {}
+
+/**
+ * Save a new deck. If the sign-in quietly lapsed (common after the app sat in
+ * the background), renew it and try again before giving up.
+ */
 export async function createDeck(deck) {
-  return retryOnce(async () => check(await supabase.from('decks').insert(deck).select(DECK_FIELDS).single()));
+  const insert = async () => check(await supabase.from('decks').insert(deck).select(DECK_FIELDS).single());
+  try {
+    return await retryOnce(insert);
+  } catch (e) {
+    if (!isAuthLapse(e)) throw e;
+    const { data } = await supabase.auth.refreshSession();
+    if (!data?.session) throw new SignedOutError('Your sign-in expired.');
+    return retryOnce(insert);
+  }
 }
 
 export async function updateDeck(id, patch) {
@@ -127,4 +144,24 @@ export async function updatePrefs(patch) {
   const { data, error } = await supabase.auth.updateUser({ data: patch });
   if (error) throw error;
   return data.user;
+}
+
+/** Turn on sharing for a deck and return its link (same code every time). */
+export async function shareDeck(deck) {
+  let id = deck.share_id;
+  if (!id) {
+    id = crypto.randomUUID();
+    const res = await supabase.from('decks').update({ share_id: id }).eq('id', deck.id).select('share_id').single();
+    if (res.error) {
+      if (/share_id/.test(res.error.message)) {
+        throw new Error('Sharing needs one database update. Run supabase/007_security_and_sharing.sql in Supabase.');
+      }
+      throw res.error;
+    }
+  }
+  return { id, url: `${window.location.origin}/?share=${id}` };
+}
+
+export async function stopSharing(deckId) {
+  check(await supabase.from('decks').update({ share_id: null }).eq('id', deckId).select('id').single());
 }

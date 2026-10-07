@@ -6,12 +6,15 @@ import './styles/components.css';
 import './styles/screens.css';
 import App from './App.jsx';
 import { initTheme } from './lib/theme.js';
+import { captureIntent } from './lib/intent.js';
 import { UpdateBanner } from './components/UpdateBanner.jsx';
 import { DesignSystem } from './screens/DesignSystem.jsx';
 import { Dashboard } from './screens/Dashboard.jsx';
 import './styles/design-system.css';
+import './styles/onboarding.css';
 
 initTheme();
+captureIntent(); // ?share= / ?add= links, kept until signed in
 
 function route(path) {
   const p = path.replace(/\/$/, '');

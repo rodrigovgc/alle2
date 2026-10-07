@@ -329,7 +329,6 @@ select.input { background-image: none; }
   display: flex; align-items: center;
   min-height: var(--size-sample-card);
   padding: var(--space-5) var(--card-padding);
-  padding-right: calc(var(--card-padding) + var(--size-shape-w) + var(--space-3));
   border-radius: var(--radius-deck);
   background: var(--deck-fill);
   border: 0;
@@ -347,6 +346,7 @@ select.input { background-image: none; }
   animation: ptrSpin 0.7s linear infinite;
 }
 .sample-card__title {
+  position: relative; z-index: 1;
   display: flex; flex-direction: column;
   font-size: var(--font-size-fit-1);
   font-weight: var(--font-weight-bold);
@@ -520,7 +520,6 @@ select.input { background-image: none; }
   min-height: var(--size-deck-card);
   display: flex; flex-direction: column; align-items: flex-start;
   padding: var(--card-padding);
-  padding-right: calc(var(--card-padding) + var(--size-shape-w) + var(--space-3));
   border-radius: var(--radius-deck);
   text-align: left;
   overflow: hidden;
@@ -557,6 +556,7 @@ select.input { background-image: none; }
 }
 .deck__arrow { width: var(--size-icon-small); height: var(--size-icon-small); }
 .deck__title {
+  position: relative; z-index: 1;   /* full width, on top of the faint shape */
   font-size: var(--font-size-deck-title);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
@@ -719,3 +719,6 @@ select.input { background-image: none; }
 /* The live preview inside Edit deck: no drop shadow (it peeked under the
    sheet title as a pale shape when scrolled) */
 .sheet .deck--preview .deck__surface, .sheet .deck--preview { box-shadow: none; }
+
+.toast--notice { cursor: pointer; }
+.share-link { font-size: var(--font-size-small); color: var(--text-secondary); }

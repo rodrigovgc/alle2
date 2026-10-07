@@ -21,7 +21,7 @@ export function DeckPreview({ deck }) {
   );
 }
 
-export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onResetProgress, onRemove }) {
+export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onShare, onResetProgress, onRemove }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { fill, deep, ink, ink2 } = deckColorVars(deck.color, mode);
   // Bounce when the colour changes (e.g. Rainbow colours), not on first show.
@@ -38,7 +38,8 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
 
   const items = [
     { label: 'Update URL', icon: 'link', onSelect: onUpdateUrl },
-    { label: 'Edit deck', icon: 'palette', onSelect: onCustomize },
+    { label: 'Edit deck', icon: 'edit', onSelect: onCustomize },
+    { label: 'Share deck', icon: 'share', onSelect: onShare },
     { label: 'Reset progress', icon: 'reset', onSelect: onResetProgress },
     { divider: true },
     { label: 'Remove deck', icon: 'trash', danger: true, onSelect: onRemove },

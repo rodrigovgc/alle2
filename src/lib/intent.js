@@ -1,0 +1,37 @@
+import { supabase } from './supabase.js';
+import { READY_MADE } from './sampleDeck.js';
+
+// A link can ask the app to add a deck: ?share=<code> (someone's shared deck)
+// or ?add=<key> (a ready-made deck, e.g. from the website). The request is kept
+// on the device so it survives signing in or creating an account first.
+
+const KEY = 'alle-intent';
+
+/** Read ?share= / ?add= from the address once, keep it, tidy the address. */
+export function captureIntent() {
+  const url = new URL(window.location.href);
+  const share = url.searchParams.get('share');
+  const add = url.searchParams.get('add');
+  if (!share && !add) return;
+  try { localStorage.setItem(KEY, JSON.stringify(share ? { type: 'share', id: share } : { type: 'add', id: add })); } catch { /* storage off */ }
+  url.searchParams.delete('share'); url.searchParams.delete('add');
+  window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+}
+
+export function readIntent() {
+  try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
+}
+export function clearIntent() { try { localStorage.removeItem(KEY); } catch { /* storage off */ } }
+
+/** Fetch what the link points to: { title, deck? , key? } or null. */
+export async function resolveIntent(intent) {
+  if (!intent) return null;
+  if (intent.type === 'add') {
+    const r = READY_MADE.find((x) => x.key === intent.id);
+    return r ? { kind: 'ready', key: r.key, title: r.title, color: r.color, shape: r.shape } : null;
+  }
+  if (!/^[0-9a-f-]{36}$/i.test(intent.id)) return null;
+  const { data, error } = await supabase.rpc('get_shared_deck', { sid: intent.id });
+  const deck = !error && Array.isArray(data) ? data[0] : null;
+  return deck ? { kind: 'shared', title: deck.title, deck } : null;
+}

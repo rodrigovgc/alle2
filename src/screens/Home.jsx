@@ -24,6 +24,7 @@ export function Home({
   decks, loading, dueByDeck, colorMode,
   onAddSample, onColorMode, onStudyDeck, onShuffle,
   onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onRainbow, onRefresh, onSignOut, user, onUserUpdated,
+  onShareDeck, onStopSharing, onHelp,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -107,9 +108,10 @@ export function Home({
             items={[
               ...(decks.length > 1 ? [
                 { label: 'Reorder decks', icon: 'sort', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } },
-                { label: 'Rainbow colours', icon: 'palette', onSelect: () => { setSearching(false); setQuery(''); onRainbow(); } },
+                { label: 'Repaint decks', icon: 'repaint', onSelect: () => { setSearching(false); setQuery(''); onRainbow(); } },
               ] : []),
               { label: 'Account', icon: 'person', onSelect: () => setSheet({ type: 'account' }) },
+              { label: 'Help', icon: 'help', onSelect: () => onHelp() },
             ]}
           />
         </div>
@@ -194,7 +196,7 @@ export function Home({
               <p className="start-tile__text">Pick a deck to see how studying works.</p>
               <div className="start-tile__samples">
                 {READY_MADE.map((r) => (
-                  <SampleCard key={r.key} title={r.title} color={r.color} onClick={() => onAddSample(r.key)} />
+                  <SampleCard key={r.key} title={r.title} color={r.color} shape={r.shape} onClick={() => onAddSample(r.key)} />
                 ))}
               </div>
             </section>
@@ -213,6 +215,7 @@ export function Home({
                 onOpen={() => onStudyDeck(deck)}
                 onUpdateUrl={() => setSheet({ type: 'url', deck })}
                 onCustomize={() => setSheet({ type: 'cover', deck })}
+                onShare={() => setSheet({ type: 'share', deck })}
                 onResetProgress={() => setSheet({ type: 'reset', deck })}
                 onRemove={() => setSheet({ type: 'remove', deck })}
               />
@@ -236,6 +239,7 @@ export function Home({
                 onOpen={() => onStudyDeck(deck)}
                 onUpdateUrl={() => setSheet({ type: 'url', deck })}
                 onCustomize={() => setSheet({ type: 'cover', deck })}
+                onShare={() => setSheet({ type: 'share', deck })}
                 onResetProgress={() => setSheet({ type: 'reset', deck })}
                 onRemove={() => setSheet({ type: 'remove', deck })}
               />
@@ -301,6 +305,7 @@ export function Home({
                     <SampleCard
                       title={r.title}
                       color={r.color}
+                      shape={r.shape}
                       onClick={() => onAddSample(r.key)}
                     />
                   </motion.div>
@@ -380,6 +385,10 @@ export function Home({
             onSave={(patch) => onUpdateDeck(sheet.deck.id, patch)}
           />
         )}
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'share'} onClose={close} title="Share deck" variant="dialog">
+        {sheet?.deck && <ShareSheet deck={sheet.deck} onShare={onShareDeck} onStop={async () => { await onStopSharing(sheet.deck.id); close(); }} />}
       </Sheet>
 
       <Sheet open={sheet?.type === 'reset'} onClose={close} title="Reset progress" variant="dialog">
@@ -639,6 +648,41 @@ function ShufflePicker({ decks, onStart }) {
   );
 }
 
+/** Share a deck by link: anyone with it can add a copy. */
+function ShareSheet({ deck, onShare, onStop }) {
+  const [link, setLink] = useState('');
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    onShare(deck).then((r) => alive && setLink(r.url)).catch((e) => alive && setError(e.message));
+    return () => { alive = false; };
+  }, [deck.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function copy() {
+    try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+    catch { setError('Couldn’t copy. Select the link and copy it yourself.'); }
+  }
+  async function shareNative() {
+    try { await navigator.share({ title: deck.title, text: `Study “${deck.title}” with me on Alle`, url: link }); } catch { /* cancelled */ }
+  }
+  return (
+    <div className="sheet__body">
+      <p className="sheet__text">Anyone with this link can add a copy of “{deck.title}” to their own Alle. Your progress stays private.</p>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <input className="input share-link" readOnly value={link || 'Creating link…'} onFocus={(e) => e.target.select()} aria-label="Share link" />
+      <SheetActions>
+        {typeof navigator !== 'undefined' && navigator.share
+          ? <Button icon="share" disabled={!link} onClick={shareNative}>Share</Button>
+          : null}
+        <Button variant={typeof navigator !== 'undefined' && navigator.share ? 'secondary' : 'primary'} disabled={!link} onClick={copy}>
+          {copied ? 'Link copied' : 'Copy link'}
+        </Button>
+        {link && <button type="button" className="text-btn" onClick={onStop}>Stop sharing</button>}
+      </SheetActions>
+    </div>
+  );
+}
+
 function CreateChoices({ onAi, onPaste, onImport }) {
   return (
     <div className="create-choices">
@@ -650,7 +694,7 @@ function CreateChoices({ onAi, onPaste, onImport }) {
 }
 
 /** A small deck card that adds a sample deck when tapped. */
-function SampleCard({ title, color, onClick, added = false }) {
+function SampleCard({ title, color, shape, onClick, added = false }) {
   const { fill, deep, ink, ink2 } = deckColorVars(color);
   const [busy, setBusy] = useState(false);
   return (
@@ -668,7 +712,7 @@ function SampleCard({ title, color, onClick, added = false }) {
         {added && <span className="sample-card__added"><Icon name="check" /> Added</span>}
         {busy && <span className="sample-card__added"><span className="mini-spinner" aria-hidden="true" /> Adding…</span>}
       </span>
-      <DeckShape shape={color} />
+      <DeckShape shape={shape || color} />
     </button>
   );
 }

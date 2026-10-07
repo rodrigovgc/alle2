@@ -26,7 +26,12 @@ export function Auth({ notice: startNotice = '' }) {
   const [lastName, setLastName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState(startNotice);
+  const [notice, setNotice] = useState(() => {
+    const left = sessionStorage.getItem('alle-auth-notice');
+    if (left) sessionStorage.removeItem('alle-auth-notice');
+    return left || startNotice;
+  });
+  useEffect(() => { if (startNotice) setNotice(startNotice); }, [startNotice]);
 
   const isSignUp = mode === 'signup';
   const typing = useVisualViewport(true);

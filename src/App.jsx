@@ -2,12 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase, isConfigured } from './lib/supabase.js';
 import * as api from './lib/api.js';
 import { fetchDeckFromUrl } from './lib/csv.js';
-import { SAMPLE_DECKS } from './lib/sampleDeck.js';
+import { SAMPLE_DECKS, LIBRARY } from './lib/sampleDeck.js';
+import { answerMode } from './lib/srs.js';
 import { pickDeckLook } from './styles/tokens.js';
 import { track } from './lib/analytics.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
 import { Auth, NewPassword } from './screens/Auth.jsx';
 import { handleEmailLink } from './lib/emailLink.js';
+import { readIntent, resolveIntent, clearIntent } from './lib/intent.js';
+import { DeckPreview } from './components/DeckCard.jsx';
+import { Onboarding } from './components/Onboarding.jsx';
 import { Home } from './screens/Home.jsx';
 import { Study } from './screens/Study.jsx';
 import { Done } from './screens/Done.jsx';
@@ -20,6 +24,14 @@ import { motion } from 'framer-motion';
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking
   const [linkNotice, setLinkNotice] = useState('');
+  const [intentTitle, setIntentTitle] = useState('');
+  useEffect(() => {
+    const intent = readIntent();
+    if (!intent) return;
+    // Shared decks can only be read once signed in, so name ready-made ones only.
+    if (intent.type === 'share') { setIntentTitle('__shared__'); return; }
+    resolveIntent(intent).then((r) => r && setIntentTitle(r.title)).catch(() => {});
+  }, []);
   const [choosingPassword, setChoosingPassword] = useState(false);
 
   useEffect(() => {
@@ -42,7 +54,14 @@ export default function App() {
   }, []);
 
   if (user === undefined) return <div className="boot" aria-busy="true" />;
-  if (!user) return <Auth notice={linkNotice} />;
+  if (!user) {
+    return (
+      <Auth notice={linkNotice || (
+        intentTitle === '__shared__' ? 'Sign in or create an account to add the deck someone shared with you.'
+          : intentTitle ? `Sign in or create an account to add “${intentTitle}” to your decks.`
+            : '')} />
+    );
+  }
   if (choosingPassword) return <NewPassword onDone={() => setChoosingPassword(false)} />;
   return <Library key={user.id} user={user} onUser={setUser} />;
 }
@@ -54,6 +73,104 @@ function Library({ user, onUser }) {
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState({ name: 'home' });
   const [caughtUp, setCaughtUp] = useState(null); // decks to practise anyway
+  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (!notice) return undefined;
+    const t = setTimeout(() => setNotice(''), 6000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  // Save a new deck. If the sign-in has lapsed, keep the deck on this device,
+  // ask to sign in again, and save it straight after.
+  const saveNewDeck = useCallback(async (deck, source) => {
+    try {
+      const created = await api.createDeck(deck);
+      setDecks((all) => [...all, created]);
+      track('deck_added', { source, lang: deck.lang });
+      return created;
+    } catch (e) {
+      if (e instanceof api.SignedOutError) {
+        try { localStorage.setItem('alle-pending-deck', JSON.stringify(deck)); } catch { /* full */ }
+        sessionStorage.setItem('alle-auth-notice', `Your sign-in expired. Sign in again and we’ll save “${deck.title}” for you.`);
+        await supabase.auth.signOut();
+        return null;
+      }
+      throw e;
+    }
+  }, []);
+
+  const addReadyMade = async (key) => {
+    try {
+      const sample = SAMPLE_DECKS[key];
+      if (sample) {
+        // Keep the sample's own colour if it's free; otherwise a free one.
+        await saveNewDeck({ ...sample, ...pickDeckLook(decks, sample) }, 'ready_made');
+        return;
+      }
+      // A library deck from the website: read its published sheet.
+      const lib = LIBRARY[key];
+      if (!lib) return;
+      const parsed = await fetchDeckFromUrl(lib.csv_url);
+      await saveNewDeck({
+        ...lib,
+        front_label: parsed.frontLabel || lib.front_label,
+        back_label: parsed.backLabel || lib.back_label,
+        cards: parsed.cards,
+        answer_mode: 'choice',
+        is_sample: true,
+        ...pickDeckLook(decks, lib),
+      }, 'library');
+    } catch (e) { setError(api.friendlyError(e)); }
+  };
+
+  // First-run tour: once per account (saved to the account, so other devices skip it).
+  const [touring, setTouring] = useState(() => {
+    if (user.user_metadata?.onboarded) return false;
+    try { return localStorage.getItem(`alle-onboarded:${user.id}`) !== '1'; } catch { return true; }
+  });
+  function finishTour() {
+    setTouring(false);
+    try { localStorage.setItem(`alle-onboarded:${user.id}`, '1'); } catch { /* storage off */ }
+    if (!user.user_metadata?.onboarded) {
+      supabase.auth.updateUser({ data: { onboarded: true } }).then(({ data }) => data?.user && onUser(data.user)).catch(() => {});
+    }
+  }
+
+  // Opened from a share or "add" link: offer to add that deck.
+  const [incoming, setIncoming] = useState(null);
+  useEffect(() => {
+    const intent = readIntent();
+    if (!intent) return;
+    resolveIntent(intent).then((r) => {
+      if (r) setIncoming(r);
+      else { clearIntent(); setError('That deck link isn’t available anymore.'); }
+    });
+  }, []);
+  async function acceptIncoming() {
+    const r = incoming;
+    setIncoming(null); clearIntent();
+    try {
+      if (r.kind === 'ready') { await addReadyMade(r.key); return; }
+      const d = r.deck;
+      const created = await saveNewDeck({
+        title: d.title, front_label: d.front_label, back_label: d.back_label, lang: d.lang,
+        csv_url: d.csv_url, cards: d.cards, answer_mode: d.answer_mode ?? 'choice',
+        ...pickDeckLook(decks, { color: d.color, shape: d.shape }),
+      }, 'shared');
+      if (created) setNotice(`Added “${created.title}” to your decks.`);
+    } catch (e) { setError(api.friendlyError(e)); }
+  }
+
+  // A deck kept safe while signed out: save it now.
+  useEffect(() => {
+    let pending = null;
+    try { pending = JSON.parse(localStorage.getItem('alle-pending-deck') || 'null'); } catch { /* bad data */ }
+    if (!pending) return;
+    localStorage.removeItem('alle-pending-deck');
+    saveNewDeck({ ...pending, user_id: undefined }, 'restored')
+      .then((d) => d && setNotice(`Saved “${d.title}”, the deck you were making.`))
+      .catch((e) => setError(api.friendlyError(e)));
+  }, [saveNewDeck]);
   const [error, setError] = useState('');
   const refreshed = useRef(false);
 
@@ -156,25 +273,16 @@ function Library({ user, onUser }) {
         loading={loading || !ready}
         dueByDeck={dueByDeck}
         colorMode={colorMode}
-        onAddSample={async (key) => {
-          try {
-            const sample = SAMPLE_DECKS[key];
-            // Keep the sample's own colour if it's free; otherwise a free one.
-            const created = await api.createDeck({ ...sample, ...pickDeckLook(decks, sample) });
-            track('deck_added', { source: 'ready_made', title: sample.title });
-            setDecks((all) => [...all, created]);
-          } catch (e) { setError(api.friendlyError(e)); }
-        }}
+        onAddSample={addReadyMade}
         onColorMode={(mode) => setPrefs({ color_mode: mode })}
         onStudyDeck={(deck) => start([deck.id])}
         onShuffle={(ids) => start(ids && ids.length ? ids : decks.map((d) => d.id), { mix: true })}
         onAddDeck={async (deck) => {
-          const created = await api.createDeck(deck);
-          setDecks((all) => [...all, created]);
-          track('deck_added', {
-            source: deck.csv_url ? 'sheet' : 'ai_or_paste',
-            lang: deck.lang,
-          });
+          // New decks start as multiple choice (easier to begin with).
+          const created = await saveNewDeck({ answer_mode: 'choice', ...deck }, deck.csv_url ? 'sheet' : 'ai_or_paste');
+          if (created && answerMode(created) === 'choice') {
+            setNotice('This deck uses multiple choice. You can switch to typing anytime in Edit deck.');
+          }
         }}
         onUpdateDeck={async (id, patch) => {
           await api.updateDeck(id, patch);
@@ -187,6 +295,17 @@ function Library({ user, onUser }) {
           setProgress((all) => all.filter((p) => p.deck_id !== id));
         }}
         onRefresh={load}
+        onHelp={() => setTouring(true)}
+        onShareDeck={async (deck) => {
+          const r = await api.shareDeck(deck);
+          setDecks((all) => all.map((d) => (d.id === deck.id ? { ...d, share_id: r.id } : d)));
+          track('deck_shared', {});
+          return r;
+        }}
+        onStopSharing={async (id) => {
+          await api.stopSharing(id);
+          setDecks((all) => all.map((d) => (d.id === id ? { ...d, share_id: null } : d)));
+        }}
         onRainbow={() => {
           // Repaint decks in order, one after another, so it ripples down the list.
           const RAINBOW = ['yellow', 'green', 'blue', 'red', 'purple', 'lime', 'pink'];
@@ -255,9 +374,38 @@ function Library({ user, onUser }) {
         </div>
       </Sheet>
 
+      {touring && <Onboarding onDone={finishTour} />}
+
+      <Sheet open={!!incoming && !touring} onClose={() => { setIncoming(null); clearIntent(); }} title="Add this deck?" variant="dialog">
+        {incoming && (
+          <div className="sheet__body">
+            <DeckPreview deck={{
+              title: incoming.title,
+              front_label: incoming.deck?.front_label || '', back_label: incoming.deck?.back_label || '',
+              color: incoming.deck?.color || incoming.color, shape: incoming.deck?.shape || incoming.shape,
+              cards: incoming.deck?.cards || [],
+            }} />
+            <p className="sheet__text">
+              {incoming.kind === 'shared'
+                ? 'Someone shared this deck with you. Add a copy to your decks to start studying it.'
+                : 'Add this ready-made deck to your decks.'}
+            </p>
+            <SheetActions>
+              <Button onClick={acceptIncoming}>Add to my decks</Button>
+              <Button variant="secondary" onClick={() => { setIncoming(null); clearIntent(); }}>Not now</Button>
+            </SheetActions>
+          </div>
+        )}
+      </Sheet>
+
       {error && (
         <div className="toast" role="alert" onClick={() => setError('')}>
           {error}
+        </div>
+      )}
+      {!error && notice && (
+        <div className="toast toast--notice" role="status" onClick={() => setNotice('')}>
+          {notice}
         </div>
       )}
     </>
