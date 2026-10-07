@@ -720,5 +720,16 @@ select.input { background-image: none; }
    sheet title as a pale shape when scrolled) */
 .sheet .deck--preview .deck__surface, .sheet .deck--preview { box-shadow: none; }
 
-.toast--notice { cursor: pointer; }
+.toast--notice {
+  /* Same small centred pill as "New version available" */
+  left: 50%; right: auto; translate: -50% 0;
+  top: calc(env(safe-area-inset-top) + var(--space-3)); bottom: auto;
+  width: max-content; max-width: calc(100vw - var(--gutter) * 2);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-small); line-height: 1.35; text-align: center;
+  background: var(--cta-bg); color: var(--cta-fg);
+  box-shadow: var(--shadow-menu);
+  cursor: pointer;
+}
 .share-link { font-size: var(--font-size-small); color: var(--text-secondary); }

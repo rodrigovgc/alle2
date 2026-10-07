@@ -1,20 +1,6 @@
 // Sample decks offered on the empty home screen.
 
 export const SAMPLE_DECKS = {
-  portuguese: {
-    title: 'Numbers in Portuguese',
-    front_label: 'Digit',
-    back_label: 'Portuguese',
-    lang: 'pt-BR',
-    color: 'red',
-    shape: 'red',
-    is_sample: true,
-    csv_url: null,
-    cards: [
-      ['1', 'um|uma'], ['2', 'dois|duas'], ['3', 'três'], ['4', 'quatro'], ['5', 'cinco'],
-      ['6', 'seis'], ['7', 'sete'], ['8', 'oito'], ['9', 'nove'], ['10', 'dez'],
-    ].map(([front, back]) => ({ front, back })),
-  },
   multiplication: {
     title: 'Multiplication tables',
     front_label: 'Problem',
@@ -397,17 +383,16 @@ export const SAMPLE_DECKS = {
 
 /** What the ready-made list shows, in order. */
 export const READY_MADE = [
-  { key: 'portuguese', title: 'Numbers in Portuguese', color: 'red' },
-  { key: 'multiplication', title: 'Multiplication tables', color: 'green' },
-  { key: 'flagsWorld', title: 'Flags of the world', color: 'blue' },
-  { key: 'dutchClock', title: 'Telling time in Dutch', color: 'purple' },
-  { key: 'roadSigns', title: 'Road signs', color: 'yellow', shape: 'yellow' },
-  { key: 'basicDutch', title: 'Basic Dutch', color: 'purple', shape: 'green' },
-  { key: 'portugueseWords', title: 'Portuguese', color: 'red', shape: 'blue' },
+  { key: 'basicFrench', title: 'Basic French', color: 'purple', shape: 'green' },
   { key: 'organicChemistry', title: 'Organic chemistry', color: 'green', shape: 'lime' },
   { key: 'artHistory', title: 'Art history', color: 'lime', shape: 'red' },
   { key: 'guitarChords', title: 'Guitar chords', color: 'pink', shape: 'beige' },
   { key: 'engineering', title: 'Engineering Formula Sheet', color: 'blue', shape: 'green' },
+  { key: 'numbersPortuguese', title: 'Numbers in Portuguese', color: 'red', shape: 'pink' },
+  { key: 'roadSigns', title: 'Road signs', color: 'yellow', shape: 'yellow' },
+  { key: 'flagsWorld', title: 'Flags of the world', color: 'blue' },
+  { key: 'multiplication', title: 'Multiplication tables', color: 'green' },
+  { key: 'dutchClock', title: 'Telling time in Dutch', color: 'purple' },
 ];
 
 /**
@@ -415,11 +400,11 @@ export const READY_MADE = [
  * one. Same colours and shapes as on allecards.app.
  */
 export const LIBRARY = {
-  basicDutch: { title: 'Basic Dutch', front_label: 'English', back_label: 'Dutch', lang: 'nl-NL', color: 'purple', shape: 'green', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=202220146&single=true&output=csv' },
+  basicFrench: { title: 'Basic French', front_label: 'English', back_label: 'French', lang: 'fr-FR', color: 'purple', shape: 'green', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=673253401&single=true&output=csv' },
   organicChemistry: { title: 'Organic chemistry', front_label: 'Formula', back_label: 'Name', lang: 'en-US', color: 'green', shape: 'lime', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=1276418486&single=true&output=csv' },
   artHistory: { title: 'Art history', front_label: 'Painting', back_label: 'Artist', lang: 'en-US', color: 'lime', shape: 'red', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=1688842344&single=true&output=csv' },
   guitarChords: { title: 'Guitar chords', front_label: 'Chord', back_label: 'Notes', lang: 'en-US', color: 'pink', shape: 'beige', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=1512843795&single=true&output=csv' },
   engineering: { title: 'Engineering Formula Sheet', front_label: 'Formula', back_label: 'Name', lang: 'en-US', color: 'blue', shape: 'green', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=651437653&single=true&output=csv' },
-  portugueseWords: { title: 'Portuguese', front_label: 'English', back_label: 'Portuguese', lang: 'pt-PT', color: 'red', shape: 'blue', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=1063413453&single=true&output=csv' },
+  numbersPortuguese: { title: 'Numbers in Portuguese', front_label: 'Digit', back_label: 'Portuguese', lang: 'pt-PT', color: 'red', shape: 'pink', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=279138488&single=true&output=csv' },
   roadSigns: { title: 'Road signs', front_label: 'Sign', back_label: 'Meaning', lang: 'en-US', color: 'yellow', shape: 'yellow', csv_url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToovXZjYOv7ppNc3JIeYpRwCiIQP8dVNYHinlecZlx-8LzJTQF4CwUPmmQ-izWE19NpLNPHFnWN_1J/pub?gid=1111267204&single=true&output=csv' },
 };
