@@ -12,6 +12,7 @@ import { DesignSystem } from './screens/DesignSystem.jsx';
 import { Dashboard } from './screens/Dashboard.jsx';
 import './styles/design-system.css';
 import './styles/onboarding.css';
+import './styles/insights.css';
 
 initTheme();
 captureIntent(); // ?share= / ?add= links, kept until signed in

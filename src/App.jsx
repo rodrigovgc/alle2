@@ -22,6 +22,9 @@ import { Button } from './components/Button.jsx';
 import { motion } from 'framer-motion';
 
 
+// Where a new deck came from, as stored on the deck (for the dashboard).
+const SOURCES = { ready_made: 'ready_made', library: 'library', sheet: 'sheet', ai_or_paste: 'ai_or_paste', shared: 'shared' };
+
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking
   const [linkNotice, setLinkNotice] = useState('');
@@ -85,7 +88,7 @@ function Library({ user, onUser }) {
   // ask to sign in again, and save it straight after.
   const saveNewDeck = useCallback(async (deck, source) => {
     try {
-      const created = await api.createDeck(deck);
+      const created = await api.createDeck({ ...deck, source: SOURCES[source] ?? deck.source ?? null });
       setDecks((all) => [...all, created]);
       track('deck_added', { source, lang: deck.lang });
       return created;
@@ -125,6 +128,14 @@ function Library({ user, onUser }) {
   };
 
   useEffect(() => { setPageMeta('decks'); }, []);
+
+  // "Opened the app today": once a day per person, for last-active and active days.
+  useEffect(() => {
+    const key = `alle-open:${user.id}`;
+    const today = new Date().toISOString().slice(0, 10);
+    try { if (localStorage.getItem(key) === today) return; localStorage.setItem(key, today); } catch { /* storage off */ }
+    track('app_open', {});
+  }, [user.id]);
 
   // First-run tour: once per account (saved to the account, so other devices skip it).
   const [touring, setTouring] = useState(() => {
@@ -234,10 +245,17 @@ function Library({ user, onUser }) {
     const cards = buildSession(pool, { mix, practice });
     if (!cards.length) { setCaughtUp({ deckIds, mix }); return; }
     setCaughtUp(null);
+    answered.current = 0;
+    track('session_started', { cards: cards.length, decks: deckIds.length, mix });
     setScreen({ name: 'study', cards, id: Date.now() });
   }
+  // Study time for the dashboard: seconds since the session started, capped so
+  // a session left open in the background doesn't count as hours of study.
+  const answered = useRef(0);
+  const sessionSeconds = () => Math.min(45 * 60, Math.round((Date.now() - (screen.id || Date.now())) / 1000));
 
   const review = useCallback((card, verdict) => {
+    answered.current += 1;
     const row = {
       user_id: user.id,
       deck_id: card.deckId,
@@ -263,8 +281,14 @@ function Library({ user, onUser }) {
       <Study
         cards={screen.cards}
         onReview={review}
-        onExit={() => setScreen({ name: 'home' })}
-        onFinish={(score) => { track('session_finished', { total: score.total }); setScreen({ name: 'done', ...score }); }}
+        onExit={() => {
+          track('session_left', { total: answered.current, of: screen.cards.length, duration_s: sessionSeconds() });
+          setScreen({ name: 'home' });
+        }}
+        onFinish={(score) => {
+          track('session_finished', { total: score.total, correct: score.correct, duration_s: sessionSeconds() });
+          setScreen({ name: 'done', ...score });
+        }}
       />
     );
   } else if (screen.name === 'done') {

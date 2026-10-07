@@ -131,6 +131,7 @@ export const demoClient = {
       save(db);
       return { data: null, error: null };
     }
+    if (name === 'dash_insights') return { data: (typeof window !== 'undefined' && window.__DASH_SAMPLE) || null, error: null };
     if (name === 'get_shared_deck') {
       if (!db.session) return { data: [], error: null }; // signed-in only, like the real one
       const d = db.decks.find((x) => x.share_id && x.share_id === arguments[1]?.sid);

@@ -73,7 +73,15 @@ export class SignedOutError extends Error {}
  * the background), renew it and try again before giving up.
  */
 export async function createDeck(deck) {
-  const insert = async () => check(await supabase.from('decks').insert(deck).select(DECK_FIELDS).single());
+  const insert = async () => {
+    const res = await supabase.from('decks').insert(deck).select(DECK_FIELDS).single();
+    // Before supabase/009_insights.sql runs there's no "source" column: save without it.
+    if (res.error && /source/.test(res.error.message) && 'source' in deck) {
+      const { source, ...rest } = deck; // eslint-disable-line no-unused-vars
+      return check(await supabase.from('decks').insert(rest).select(DECK_FIELDS).single());
+    }
+    return check(res);
+  };
   try {
     return await retryOnce(insert);
   } catch (e) {
