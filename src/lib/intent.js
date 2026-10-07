@@ -11,12 +11,15 @@ const KEY = 'alle-intent';
 /** Read ?share= / ?add= from the address once, keep it, tidy the address. */
 export function captureIntent() {
   const url = new URL(window.location.href);
-  const share = url.searchParams.get('share');
+  // /s/<code> is normally answered by the preview page, which forwards to ?share=;
+  // if the app is opened on that address directly, read the code from the path.
+  const fromPath = url.pathname.match(/^\/s\/([0-9a-f-]{36})\/?$/i);
+  const share = url.searchParams.get('share') || (fromPath && fromPath[1]);
   const add = url.searchParams.get('add');
   if (!share && !add) return;
   try { localStorage.setItem(KEY, JSON.stringify(share ? { type: 'share', id: share } : { type: 'add', id: add })); } catch { /* storage off */ }
   url.searchParams.delete('share'); url.searchParams.delete('add');
-  window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+  window.history.replaceState(null, '', (fromPath ? '/' : url.pathname) + url.search + url.hash);
 }
 
 export function readIntent() {

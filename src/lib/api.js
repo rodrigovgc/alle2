@@ -159,7 +159,7 @@ export async function shareDeck(deck) {
       throw res.error;
     }
   }
-  return { id, url: `${window.location.origin}/?share=${id}` };
+  return { id, url: `${window.location.origin}/s/${id}` };  // /s/… shows the deck's cover in link previews
 }
 
 export async function stopSharing(deckId) {
