@@ -9,6 +9,7 @@ import { track } from './lib/analytics.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
 import { Auth, NewPassword } from './screens/Auth.jsx';
 import { handleEmailLink } from './lib/emailLink.js';
+import { setPageMeta } from './lib/pageMeta.js';
 import { readIntent, resolveIntent, clearIntent } from './lib/intent.js';
 import { DeckPreview } from './components/DeckCard.jsx';
 import { Onboarding } from './components/Onboarding.jsx';
@@ -122,6 +123,8 @@ function Library({ user, onUser }) {
       }, 'library');
     } catch (e) { setError(api.friendlyError(e)); }
   };
+
+  useEffect(() => { setPageMeta('decks'); }, []);
 
   // First-run tour: once per account (saved to the account, so other devices skip it).
   const [touring, setTouring] = useState(() => {

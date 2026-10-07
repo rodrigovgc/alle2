@@ -677,7 +677,12 @@ function ShareSheet({ deck, onShare, onStop }) {
         <Button variant={typeof navigator !== 'undefined' && navigator.share ? 'secondary' : 'primary'} disabled={!link} onClick={copy}>
           {copied ? 'Link copied' : 'Copy link'}
         </Button>
-        {link && <button type="button" className="text-btn" onClick={onStop}>Stop sharing</button>}
+        {link && (
+          <>
+            <button type="button" className="text-btn" onClick={onStop}>Stop sharing</button>
+            <p className="share-hint">Turns this link off. Anyone who already added the deck keeps their copy.</p>
+          </>
+        )}
       </SheetActions>
     </div>
   );

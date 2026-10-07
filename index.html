@@ -21,7 +21,26 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <title>Alle</title>
+    <title>Your Flashcard Decks | Alle</title>
+    <meta name="description" content="Open Alle to create and study your flashcard decks, track your progress and practise the cards that need more work." />
+    <!-- The app, login and signup don't belong in search results -->
+    <meta name="robots" content="noindex, nofollow" />
+    <script>
+      // Login / signup links (?auth=…) get their own title and description straight away.
+      (function () {
+        var a = new URLSearchParams(location.search).get('auth');
+        var m = a === 'signup'
+          ? ['Create Your Alle Account', 'Create a free Alle account and start learning with your own flashcard decks or choose a ready-made deck to get started.']
+          : (a === 'login' || a === 'signin')
+            ? ['Log in to Alle', 'Log in to Alle to access your flashcard decks, continue studying and pick up where you left off.']
+            : null;
+        if (m) {
+          document.title = m[0];
+          var d = document.querySelector('meta[name="description"]');
+          if (d) d.setAttribute('content', m[1]);
+        }
+      })();
+    </script>
     <script>
       // Apply the saved appearance before anything paints, so there's no flash.
       try {

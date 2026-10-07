@@ -36,8 +36,10 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
   }, [deck.color]);
   const count = deck.cards?.length ?? 0;
 
+  // Update URL only for decks imported from the person's own Google Sheet
+  const ownSheet = Boolean(deck.csv_url) && !deck.is_sample;
   const items = [
-    { label: 'Update URL', icon: 'link', onSelect: onUpdateUrl },
+    ...(ownSheet ? [{ label: 'Update URL', icon: 'link', onSelect: onUpdateUrl }] : []),
     { label: 'Edit deck', icon: 'edit', onSelect: onCustomize },
     { label: 'Share deck', icon: 'share', onSelect: onShare },
     { label: 'Reset progress', icon: 'reset', onSelect: onResetProgress },

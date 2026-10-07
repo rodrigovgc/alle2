@@ -733,3 +733,4 @@ select.input { background-image: none; }
   cursor: pointer;
 }
 .share-link { font-size: var(--font-size-small); color: var(--text-secondary); }
+.share-hint { margin-top: calc(var(--space-2) * -1); text-align: center; font-size: var(--font-size-caption); color: var(--text-tertiary); text-wrap: pretty; }

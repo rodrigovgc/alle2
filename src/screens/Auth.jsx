@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { setPageMeta } from '../lib/pageMeta.js';
 import { useVisualViewport } from '../lib/useViewport.js';
 import { useFocusIntoView } from '../lib/useFocusIntoView.js';
 import { supabase, isConfigured } from '../lib/supabase.js';
@@ -32,6 +33,7 @@ export function Auth({ notice: startNotice = '' }) {
     return left || startNotice;
   });
   useEffect(() => { if (startNotice) setNotice(startNotice); }, [startNotice]);
+  useEffect(() => { setPageMeta(mode === 'signup' ? 'signup' : 'login'); }, [mode]);
 
   const isSignUp = mode === 'signup';
   const typing = useVisualViewport(true);

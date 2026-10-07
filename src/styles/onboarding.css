@@ -75,7 +75,9 @@
 @keyframes scSheetFade { 0% { opacity: 0; } 5%, 88% { opacity: 1; } 95%, 100% { opacity: 0; } }
 .sc-spin { position: relative; width: 240px; height: 150px; transform-style: preserve-3d; animation: scSpin 7s cubic-bezier(.45,.05,.25,1) infinite; will-change: transform; }
 .sc-gsheet, .sc-spin__back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.sc-gsheet { border-radius: 14px; background: var(--card-bg); box-shadow: var(--shadow-card-behind); overflow: hidden; font-size: 12px; }
+.sc-gsheet { border-radius: 14px; background: var(--card-bg); box-shadow: var(--shadow-card-behind); overflow: hidden; font-size: 12px; animation: scSheetFace 7s ease-in-out infinite; }
+/* the sheet fades away as the spin begins, so its rows never show on the deck */
+@keyframes scSheetFace { 0%, 40% { opacity: 1; } 46%, 96% { opacity: 0; } 100% { opacity: 1; } }
 .sc-gsheet__bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; font-weight: 600; border-bottom: 1px solid var(--border-subtle); }
 .sc-gsheet__bar i { width: 12px; height: 12px; border-radius: 3px; background: #1E8E3E; }
 .sc-gsheet__row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border-subtle); }
@@ -86,9 +88,9 @@
 .sc-row1 span { animation: scRow1 7s steps(1) infinite; }
 .sc-row2 span { animation: scRow2 7s steps(1) infinite; }
 .sc-row3 span { animation: scRow3 7s steps(1) infinite; }
-@keyframes scRow1 { 0%, 11% { opacity: 0; } 12%, 100% { opacity: 1; } }
-@keyframes scRow2 { 0%, 19% { opacity: 0; } 20%, 100% { opacity: 1; } }
-@keyframes scRow3 { 0%, 27% { opacity: 0; } 28%, 100% { opacity: 1; } }
+@keyframes scRow1 { 0%, 11% { opacity: 0; } 12%, 44% { opacity: 1; } 45%, 100% { opacity: 0; } }
+@keyframes scRow2 { 0%, 19% { opacity: 0; } 20%, 44% { opacity: 1; } 45%, 100% { opacity: 0; } }
+@keyframes scRow3 { 0%, 27% { opacity: 0; } 28%, 44% { opacity: 1; } 45%, 100% { opacity: 0; } }
 .sc-spin__back { transform: rotateY(180deg); }
 .big-deck {
   position: relative; overflow: hidden; height: 100%; border-radius: 18px; padding: 16px 18px;
