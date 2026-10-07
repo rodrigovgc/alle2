@@ -27,19 +27,19 @@ const STEPS = [
   {
     key: 'sheets',
     title: 'Turn a Sheet into a deck',
-    text: 'Publish two columns as a CSV, paste the link into Alle, and every row becomes a card.',
+    text: 'Paste your two-column Sheet into Alle and every row becomes a card.',
     Scene: SheetScene,
   },
   {
     key: 'ai',
     title: 'Create a deck with AI',
-    text: 'Alle makes the prompt, your favourite AI makes the cards, and you paste them back in.',
+    text: 'Get a prompt from Alle, use it with your favourite AI, then paste the cards back.',
     Scene: AiScene,
   },
   {
     key: 'study',
     title: 'Study your way',
-    text: 'Choose multiple choice or typing, and cards you miss will come back for another try.',
+    text: 'Choose multiple choice or typing. Cards you miss come back for another try.',
     Scene: StudyScene,
   },
   {

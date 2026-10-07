@@ -15,8 +15,8 @@
 }
 .onb__stage { height: 280px; display: flex; align-items: center; justify-content: center; }
 .onb__copy { text-align: center; display: flex; flex-direction: column; gap: var(--space-3); padding: 0 var(--space-2); }
-.onb__title { font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); line-height: 1.15; }
-.onb__text { font-size: var(--font-size-button); line-height: 1.5; color: var(--text-secondary); }
+.onb__title { text-wrap: balance; font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); line-height: 1.15; }
+.onb__text { text-wrap: pretty; font-size: var(--font-size-button); line-height: 1.5; color: var(--text-secondary); }
 .onb__more { font-size: var(--font-size-small); color: var(--text-primary); }
 .onb__bottom { width: 100%; max-width: var(--screen-max); margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-5); }
 .onb__dots { display: flex; justify-content: center; gap: var(--space-2); }
