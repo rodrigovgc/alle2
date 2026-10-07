@@ -177,15 +177,22 @@ function SheetScene() {
   const rows = [['to go', 'gaan'], ['the house', 'het huis'], ['thank you', 'dank je']];
   return (
     <div className="sc sc-sheet">
-      <div className="sc-morph">
+      <div className="sc-spin">
         <div className="sc-gsheet">
           <div className="sc-gsheet__bar"><i /> Dutch words</div>
           <div className="sc-gsheet__row sc-gsheet__head"><span>English</span><span>Dutch</span></div>
           {rows.map(([a, b], n) => (
-            <div key={a} className="sc-gsheet__row" style={{ '--n': n }}><span>{a}</span><span>{b}</span></div>
+            <div key={a} className={`sc-gsheet__row sc-row${n + 1}`}><span>{a}</span><span>{b}</span></div>
           ))}
         </div>
-        <div className="sc-sheet__deck"><MiniDeck title="Dutch words" color="blue" meta="English → Dutch" /></div>
+        <div className="sc-spin__back">
+          <div className="big-deck" style={{ '--deck-fill': 'var(--deck-blue)', '--deck-deep': 'var(--deck-blue-deep)' }}>
+            <span className="mini-deck__meta">English → Dutch</span>
+            <span className="big-deck__title">Dutch words</span>
+            <span className="big-deck__count">3 cards</span>
+            <span className="big-deck__shape"><DeckShape shape="blue" /></span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -233,29 +240,56 @@ const APPS = [
   { name: 'Photos', bg: '#FFFFFF', glyph: 'M12 4a4 4 0 0 1 0 8 4 4 0 0 1 0-8z M5 18c1.5-3 4-4.5 7-4.5s5.5 1.5 7 4.5z', dark: true },
 ];
 
+function AppIcon({ app }) {
+  return (
+    <span className="sc-app">
+      <span className="sc-app__icon" style={{ background: app.bg }}>
+        <svg viewBox="0 0 24 24"><path d={app.glyph} fill="none" stroke={app.dark ? '#3a3a3c' : '#fff'} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
+      </span>
+      {app.name && <small>{app.name}</small>}
+    </span>
+  );
+}
+
 function HomeScene() {
+  const grid = APPS.filter((a) => ['Mail', 'Camera', 'Maps', 'Photos', 'Music'].includes(a.name));
+  const dock = APPS.filter((a) => ['Phone', 'Messages'].includes(a.name));
   return (
     <div className="sc sc-home">
-      <div className="sc-phone">
-        <div className="sc-apps">
-          {APPS.map((a) => (
-            <span key={a.name} className="sc-app">
-              <span className="sc-app__icon" style={{ background: a.bg }}>
-                <svg viewBox="0 0 24 24"><path d={a.glyph} fill="none" stroke={a.dark ? '#3a3a3c' : '#fff'} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
-              </span>
-              <small>{a.name}</small>
-            </span>
-          ))}
-          <span className="sc-app sc-appicon">
-            <span className="sc-app__icon sc-appicon__img"><i /><i /></span>
-            <small>Alle</small>
-          </span>
+      <div className="iphone">
+        <span className="iphone__island" />
+        {/* 1. Alle in Safari */}
+        <div className="iphone__screen scr-safari">
+          <div className="scr-status"><b>9:41</b></div>
+          <div className="scr-page">
+            <span className="scr-page__logo"><i /><i /> Alle</span>
+            <span className="scr-page__deck" style={{ background: 'var(--deck-yellow)' }} />
+            <span className="scr-page__deck" style={{ background: 'var(--deck-green)' }} />
+            <span className="scr-page__deck" style={{ background: 'var(--deck-blue)' }} />
+          </div>
+          <div className="scr-toolbar">
+            <span className="scr-url">my.allecards.app</span>
+            <span className="sc-share"><Icon name="share" /></span>
+          </div>
+          <div className="sc-sheetmenu">
+            <span>Copy</span>
+            <span className="sc-sheetmenu__hl">Add to Home Screen</span>
+            <span>Add Bookmark</span>
+          </div>
         </div>
-        <div className="sc-phone__bar"><span className="sc-share"><Icon name="share" /></span></div>
-        <div className="sc-sheetmenu">
-          <span>Copy</span>
-          <span className="sc-sheetmenu__hl">Add to Home Screen</span>
-          <span>Add Bookmark</span>
+        {/* 2. The home screen, with Alle on it */}
+        <div className="iphone__screen scr-home">
+          <div className="scr-status scr-status--light"><b>9:41</b></div>
+          <div className="sc-apps">
+            {grid.map((a) => <AppIcon key={a.name} app={a} />)}
+            <span className="sc-app sc-appicon">
+              <span className="sc-app__icon sc-appicon__img"><i /><i /></span>
+              <small>Alle</small>
+            </span>
+          </div>
+          <div className="scr-dock">
+            {dock.map((a) => <AppIcon key={a.name} app={{ ...a, name: '' }} />)}
+          </div>
         </div>
       </div>
     </div>

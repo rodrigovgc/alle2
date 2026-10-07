@@ -104,7 +104,7 @@ function Library({ user, onUser }) {
       const sample = SAMPLE_DECKS[key];
       if (sample) {
         // Keep the sample's own colour if it's free; otherwise a free one.
-        await saveNewDeck({ ...sample, ...pickDeckLook(decks, sample) }, 'ready_made');
+        await saveNewDeck({ ...sample, ...pickDeckLook(decks) }, 'ready_made');
         return;
       }
       // A library deck from the website: read its published sheet.
@@ -118,7 +118,7 @@ function Library({ user, onUser }) {
         cards: parsed.cards,
         answer_mode: 'choice',
         is_sample: true,
-        ...pickDeckLook(decks, lib),
+        ...pickDeckLook(decks),
       }, 'library');
     } catch (e) { setError(api.friendlyError(e)); }
   };
@@ -155,7 +155,7 @@ function Library({ user, onUser }) {
       const created = await saveNewDeck({
         title: d.title, front_label: d.front_label, back_label: d.back_label, lang: d.lang,
         csv_url: d.csv_url, cards: d.cards, answer_mode: d.answer_mode ?? 'choice',
-        ...pickDeckLook(decks, { color: d.color, shape: d.shape }),
+        ...pickDeckLook(decks),
       }, 'shared');
       if (created) setNotice(`Added “${created.title}” to your decks.`);
     } catch (e) { setError(api.friendlyError(e)); }
@@ -382,7 +382,7 @@ function Library({ user, onUser }) {
             <DeckPreview deck={{
               title: incoming.title,
               front_label: incoming.deck?.front_label || '', back_label: incoming.deck?.back_label || '',
-              color: incoming.deck?.color || incoming.color, shape: incoming.deck?.shape || incoming.shape,
+              ...pickDeckLook(decks),   // the colour it will really get
               cards: incoming.deck?.cards || [],
             }} />
             <p className="sheet__text">

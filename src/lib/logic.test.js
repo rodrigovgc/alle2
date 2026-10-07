@@ -127,20 +127,19 @@ test('image cells', () => {
   assert.equal(imageSrc('3.5'), null);
 });
 
-import { pickDeckLook, DECK_COLORS } from '../styles/tokens.js';
-test('new decks get an unused colour and shape', () => {
+import { pickDeckLook } from '../styles/tokens.js';
+test('new decks follow the rainbow and never get beige', () => {
   let decks = [];
-  for (let i = 0; i < 8; i++) decks.push({ id: i, ...pickDeckLook(decks) });
-  assert.equal(new Set(decks.map((d) => d.color)).size, 8);
-  assert.equal(new Set(decks.map((d) => d.shape)).size, 8);
-  // sample keeps its colour when free, moves when taken
-  assert.equal(pickDeckLook([], { color: 'red', shape: 'red' }).color, 'red');
-  assert.notEqual(pickDeckLook([{ color: 'red', shape: 'red' }], { color: 'red', shape: 'red' }).color, 'red');
-  // beyond 8: colour repeats, but never the same colour + shape pair
+  for (let i = 0; i < 9; i++) decks.push({ id: i, ...pickDeckLook(decks) });
+  assert.deepEqual(decks.slice(0, 8).map((d) => d.color), ['yellow', 'green', 'blue', 'red', 'purple', 'lime', 'pink', 'yellow']);
+  assert.ok(!decks.some((d) => d.color === 'beige'));
+  // continues after whatever the last deck is
+  assert.equal(pickDeckLook([{ color: 'blue', shape: 'blue' }]).color, 'red');
+  assert.equal(pickDeckLook([{ color: 'beige', shape: 'beige' }]).color, 'yellow');
+  // never the same colour + shape pair while one is free
   for (let i = 0; i < 40; i++) decks.push({ id: 100 + i, ...pickDeckLook(decks) });
-  const pairs = decks.map((d) => `${d.color}/${d.shape}`);
+  const pairs = decks.slice(0, 50).map((d) => `${d.color}/${d.shape}`);
   assert.equal(new Set(pairs).size, pairs.length);
-  assert.ok(DECK_COLORS.includes(decks[20].color));
 });
 
 import { clockTime } from './media.js';

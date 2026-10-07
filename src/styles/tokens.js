@@ -45,27 +45,24 @@ export function tokenColor(name, fallback = 'transparent') {
 
 export const nextDeckColor = (count) => DECK_COLORS[count % DECK_COLORS.length];
 
+/** The order new decks take their colours in. Beige is never suggested; it's
+ *  only a choice in Edit deck. */
+export const RAINBOW = ['yellow', 'green', 'blue', 'red', 'purple', 'lime', 'pink'];
+
 /**
- * A colour and a shape for a new deck that no existing deck uses. Keeps the
- * preferred one (e.g. a sample deck's own colour) when it's still free. Once
- * all 8 are taken, picks the least used, and never repeats an exact
- * colour + shape pair while one of the 64 is left.
+ * Colour and shape for a new deck: the next rainbow colour after the last
+ * deck in the list, so the home screen keeps its rainbow. The shape is the
+ * least used one, never repeating the same colour + shape pair while possible.
  */
-export function pickDeckLook(decks, preferred = {}) {
-  const count = (key) => (list) => list.reduce((m, k) => m.set(k, (m.get(k) || 0) + 1), new Map(key.map((k) => [k, 0])));
-  const colorUse = count(DECK_COLORS)(decks.map((d) => d.color).filter((c) => DECK_COLORS.includes(c)));
-  const shapeUse = count(DECK_SHAPES)(decks.map((d) => deckShape(d)));
-  const leastUsed = (use, prefer) => {
-    const min = Math.min(...use.values());
-    if (prefer && use.get(prefer) === min) return prefer;
-    return [...use.keys()].find((k) => use.get(k) === min);
-  };
-  const color = leastUsed(colorUse, preferred.color);
-  // Shape: least used, and not already paired with this colour.
+export function pickDeckLook(decks) {
+  const last = [...decks].reverse().find((d) => RAINBOW.includes(d.color));
+  const color = last ? RAINBOW[(RAINBOW.indexOf(last.color) + 1) % RAINBOW.length] : RAINBOW[0];
+  const shapeUse = new Map(DECK_SHAPES.map((k) => [k, 0]));
+  decks.forEach((d) => { const k = deckShape(d); if (shapeUse.has(k)) shapeUse.set(k, shapeUse.get(k) + 1); });
   const taken = new Set(decks.filter((d) => d.color === color).map((d) => deckShape(d)));
-  const shapeOrder = [...shapeUse.entries()]
-    .sort((a, b) => a[1] - b[1] || (b[0] === (preferred.shape ?? color)) - (a[0] === (preferred.shape ?? color)));
-  const shape = (shapeOrder.find(([k]) => !taken.has(k)) ?? shapeOrder[0])[0];
+  // Least used first; on a tie, the shape that "belongs" to this colour.
+  const order = [...shapeUse.entries()].sort((a, b) => a[1] - b[1] || (b[0] === color) - (a[0] === color));
+  const shape = (order.find(([k]) => !taken.has(k)) ?? order[0])[0];
   return { color, shape };
 }
 
