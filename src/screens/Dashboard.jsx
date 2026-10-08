@@ -87,6 +87,10 @@ export function Dashboard() {
           <ActivityChart daily={d.daily} />
         </Card>
 
+        <Card title={`Sign-ups (${fmt(k.users_new)} in ${d.days} days)`} wide>
+          <Signups daily={d.daily} users={d.users} days={d.days} />
+        </Card>
+
         <Card title="From sign-up to habit">
           <Funnel steps={d.funnel} />
         </Card>
@@ -234,6 +238,53 @@ function ActivityChart({ daily }) {
         <polyline points={line} className="line" />
       </svg>
       <p className="ins-note ins-note--small">Dots under the axis mark days with new sign-ups.</p>
+    </div>
+  );
+}
+
+function Signups({ daily, users, days }) {
+  const max = Math.max(1, ...daily.map((x) => x.signups));
+  const W = 900; const H = 150; const pad = 22;
+  const bw = (W - pad * 2) / daily.length;
+  const every = Math.ceil(daily.length / 8);
+  const since = Date.now() - days * 86400000;
+  const recent = users.filter((u) => new Date(u.joined).getTime() >= since)
+    .sort((a, b) => new Date(b.joined) - new Date(a.joined));
+  return (
+    <div className="ins-signups">
+      <svg viewBox={`0 0 ${W} ${H}`} className="ins-chart__svg" role="img" aria-label="Sign-ups per day">
+        {daily.map((x, i) => {
+          const h = (x.signups / max) * (H - pad * 2 - 14);
+          const cx = pad + i * bw + bw / 2;
+          return (
+            <g key={x.day}>
+              <title>{`${dateShort(x.day)}: ${x.signups} sign-up${x.signups === 1 ? '' : 's'}`}</title>
+              {x.signups > 0 && <rect x={pad + i * bw + bw * 0.18} y={H - pad - h} width={bw * 0.64} height={h} rx="3" className="bar-signup" />}
+              {x.signups > 0 && <text x={cx} y={H - pad - h - 5} textAnchor="middle" className="val">{x.signups}</text>}
+              {i % every === 0 && <text x={cx} y={H - 4} textAnchor="middle" className="axis">{dateShort(x.day)}</text>}
+            </g>
+          );
+        })}
+        <line x1={pad} x2={W - pad} y1={H - pad} y2={H - pad} className="base" />
+      </svg>
+      {recent.length ? (
+        <div className="ins-table-wrap">
+          <table className="ins-table">
+            <thead><tr><th>Person</th><th>Signed up</th><th>Added a deck</th><th>Studied</th><th>Last active</th></tr></thead>
+            <tbody>
+              {recent.map((u) => (
+                <tr key={u.email}>
+                  <td><b>{u.name || '—'}</b><small className="ins-sub">{u.email}</small></td>
+                  <td>{new Date(u.joined).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+                  <td>{u.decks ? `Yes, ${u.decks}` : <span className="ins-no">Not yet</span>}</td>
+                  <td>{u.reviews ? `${fmt(u.reviews)} reviews` : <span className="ins-no">Not yet</span>}</td>
+                  <td>{ago(u.last_active)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="ins-note">No sign-ups in this period.</p>}
     </div>
   );
 }

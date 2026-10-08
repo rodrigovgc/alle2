@@ -81,3 +81,11 @@
 .ins-stat span { font-size: 13px; color: var(--text-secondary); }
 .ins-stat b { font-size: 26px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .ins-stat small { font-size: 12px; color: var(--text-tertiary); }
+
+/* sign-ups */
+.ins-signups .ins-chart__svg { margin-bottom: 10px; }
+.ins-chart__svg .bar-signup { fill: var(--deck-pink); }
+.ins-chart__svg .val { font-size: 12px; font-weight: 600; fill: var(--text-primary); }
+.ins-chart__svg .base { stroke: var(--border-subtle); }
+.ins-sub { display: block; color: var(--text-tertiary); font-size: 12px; }
+.ins-no { color: var(--text-tertiary); }

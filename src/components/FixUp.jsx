@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button, IconButton } from './Button.jsx';
 import { Tag } from './Tag.jsx';
@@ -22,6 +22,10 @@ const shuffle = (a) => {
   for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
   return b;
 };
+// Typing on a keyboard: "e" matches "é", case doesn't matter, punctuation is ignored.
+const fold = (x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const bare = (w) => fold(w).replace(/[^\p{L}\p{N}]/gu, '');
+
 const wordsOf = (answer) => answer.replace(/\s*•\s*/g, ' ').trim().split(/\s+/);
 const LETTERS = 'abcdefghijklmnoprstuvwz';
 
@@ -88,7 +92,72 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
     setIndex(index + 1);
     setPlaced([]);
     setChecked(null);
+    setTyped('');
   }
+
+  // ---- Keyboard: type to place chips (clicking still works) ----
+  const [typed, setTyped] = useState('');   // the word being typed (phrases only)
+  const [miss, setMiss] = useState(0);      // brief nudge when nothing matches
+  const free = bank.filter((c) => !placedSet.has(c.id));
+  const nudge = () => setMiss((n) => n + 1);
+
+  function placeLetter(key) {
+    const k = key.toLowerCase();
+    const chip = free.find((c) => c.w.toLowerCase() === k) || free.find((c) => fold(c.w) === fold(k));
+    if (chip) place(chip); else nudge();
+  }
+  // A word goes in when it's typed in full, or when Space/Enter picks the only match.
+  function commitWord(text, force) {
+    const t = bare(text);
+    if (!t) return false;
+    const exact = free.filter((c) => bare(c.w) === t);
+    const longer = free.filter((c) => bare(c.w).startsWith(t) && bare(c.w) !== t);
+    if (exact.length && (force || !longer.length)) { place(exact[0]); setTyped(''); return true; }
+    if (force) {
+      if (longer.length === 1) { place(longer[0]); setTyped(''); return true; }
+      nudge();
+    }
+    return false;
+  }
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      if (checked) {
+        if (e.key === 'Enter') { e.preventDefault(); nextCard(); }
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (joiner === ' ' && typed) commitWord(typed, true);
+        else if (placed.length) check();
+        return;
+      }
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (typed) setTyped((t) => t.slice(0, -1));
+        else if (placed.length) removeAt(placed.length - 1);
+        return;
+      }
+      if (e.key === 'Escape') { setTyped(''); return; }
+      if (e.key.length !== 1) return;
+      if (joiner === '') {           // letters
+        if (e.key === ' ') return;
+        e.preventDefault(); placeLetter(e.key);
+        return;
+      }
+      if (e.key === ' ') { e.preventDefault(); commitWord(typed, true); return; }
+      e.preventDefault();
+      const next = typed + e.key;
+      if (!commitWord(next, false)) {
+        const any = free.some((c) => bare(c.w).startsWith(bare(next)));
+        if (any || !bare(next)) setTyped(next); else nudge();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   return (
     <div className="study fixup">
@@ -127,6 +196,7 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
                     {placedChips.map((chip, i) => (
                       <button key={chip.id} type="button" className={`chip ${joiner ? '' : 'chip--letter'}`} onClick={() => removeAt(i)}>{chip.w}</button>
                     ))}
+                    {typed && <span className="chip chip--typing" aria-live="polite">{typed}<i aria-hidden="true" /></span>}
                   </div>
                 </>
               ) : (
@@ -142,13 +212,19 @@ export function FixUp({ cards, sessionTotal, baseCorrect = 0, onExit, onDone }) 
       </div>
 
       {/* Word bank below the card; a lifted word leaves its slot behind */}
-      <div className="fixup__bank">
+      <div className={`fixup__bank ${miss ? 'is-miss' : ''}`} key={`bank-${miss}`}>
         {!checked && bank.map((chip) => (
           placedSet.has(chip.id)
             ? <span key={chip.id} className={`chip chip--ghost ${joiner ? '' : 'chip--letter'}`} aria-hidden="true">{chip.w}</span>
             : <button key={chip.id} type="button" className={`chip chip--bank ${joiner ? '' : 'chip--letter'}`} onClick={() => place(chip)}>{chip.w}</button>
         ))}
       </div>
+      {!checked && (
+        <p className="fixup__keys">
+          {joiner ? 'Type a word, or press Space to place it · Backspace to undo · Enter to check'
+            : 'Type the letters · Backspace to undo · Enter to check'}
+        </p>
+      )}
 
       <div className="fixup__controls">
         {!checked
