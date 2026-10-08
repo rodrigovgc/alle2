@@ -74,7 +74,10 @@ export default function App() {
 function Library({ user, onUser }) {
   const ready = true;
   const [decks, setDecks] = useState([]);
-  const [groups, setGroups] = useState([]);
+  const [groups, setGroups] = useState(null);   // null: groups not set up in the database yet
+  const groupsRef = useRef(null);
+  useEffect(() => { groupsRef.current = groups; }, [groups]);
+  const sortGroups = (gs) => [...gs].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState({ name: 'home' });
@@ -90,7 +93,18 @@ function Library({ user, onUser }) {
   // ask to sign in again, and save it straight after.
   const saveNewDeck = useCallback(async (deck, source) => {
     try {
-      const created = await api.createDeck({ ...deck, source: SOURCES[source] ?? deck.source ?? null });
+      let groupId = deck.group_id;
+      const gs = groupsRef.current;
+      if (!groupId && gs) {
+        let first = sortGroups(gs)[0];
+        if (!first) {
+          first = await api.createGroup({ title: 'My study decks', position: 1 });
+          groupsRef.current = [first];
+          setGroups([first]);
+        }
+        groupId = first.id;
+      }
+      const created = await api.createDeck({ ...deck, ...(groupId ? { group_id: groupId } : {}), source: SOURCES[source] ?? deck.source ?? null });
       setDecks((all) => [...all, created]);
       track('deck_added', { source, lang: deck.lang });
       return created;
@@ -168,9 +182,9 @@ function Library({ user, onUser }) {
     try {
       if (r.kind === 'ready') { await addReadyMade(r.key); return; }
       if (r.kind === 'group') {
-        const position = Math.max(0, ...groups.map((g) => g.position ?? 0)) + 1;
+        const position = Math.max(0, ...(groups || []).map((x) => x.position ?? 0)) + 1;
         const g = await api.createGroup({ title: r.title, position });
-        setGroups((all) => [...all, g]);
+        setGroups((all) => [...(all || []), g]);
         let soFar = [...decks];
         for (const d of r.decks) {
           const created = await saveNewDeck({
@@ -212,7 +226,18 @@ function Library({ user, onUser }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [d, g] = await Promise.all([api.listDecks(), api.listGroups().catch(() => [])]);
+      let [d, g] = await Promise.all([api.listDecks(), api.listGroups().catch(() => null)]);
+      // Every deck lives in a group, and there is always at least one group.
+      if (g && d.length) {
+        if (!g.length) g = [await api.createGroup({ title: 'My study decks', position: 1 })];
+        const first = sortGroups(g)[0].id;
+        const ids = new Set(g.map((x) => x.id));
+        const orphans = d.filter((x) => !x.group_id || !ids.has(x.group_id));
+        if (orphans.length) {
+          await Promise.all(orphans.map((x) => api.updateDeck(x.id, { group_id: first }).catch(() => {})));
+          d = d.map((x) => (orphans.includes(x) ? { ...x, group_id: first } : x));
+        }
+      }
       setDecks(d);
       setGroups(g);
       setProgress(await api.listProgress(d.map((x) => x.id)));
@@ -352,11 +377,11 @@ function Library({ user, onUser }) {
           await api.stopSharing(id);
           setDecks((all) => all.map((d) => (d.id === id ? { ...d, share_id: null } : d)));
         }}
-        onRainbow={() => {
+        onRainbow={(only) => {
           // Repaint decks in order, one after another, so it ripples down the list.
           const RAINBOW = ['yellow', 'green', 'blue', 'red', 'purple', 'lime', 'pink'];
           if (colorMode === 'monochrome') setPrefs({ color_mode: 'colorful' });
-          decks.forEach((deck, i) => {
+          (only ? decks.filter((d) => only.includes(d.id)) : decks).forEach((deck, i) => {
             const color = RAINBOW[i % RAINBOW.length];
             if (deck.color === color) return;
             setTimeout(() => {
@@ -367,20 +392,25 @@ function Library({ user, onUser }) {
           track('rainbow_used', {});
         }}
         groups={groups}
-        onCreateGroup={async (title) => {
-          const position = Math.max(0, ...groups.map((g) => g.position ?? 0)) + 1;
+        onCreateGroup={async (title, after) => {
+          // Right after the group it was created from, or at the end
+          const list = sortGroups(groups || []);
+          const i = after ? list.findIndex((x) => x.id === after) : -1;
+          const position = i >= 0
+            ? ((list[i].position ?? 0) + (list[i + 1]?.position ?? (list[i].position ?? 0) + 2)) / 2
+            : Math.max(0, ...list.map((x) => x.position ?? 0)) + 1;
           const g = await api.createGroup({ title, position });
-          setGroups((all) => [...all, g]);
+          setGroups((all) => [...(all || []), g]);
           track('group_created', {});
           return g;
         }}
         onUpdateGroup={async (id, patch) => {
-          setGroups((all) => all.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+          setGroups((all) => (all || []).map((g) => (g.id === id ? { ...g, ...patch } : g)));
           try { await api.updateGroup(id, patch); } catch (e) { setError(api.friendlyError(e)); }
         }}
         onMoveGroup={async (id, delta) => {
           // Swap places with the neighbouring group
-          const sorted = [...groups].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+          const sorted = sortGroups(groups || []);
           const i = sorted.findIndex((g) => g.id === id); const j = i + delta;
           if (i < 0 || j < 0 || j >= sorted.length) return;
           [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
@@ -388,19 +418,21 @@ function Library({ user, onUser }) {
           setGroups(renum);
           try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); } catch (e) { setError(api.friendlyError(e)); }
         }}
-        onDeleteGroup={async (id, { withDecks = false } = {}) => {
+        onDeleteGroup={async (id, { withDecks = false, moveTo = null } = {}) => {
           try {
             if (withDecks) {
               const doomed = decks.filter((d) => d.group_id === id).map((d) => d.id);
               for (const deckId of doomed) await api.removeDeck(deckId);
               setDecks((all) => all.filter((d) => !doomed.includes(d.id)));
               setProgress((all) => all.filter((p) => !doomed.includes(p.deck_id)));
-            } else {
-              // Ungroup: the decks stay, just without a group
-              setDecks((all) => all.map((d) => (d.group_id === id ? { ...d, group_id: null } : d)));
+            } else if (moveTo) {
+              // Keep the decks: they move to another group first
+              const moving = decks.filter((d) => d.group_id === id);
+              await Promise.all(moving.map((d) => api.updateDeck(d.id, { group_id: moveTo })));
+              setDecks((all) => all.map((d) => (d.group_id === id ? { ...d, group_id: moveTo } : d)));
             }
             await api.removeGroup(id);
-            setGroups((all) => all.filter((g) => g.id !== id));
+            setGroups((all) => (all || []).filter((g) => g.id !== id));
           } catch (e) { setError(api.friendlyError(e)); }
         }}
         onReorderGroups={async (ordered) => {
@@ -419,13 +451,13 @@ function Library({ user, onUser }) {
         }}
         onShareGroup={async (group) => {
           const r = await api.shareGroup(group);
-          setGroups((all) => all.map((g) => (g.id === group.id ? { ...g, share_id: r.id } : g)));
+          setGroups((all) => (all || []).map((g) => (g.id === group.id ? { ...g, share_id: r.id } : g)));
           track('group_shared', {});
           return r;
         }}
         onStopSharingGroup={async (id) => {
           await api.stopSharingGroup(id);
-          setGroups((all) => all.map((g) => (g.id === id ? { ...g, share_id: null } : g)));
+          setGroups((all) => (all || []).map((g) => (g.id === id ? { ...g, share_id: null } : g)));
         }}
         onMoveDeck={async (deckId, groupId) => {
           setDecks((all) => all.map((d) => (d.id === deckId ? { ...d, group_id: groupId } : d)));

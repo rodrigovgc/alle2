@@ -177,10 +177,10 @@ export async function stopSharing(deckId) {
 /* ---- Deck groups (supabase/010_groups.sql) ------------------------------ */
 const missingGroups = (e) => /deck_groups|group_id/.test(e?.message || '');
 
-/** Groups in their order. Before 010 runs there are none (and no error). */
+/** Groups in their order, or null before supabase/010_groups.sql has run. */
 export async function listGroups() {
   const { data, error } = await supabase.from('deck_groups').select('*').order('position', { ascending: true });
-  if (error) { if (missingGroups(error)) return []; throw error; }
+  if (error) { if (missingGroups(error)) return null; throw error; }
   return data || [];
 }
 export async function createGroup(group) {

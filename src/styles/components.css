@@ -660,10 +660,11 @@ select.input { background-image: none; }
 .sheet--popup .sheet__actions::before, .shuffle-body .sheet__actions::before {
   content: ""; position: absolute; z-index: -1;
   left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1);
-  top: calc(var(--space-3) * -1); bottom: 0;   /* no overhang: it made popups scroll for nothing */
+  top: 0; bottom: 0;   /* starts at the buttons: never covers the content above */
   background: color-mix(in srgb, var(--card-bg) 82%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5);
-  box-shadow: 0 -1px 0 var(--border-subtle);
+  box-shadow: 0 -1px 0 transparent;
+  transition: box-shadow var(--duration-base);
   pointer-events: none;
 }
 
@@ -835,3 +836,9 @@ select.input { background-image: none; }
 .finish-block__links { font-size: var(--font-size-caption); color: var(--text-secondary); margin-top: calc(var(--space-1) * -1); }
 .finish-block__links a { color: var(--text-primary); font-weight: 500; }
 .finish-block .finish-prompt { margin-top: calc(var(--space-1) * -1); }
+
+/* the line above pinned buttons only when content continues underneath */
+.sheet.has-more .sheet__actions::before { box-shadow: 0 -1px 0 var(--border-subtle); }
+.sheet--popup .sheet__actions, .shuffle-body .sheet__actions { padding-top: var(--space-3); }
+/* Bottom sheets clip to their rounded top, so nothing pokes out while scrolling */
+.sheet { overflow: hidden; }

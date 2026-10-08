@@ -618,3 +618,17 @@
 .sortable-deck.is-static { cursor: auto; }
 .group__head { justify-content: flex-start; }
 .group__head .group__title { flex: 0 1 auto; min-width: 0; }
+
+/* Group heading details */
+.group__head { align-items: center; min-height: 44px; }
+.group__title-edit { position: relative; display: inline-grid; max-width: 100%; min-width: 0; }
+.group__title-edit > * { grid-area: 1 / 1; }
+.group__title-sizer { visibility: hidden; white-space: pre; padding: 0 6px; overflow: hidden; }
+.group__title-edit .group__title-input { width: 100%; max-width: none; padding: 0 6px; margin-left: -6px; }
+.group__more {
+  display: grid; place-items: center; width: 36px; height: 36px; margin-right: 14px; /* lines up with the decks' ⋯ */
+  border-radius: 50%; color: var(--text-primary);
+}
+.group__more:hover { background: var(--color-surface); }
+.group__more .icon { width: 20px; height: 20px; }
+.group__title-edit .group__title-input { min-width: 0; }

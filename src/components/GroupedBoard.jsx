@@ -10,7 +10,6 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Icon } from './Icon.jsx';
-import { IconButton } from './Button.jsx';
 import { Menu } from './Menu.jsx';
 
 /*
@@ -127,19 +126,18 @@ export function GroupedBoard({
           <GroupSection
             key={g.id}
             group={g}
-            count={(items[g.id] || []).length}
             items={menuItemsFor(g, (items[g.id] || []).map((id) => byId[id]).filter(Boolean))}
             onToggle={() => onToggle(g)}
             onRename={(title) => onRename(g, title)}
           >
             <DeckArea containerKey={g.id} ids={items[g.id] || []} byId={byId} renderDeck={renderDeck} canDrag={canDragDecks}
-              empty="No decks yet. Drag one here, or use a deck’s ⋯ menu and choose Move to group." />
+              empty={canDragDecks ? 'No decks yet. Drag one here, or use a deck’s ⋯ menu and choose Move to group.' : 'No decks yet. Use a deck’s ⋯ menu and choose Move to group.'} />
           </GroupSection>
         ))}
       </SortableContext>
-      {(items[NONE].length > 0 || (canDragDecks && active && isDeckKey(active))) && (
+      {items[NONE].length > 0 && (
         <section className="group group--none" aria-label="Decks without a group">
-          <h2 className="home__title group__title group__title--none">Not in a group</h2>
+          <h2 className="home__title group__title group__title--none">Other decks</h2>
           <DeckArea containerKey={NONE} ids={items[NONE]} byId={byId} renderDeck={renderDeck} canDrag={canDragDecks}
             empty="Drop a deck here to take it out of its group." />
         </section>
@@ -176,7 +174,7 @@ function SortableDeck({ id, disabled, children }) {
   );
 }
 
-function GroupSection({ group, count, items, onToggle, onRename, children }) {
+function GroupSection({ group, items, onToggle, onRename, children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const reduce = useReducedMotion();
@@ -191,24 +189,24 @@ function GroupSection({ group, count, items, onToggle, onRename, children }) {
     >
       <div className="home__title-row group__head" {...attributes} {...listeners} title="Drag to reorder groups">
         <GroupName title={group.title} editing={editing} setEditing={setEditing} onRename={onRename} />
-        <span className="group__count">{count}</span>
         <button type="button" className="group__chevron-btn" aria-expanded={open} aria-label={open ? `Collapse ${group.title}` : `Expand ${group.title}`} onClick={onToggle}>
           <Icon name="chevron" className={`group__chevron ${open ? '' : 'is-closed'}`} />
         </button>
         <span className="group__spacer" />
         <div className="group__menu">
-          <IconButton icon="more" label={`Options for group ${group.title}`} onClick={() => setMenuOpen(true)} />
+          <button type="button" className="group__more" aria-label={`Options for group ${group.title}`} onClick={() => setMenuOpen(true)}>
+            <Icon name="more" />
+          </button>
           <Menu open={menuOpen} onClose={() => setMenuOpen(false)} items={items} className="menu--deck" />
         </div>
       </div>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
-            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
-            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0, overflow: 'hidden' }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto', transitionEnd: { overflow: 'visible' } }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0, overflow: 'hidden' }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            style={{ overflow: 'hidden' }}
           >
             {children}
           </motion.div>
@@ -231,19 +229,26 @@ function GroupName({ title, editing, setEditing, onRename }) {
   };
   if (editing) {
     return (
-      <input
-        ref={ref}
-        className="home__title group__title group__title-input"
-        value={value}
-        aria-label="Group name"
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={save}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-          if (e.key === 'Escape') { setValue(title); setEditing(false); }
-        }}
-        onPointerDown={(e) => e.stopPropagation()}
-      />
+      <span className="group__title-edit">
+        {/* the hidden copy sets the width, so the field only grows when the text does */}
+        <span className="home__title group__title group__title-sizer" aria-hidden="true">{value || ' '}</span>
+        <input
+          ref={ref}
+          className="home__title group__title group__title-input"
+          size={1}
+          value={value}
+          aria-label="Group name"
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={save}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+            if (e.key === 'Escape') { setValue(title); setEditing(false); }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        />
+      </span>
     );
   }
   return (

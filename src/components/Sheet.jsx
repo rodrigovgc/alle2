@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { IconButton } from './Button.jsx';
 import { SPRING } from '../styles/tokens.js';
@@ -88,6 +88,22 @@ function SheetFrame({ title, onClose, children }) {
 
   const scrollRef = useRef(null);
   useFocusIntoView(scrollRef);
+  // Hairlines only when there's something underneath: above (scrolled) or below (more to see)
+  const edges = useCallback(() => {
+    const el = scrollRef.current; const sheet = el?.parentElement;
+    if (!el || !sheet) return;
+    sheet.classList.toggle('is-scrolled', el.scrollTop > 2);
+    sheet.classList.toggle('has-more', el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+  }, []);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    edges();
+    const ro = new ResizeObserver(edges);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+  }, [edges]);
   return (
     <>
       <header className="sheet__header" ref={headRef}>
@@ -97,7 +113,7 @@ function SheetFrame({ title, onClose, children }) {
       <div
         className="sheet__scroll"
         ref={scrollRef}
-        onScroll={(e) => e.currentTarget.parentElement?.classList.toggle('is-scrolled', e.currentTarget.scrollTop > 2)}
+        onScroll={edges}
       >{children}</div>
     </>
   );

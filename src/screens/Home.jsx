@@ -79,8 +79,9 @@ export function Home({
     />
   );
   // Groups: shown as sections when not searching or reordering
-  const sortedGroups = [...groups].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  const grouped = !query && !reordering && sortedGroups.length > 0;
+  const groupsOn = Array.isArray(groups);   // false until supabase/010_groups.sql has run
+  const sortedGroups = [...(groups || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const grouped = !query && !reordering && groupsOn && sortedGroups.length > 0 && decks.length > 0;
   const groupIds = new Set(sortedGroups.map((g) => g.id));
   const ungrouped = decks.filter((d) => !d.group_id || !groupIds.has(d.group_id));
   // Reorder decks inside one group (or the ungrouped ones) and keep the rest in place
@@ -90,11 +91,11 @@ export function Home({
   };
   const ptr = usePullToRefresh(onRefresh, !sheet && !reordering);
   async function finishReorder() {
-    const changed = order.some((d, i) => d.id !== decks[i]?.id);
-    const next = order;
+    const { list, from } = order;
     setOrder(null);
-    if (changed) await onReorder(next);
+    if (list.some((d, i) => d.id !== from[i]?.id)) reorderSubset(list);
   }
+  const startReorder = (list, title) => { setSearching(false); setQuery(''); setOrder({ list, from: list, title }); };
   // Ready-made decks the user hasn't added yet; added ones are hidden.
   const remainingReadyMade = READY_MADE.filter((r) => !decks.some((d) => d.is_sample && d.title === r.title));
 
@@ -133,11 +134,10 @@ export function Home({
             onClose={() => setMenuOpen(false)}
             className="menu--home"
             items={[
-              ...(decks.length > 1 ? [
-                { label: 'Reorder decks', icon: 'sort', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } },
+              ...(!groupsOn && decks.length > 1 ? [
+                { label: 'Reorder decks', icon: 'sort', onSelect: () => startReorder(decks, 'Reorder decks') },
                 { label: 'Repaint decks', icon: 'repaint', onSelect: () => { setSearching(false); setQuery(''); onRainbow(); } },
               ] : []),
-              ...(decks.length ? [{ label: 'New group', icon: 'folder', onSelect: () => setSheet({ type: 'group-new' }) }] : []),
               { label: 'Account', icon: 'person', onSelect: () => setSheet({ type: 'account' }) },
               { label: 'Help', icon: 'help', onSelect: () => onHelp() },
             ]}
@@ -203,9 +203,9 @@ export function Home({
         </motion.div>
       </header>
 
-      {(loading || decks.length > 0) && (
+      {grouped ? <h1 className="visually-hidden">My study decks</h1> : (loading || decks.length > 0) && (
         <div className="home__title-row">
-          <h1 className="home__title">{reordering ? 'Reorder decks' : 'My study decks'}</h1>
+          <h1 className="home__title">{reordering ? order.title : 'My study decks'}</h1>
           {reordering && <button type="button" className="text-btn home__done" onClick={finishReorder}>Done</button>}
         </div>
       )}
@@ -233,7 +233,7 @@ export function Home({
         {!!decks.length && !visible.length && (
           <p className="empty__body">No decks match “{query}”.</p>
         )}
-        {reordering && <ReorderList decks={order} mode={colorMode} onChange={setOrder} />}
+        {reordering && <ReorderList decks={order.list} mode={colorMode} onChange={(list) => setOrder((o) => ({ ...o, list }))} />}
         {grouped && (
           <GroupedBoard
             groups={sortedGroups}
@@ -246,10 +246,16 @@ export function Home({
             onDecksChange={onDecksChange}
             menuItemsFor={(g, inGroup) => [
               ...(inGroup.length ? [{ label: 'Shuffle this group', icon: 'shuffle', onSelect: () => onShuffle(inGroup.map((d) => d.id)) }] : []),
+              ...(inGroup.length > 1 ? [
+                { label: 'Reorder decks', icon: 'sort', onSelect: () => startReorder(inGroup, `Reorder ${g.title}`) },
+                { label: 'Repaint decks', icon: 'repaint', onSelect: () => onRainbow(inGroup.map((d) => d.id)) },
+              ] : []),
+              { label: 'New group', icon: 'folder', onSelect: () => setSheet({ type: 'group-new', after: g.id }) },
               ...(inGroup.length ? [{ label: 'Share group', icon: 'share', onSelect: () => setSheet({ type: 'group-share', group: g }) }] : []),
-              { label: 'Ungroup', icon: 'folder', onSelect: () => onDeleteGroup(g.id, { withDecks: false }) },
-              { divider: true },
-              { label: 'Delete group', icon: 'trash', danger: true, onSelect: () => setSheet({ type: 'group-delete', group: g, count: inGroup.length }) },
+              ...(sortedGroups.length > 1 ? [
+                { divider: true },
+                { label: 'Delete group', icon: 'trash', danger: true, onSelect: () => setSheet({ type: 'group-delete', group: g, count: inGroup.length }) },
+              ] : []),
             ]}
           />
         )}
@@ -458,7 +464,7 @@ export function Home({
             hint={sheet.type === 'group-new' ? 'Then add decks with each deck’s ⋯ menu → Move to group.' : null}
             onSubmit={async (title) => {
               if (sheet.type === 'group-rename') await onUpdateGroup(sheet.group.id, { title });
-              else await onCreateGroup(title);
+              else await onCreateGroup(title, sheet.after);
               close();
             }}
           />
@@ -473,12 +479,18 @@ export function Home({
                 ? <>“{sheet.group.title}” and its {sheet.count} {sheet.count === 1 ? 'deck' : 'decks'} will be deleted, with their progress. This can’t be undone.</>
                 : <>“{sheet.group.title}” will be deleted.</>}
             </p>
-            {sheet.count > 0 && <p className="field__hint">To keep the decks, choose Ungroup instead.</p>}
             <SheetActions>
               <Button variant="danger" onClick={async () => { await onDeleteGroup(sheet.group.id, { withDecks: true }); close(); }}>
                 {sheet.count ? `Delete group and ${sheet.count} ${sheet.count === 1 ? 'deck' : 'decks'}` : 'Delete group'}
               </Button>
-              {sheet.count > 0 && <Button variant="secondary" onClick={async () => { await onDeleteGroup(sheet.group.id, { withDecks: false }); close(); }}>Ungroup instead</Button>}
+              {sheet.count > 0 && (() => {
+                const other = sortedGroups.find((x) => x.id !== sheet.group.id);
+                return other && (
+                  <Button variant="secondary" onClick={async () => { await onDeleteGroup(sheet.group.id, { moveTo: other.id }); close(); }}>
+                    Keep the decks: move to “{other.title}”
+                  </Button>
+                );
+              })()}
             </SheetActions>
           </div>
         )}
@@ -803,11 +815,6 @@ function MoveToGroup({ deck, groups, onMove, onCreate }) {
               <Icon name="folder" /><span>{g.title}</span>{deck.group_id === g.id && <Icon name="check" />}
             </button>
           ))}
-          {deck.group_id && (
-            <button type="button" className="move-list__item" onClick={() => run(() => onMove(null))}>
-              <Icon name="close" /><span>Remove from group</span>
-            </button>
-          )}
         </div>
       )}
       {creating ? (
