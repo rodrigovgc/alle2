@@ -583,3 +583,20 @@
 .fixup__keys { display: none; margin: calc(var(--space-2) * -1) 0 var(--space-3); text-align: center; font-size: var(--font-size-caption); color: var(--text-tertiary); }
 @media (hover: hover) and (pointer: fine) { .fixup__keys { display: block; } }
 @media (prefers-reduced-motion: reduce) { .fixup__bank.is-miss { animation: none; } .chip--typing i { animation: none; } }
+
+/* ---- Deck groups ---------------------------------------------------------- */
+.group { margin-top: var(--space-8); }
+.group__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.group__toggle { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; padding: 0; color: inherit; text-align: left; }
+.group__title { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.group__count { flex: none; min-width: 24px; height: 24px; padding: 0 8px; border-radius: 999px; background: var(--color-surface-deep); font-size: var(--font-size-caption); display: inline-grid; place-items: center; color: var(--text-secondary); }
+.group__chevron { flex: none; width: 20px; height: 20px; color: var(--text-secondary); transition: transform var(--duration-base) var(--ease-out); }
+.group__chevron.is-closed { transform: rotate(-90deg); }
+.group__menu { position: relative; flex: none; }
+.group__decks { margin-top: var(--space-3); }
+.group__empty { grid-column: 1 / -1; padding: var(--space-5); border-radius: var(--radius-deck); border: 1.5px dashed var(--border-subtle); color: var(--text-secondary); font-size: var(--font-size-small); text-align: center; }
+.move-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.move-list__item { display: flex; align-items: center; gap: var(--space-3); min-height: 52px; padding: 0 var(--space-4); border-radius: var(--radius-field); background: var(--choice-bg); text-align: left; font-size: var(--font-size-button); }
+.move-list__item span { flex: 1; }
+.move-list__item.is-on { background: color-mix(in srgb, var(--cta-bg) 8%, var(--choice-bg)); font-weight: var(--font-weight-semibold); }
+.move-new { display: flex; flex-direction: column; gap: var(--space-3); }

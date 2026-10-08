@@ -167,14 +167,18 @@
    content scrolling underneath blurs out instead of being cut off. */
 .sheet__header::before {
   content: ""; position: absolute; z-index: -1;
-  left: 0; right: 0; top: 0; bottom: calc(var(--size-edge-fade) * -1);
+  left: 0; right: 0; top: 0;
   border-top-left-radius: inherit; border-top-right-radius: inherit;
-  background: linear-gradient(to bottom, var(--card-bg) 72%, color-mix(in srgb, var(--card-bg) 0%, transparent));
-  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
-  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+  /* Frosted, like the website's navigation: translucent, blurred, and a
+     hairline once content scrolls underneath */
+  bottom: 0;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 1px 0 transparent;
+  transition: box-shadow var(--duration-base);
   pointer-events: none;
 }
+.sheet.is-scrolled .sheet__header::before { box-shadow: 0 1px 0 var(--border-subtle); }
 .sheet__title {
   font-size: var(--font-size-small-title);
   font-weight: var(--font-weight-semibold);
@@ -656,11 +660,10 @@ select.input { background-image: none; }
 .sheet--popup .sheet__actions::before, .shuffle-body .sheet__actions::before {
   content: ""; position: absolute; z-index: -1;
   left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1);
-  top: calc(var(--size-edge-fade) * -1.5); bottom: calc(var(--kb, 0px) * -1 - 40px);
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--card-bg) 0%, transparent), var(--card-bg) 45%);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40%);
-  mask-image: linear-gradient(to bottom, transparent, #000 40%);
+  top: calc(var(--space-3) * -1); bottom: calc(var(--kb, 0px) * -1 - 40px);
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 -1px 0 var(--border-subtle);
   pointer-events: none;
 }
 
@@ -734,3 +737,58 @@ select.input { background-image: none; }
 }
 .share-link { font-size: var(--font-size-small); color: var(--text-secondary); }
 .share-hint { margin-top: calc(var(--space-2) * -1); text-align: center; font-size: var(--font-size-caption); color: var(--text-tertiary); text-wrap: pretty; }
+
+/* Edit deck: rename straight on the card */
+.deck__title-edit { position: relative; z-index: 1; display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); cursor: text; width: 100%; max-width: 100%; }
+.deck__title-input {
+  flex: 1 1 0; width: 0; min-width: 0; margin: 0; padding: 2px 6px; margin-left: -6px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--deck-ink);
+  font: inherit; font-size: var(--font-size-deck-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title);
+  -webkit-line-clamp: unset; display: block; outline: none;
+  transition: background var(--duration-fast);
+}
+.deck__title-input:hover { background: color-mix(in srgb, var(--deck-deep) 35%, transparent); }
+.deck__title-input:focus { background: color-mix(in srgb, #fff 55%, transparent); }
+.deck__title-pencil { flex: none; width: 18px; height: 18px; color: var(--deck-ink-2); opacity: .8; }
+.deck__title-hint { margin-top: calc(var(--space-2) * -1); }
+.autosave-hint { text-align: center; margin-top: calc(var(--space-2) * -1); }
+
+/* ---- AI builder ----------------------------------------------------------- */
+/* Keeps the deck in view while choosing sides and size */
+.builder__deck { display: flex; align-items: center; gap: 6px; font-size: var(--font-size-small); color: var(--text-secondary); margin-top: calc(var(--space-2) * -1); }
+.builder__deck .icon { width: 14px; height: 14px; }
+.builder__deck b { color: var(--text-primary); font-weight: var(--font-weight-semibold); }
+
+/* Front / back shown side by side, with a real example */
+.side-demo { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: var(--space-2); }
+.side-demo__card {
+  display: flex; flex-direction: column; gap: 4px; min-height: 108px; padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-field); background: var(--card-bg); box-shadow: var(--shadow-card-behind);
+}
+.side-demo__card--back { background: color-mix(in srgb, var(--deck-blue) 55%, var(--card-bg)); }
+.side-demo__label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-tertiary); }
+.side-demo__name { font-size: var(--font-size-caption); color: var(--text-secondary); }
+.side-demo__text { margin-top: auto; font-size: var(--font-size-button); font-weight: var(--font-weight-semibold); line-height: 1.25; text-wrap: balance; }
+.side-demo__arrow { align-self: center; width: 18px; height: 18px; color: var(--text-tertiary); }
+
+/* Finish: overview + three steps + paste box */
+.finish-summary { display: flex; flex-direction: column; gap: 6px; padding: var(--space-3); border-radius: var(--radius-field); background: var(--color-surface); }
+.finish-summary .input { font-weight: var(--font-weight-semibold); background: var(--card-bg); }
+.finish-summary__facts { font-size: var(--font-size-caption); color: var(--text-secondary); padding: 0 4px; }
+.finish-steps { list-style: none; margin: 0; padding: 0; counter-reset: fs; display: flex; flex-direction: column; gap: var(--space-3); }
+.finish-steps > li { counter-increment: fs; position: relative; padding-left: 34px; display: flex; flex-direction: column; gap: 6px; }
+.finish-steps > li::before {
+  content: counter(fs); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--text-primary); color: var(--color-background); font-size: 13px; font-weight: 600;
+}
+.finish-steps b { font-weight: var(--font-weight-semibold); line-height: 24px; }
+.finish-steps__hint { font-size: var(--font-size-caption); color: var(--text-secondary); }
+.finish-steps__row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.finish-steps__row .btn { width: auto; padding: 0 var(--space-5); }
+.ai-link {
+  display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: var(--radius-pill);
+  background: var(--color-surface); color: var(--text-primary); text-decoration: none; font-size: var(--font-size-small); font-weight: 500;
+}
+.ai-link .icon { width: 14px; height: 14px; }
+.finish-prompt summary { cursor: pointer; font-size: var(--font-size-caption); color: var(--text-secondary); width: max-content; }
+.finish-prompt .prompt-box__text { margin-top: var(--space-2); max-height: 160px; overflow: auto; padding: var(--space-3); border-radius: var(--radius-field); background: var(--color-surface); font-size: 12px; white-space: pre-wrap; }

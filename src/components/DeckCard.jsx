@@ -4,16 +4,16 @@ import { Menu } from './Menu.jsx';
 import { deckColorVars, deckShape } from '../styles/tokens.js';
 
 /** Non-interactive copy of a deck card, used as the live preview in Edit deck. */
-export function DeckPreview({ deck }) {
+export function DeckPreview({ deck, titleSlot = null }) {
   const { fill, deep, ink, ink2 } = deckColorVars(deck.color);
   const count = deck.cards?.length ?? 0;
   return (
-    <div className="deck deck--preview" style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }} aria-hidden="true">
+    <div className={`deck deck--preview ${titleSlot ? 'is-editable' : ''}`} style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }} aria-hidden={titleSlot ? undefined : 'true'}>
       <div className="deck__surface">
         <span className="deck__meta">
           {deck.front_label}<Icon name="arrow" className="deck__arrow" />{deck.back_label}
         </span>
-        <span className="deck__title">{deck.title || 'Untitled deck'}</span>
+        {titleSlot || <span className="deck__title">{deck.title || 'Untitled deck'}</span>}
         <span className="deck__count">{count} {count === 1 ? 'card' : 'cards'}</span>
         <DeckShape shape={deckShape(deck)} />
       </div>
@@ -21,7 +21,7 @@ export function DeckPreview({ deck }) {
   );
 }
 
-export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onShare, onResetProgress, onRemove }) {
+export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, onShare, onMoveToGroup, onResetProgress, onRemove }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { fill, deep, ink, ink2 } = deckColorVars(deck.color, mode);
   // Bounce when the colour changes (e.g. Rainbow colours), not on first show.
@@ -42,6 +42,7 @@ export function DeckCard({ deck, mode, due, onOpen, onUpdateUrl, onCustomize, on
     ...(ownSheet ? [{ label: 'Update URL', icon: 'link', onSelect: onUpdateUrl }] : []),
     { label: 'Edit deck', icon: 'edit', onSelect: onCustomize },
     { label: 'Share deck', icon: 'share', onSelect: onShare },
+    ...(onMoveToGroup ? [{ label: 'Move to group', icon: 'folder', onSelect: onMoveToGroup }] : []),
     { label: 'Reset progress', icon: 'reset', onSelect: onResetProgress },
     { divider: true },
     { label: 'Remove deck', icon: 'trash', danger: true, onSelect: onRemove },

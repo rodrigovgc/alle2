@@ -30,7 +30,7 @@ function query(table) {
     if (!user) return { data: null, error: { message: 'Not signed in' } };
     const mine = (r) => r.user_id === user.id;
     const match = (r) => mine(r) && state.filters.every((f) => f(r));
-    let rows = db[table];
+    let rows = db[table] || [];
     let data;
 
     if (state.op === 'insert') {

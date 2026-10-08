@@ -73,6 +73,7 @@ export default function App() {
 function Library({ user, onUser }) {
   const ready = true;
   const [decks, setDecks] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState({ name: 'home' });
@@ -194,8 +195,9 @@ function Library({ user, onUser }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await api.listDecks();
+      const [d, g] = await Promise.all([api.listDecks(), api.listGroups().catch(() => [])]);
       setDecks(d);
+      setGroups(g);
       setProgress(await api.listProgress(d.map((x) => x.id)));
       return d;
     } catch (e) {
@@ -346,6 +348,39 @@ function Library({ user, onUser }) {
             api.updateDeck(deck.id, { color }).catch(() => {});
           });
           track('rainbow_used', {});
+        }}
+        groups={groups}
+        onCreateGroup={async (title) => {
+          const position = Math.max(0, ...groups.map((g) => g.position ?? 0)) + 1;
+          const g = await api.createGroup({ title, position });
+          setGroups((all) => [...all, g]);
+          track('group_created', {});
+          return g;
+        }}
+        onUpdateGroup={async (id, patch) => {
+          setGroups((all) => all.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+          try { await api.updateGroup(id, patch); } catch (e) { setError(api.friendlyError(e)); }
+        }}
+        onMoveGroup={async (id, delta) => {
+          // Swap places with the neighbouring group
+          const sorted = [...groups].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+          const i = sorted.findIndex((g) => g.id === id); const j = i + delta;
+          if (i < 0 || j < 0 || j >= sorted.length) return;
+          [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
+          const renum = sorted.map((g, k) => ({ ...g, position: k + 1 }));
+          setGroups(renum);
+          try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); } catch (e) { setError(api.friendlyError(e)); }
+        }}
+        onDeleteGroup={async (id) => {
+          await api.removeGroup(id);
+          setGroups((all) => all.filter((g) => g.id !== id));
+          setDecks((all) => all.map((d) => (d.group_id === id ? { ...d, group_id: null } : d)));
+        }}
+        onMoveDeck={async (deckId, groupId) => {
+          setDecks((all) => all.map((d) => (d.id === deckId ? { ...d, group_id: groupId } : d)));
+          try { await api.updateDeck(deckId, { group_id: groupId }); } catch (e) {
+            setError(/group_id/.test(e.message) ? 'Groups need one database update. Run supabase/010_groups.sql in Supabase.' : api.friendlyError(e));
+          }
         }}
         onReorder={async (ordered) => {
           setDecks(ordered); // show the new order straight away

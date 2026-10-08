@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Logo, Icon, DeckShape } from '../components/Icon.jsx';
 import { Button, IconButton } from '../components/Button.jsx';
 import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
@@ -25,6 +25,7 @@ export function Home({
   onAddSample, onColorMode, onStudyDeck, onShuffle,
   onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onRainbow, onRefresh, onSignOut, user, onUserUpdated,
   onShareDeck, onStopSharing, onHelp,
+  groups = [], onCreateGroup, onUpdateGroup, onMoveGroup, onDeleteGroup, onMoveDeck,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -61,6 +62,30 @@ export function Home({
   // Reorder mode: a working copy of the order, saved on Done.
   const [order, setOrder] = useState(null);
   const reordering = order !== null;
+  const renderDeck = (deck) => (
+    <DeckCard
+      deck={deck}
+      mode={colorMode}
+      due={dueByDeck[deck.id] || 0}
+      onOpen={() => onStudyDeck(deck)}
+      onUpdateUrl={() => setSheet({ type: 'url', deck })}
+      onCustomize={() => setSheet({ type: 'cover', deck })}
+      onShare={() => setSheet({ type: 'share', deck })}
+      onMoveToGroup={() => setSheet({ type: 'move', deck })}
+      onResetProgress={() => setSheet({ type: 'reset', deck })}
+      onRemove={() => setSheet({ type: 'remove', deck })}
+    />
+  );
+  // Groups: shown as sections when not searching or reordering
+  const sortedGroups = [...groups].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const grouped = !query && !reordering && sortedGroups.length > 0;
+  const groupIds = new Set(sortedGroups.map((g) => g.id));
+  const ungrouped = decks.filter((d) => !d.group_id || !groupIds.has(d.group_id));
+  // Reorder decks inside one group (or the ungrouped ones) and keep the rest in place
+  const reorderSubset = (subsetNew) => {
+    const ids = new Set(subsetNew.map((d) => d.id)); let k = 0;
+    onReorder(decks.map((d) => (ids.has(d.id) ? subsetNew[k++] : d)));
+  };
   const ptr = usePullToRefresh(onRefresh, !sheet && !reordering);
   async function finishReorder() {
     const changed = order.some((d, i) => d.id !== decks[i]?.id);
@@ -110,6 +135,7 @@ export function Home({
                 { label: 'Reorder decks', icon: 'sort', onSelect: () => { setSearching(false); setQuery(''); setOrder(decks); } },
                 { label: 'Repaint decks', icon: 'repaint', onSelect: () => { setSearching(false); setQuery(''); onRainbow(); } },
               ] : []),
+              ...(decks.length ? [{ label: 'New group', icon: 'folder', onSelect: () => setSheet({ type: 'group-new' }) }] : []),
               { label: 'Account', icon: 'person', onSelect: () => setSheet({ type: 'account' }) },
               { label: 'Help', icon: 'help', onSelect: () => onHelp() },
             ]}
@@ -206,7 +232,8 @@ export function Home({
           <p className="empty__body">No decks match “{query}”.</p>
         )}
         {reordering && <ReorderList decks={order} mode={colorMode} onChange={setOrder} />}
-        {!reordering && canDrag && !query && (
+        {grouped && <DeckGrid decks={ungrouped} canDrag={canDrag} onReorder={reorderSubset} renderDeck={renderDeck} />}
+        {!grouped && !reordering && canDrag && !query && (
           <SortableDecks decks={decks} onReorder={onReorder} renderDeck={(deck) => (
               <DeckCard
                 deck={deck}
@@ -221,7 +248,7 @@ export function Home({
               />
             )} />
         )}
-        {!reordering && !(canDrag && !query) && <AnimatePresence initial={false} mode="popLayout">
+        {!grouped && !reordering && !(canDrag && !query) && <AnimatePresence initial={false} mode="popLayout">
           {visible.map((deck) => (
             <motion.div
               key={deck.id}
@@ -248,6 +275,30 @@ export function Home({
           ))}
         </AnimatePresence>}
       </section>
+
+      {grouped && sortedGroups.map((g, i) => {
+        const inGroup = decks.filter((d) => d.group_id === g.id);
+        return (
+          <GroupSection
+            key={g.id}
+            group={g}
+            count={inGroup.length}
+            onToggle={() => onUpdateGroup(g.id, { collapsed: !g.collapsed })}
+            items={[
+              ...(inGroup.length ? [{ label: 'Shuffle this group', icon: 'shuffle', onSelect: () => onShuffle(inGroup.map((d) => d.id)) }] : []),
+              { label: 'Rename group', icon: 'edit', onSelect: () => setSheet({ type: 'group-rename', group: g }) },
+              ...(i > 0 ? [{ label: 'Move up', icon: 'sort', onSelect: () => onMoveGroup(g.id, -1) }] : []),
+              ...(i < sortedGroups.length - 1 ? [{ label: 'Move down', icon: 'sort', onSelect: () => onMoveGroup(g.id, 1) }] : []),
+              { divider: true },
+              { label: 'Delete group', icon: 'trash', danger: true, onSelect: () => setSheet({ type: 'group-delete', group: g }) },
+            ]}
+          >
+            {inGroup.length
+              ? <DeckGrid decks={inGroup} canDrag={canDrag} onReorder={reorderSubset} renderDeck={renderDeck} />
+              : <p className="group__empty">No decks yet. Use a deck’s ⋯ menu and choose Move to group.</p>}
+          </GroupSection>
+        );
+      })}
 
       {decks.length > 0 && !reordering && (
         <div className={`home__cta ${ctaCompact ? 'is-compact' : ''}`}>
@@ -383,12 +434,51 @@ export function Home({
           <CoverForm
             deck={sheet.deck}
             onSave={(patch) => onUpdateDeck(sheet.deck.id, patch)}
+            onDone={close}
           />
         )}
       </Sheet>
 
       <Sheet open={sheet?.type === 'share'} onClose={close} title="Share deck" variant="dialog">
         {sheet?.deck && <ShareSheet deck={sheet.deck} onShare={onShareDeck} onStop={async () => { await onStopSharing(sheet.deck.id); close(); }} />}
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'move'} onClose={close} title="Move to group" variant="dialog">
+        {sheet?.deck && (
+          <MoveToGroup
+            deck={sheet.deck}
+            groups={sortedGroups}
+            onMove={async (groupId) => { await onMoveDeck(sheet.deck.id, groupId); close(); }}
+            onCreate={async (title) => { const g = await onCreateGroup(title); await onMoveDeck(sheet.deck.id, g.id); close(); }}
+          />
+        )}
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'group-new' || sheet?.type === 'group-rename'} onClose={close} title={sheet?.type === 'group-rename' ? 'Rename group' : 'New group'} variant="dialog">
+        {(sheet?.type === 'group-new' || sheet?.type === 'group-rename') && (
+          <GroupNameForm
+            initial={sheet.group?.title || ''}
+            submitLabel={sheet.type === 'group-rename' ? 'Save' : 'Create group'}
+            hint={sheet.type === 'group-new' ? 'Then add decks with each deck’s ⋯ menu → Move to group.' : null}
+            onSubmit={async (title) => {
+              if (sheet.type === 'group-rename') await onUpdateGroup(sheet.group.id, { title });
+              else await onCreateGroup(title);
+              close();
+            }}
+          />
+        )}
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'group-delete'} onClose={close} title="Delete group?" variant="dialog">
+        {sheet?.group && (
+          <div className="sheet__body">
+            <p className="sheet__text">“{sheet.group.title}” will be removed. Its decks stay, they just won’t be in a group.</p>
+            <SheetActions>
+              <Button variant="danger" onClick={async () => { await onDeleteGroup(sheet.group.id); close(); }}>Delete group</Button>
+              <Button variant="secondary" onClick={close}>Cancel</Button>
+            </SheetActions>
+          </div>
+        )}
       </Sheet>
 
       <Sheet open={sheet?.type === 'reset'} onClose={close} title="Reset progress" variant="dialog">
@@ -508,7 +598,7 @@ function DeckUrlForm({ initialUrl = '', submitLabel, onSubmit, withTitle = false
   );
 }
 
-function CoverForm({ deck, onSave }) {
+function CoverForm({ deck, onSave, onDone }) {
   const [title, setTitle] = useState(deck.title);
   const [color, setColor] = useState(deck.color);
   const [shape, setShape] = useState(deckShape(deck));
@@ -549,7 +639,24 @@ function CoverForm({ deck, onSave }) {
 
   return (
     <div className="sheet__body">
-      <DeckPreview deck={{ ...deck, title, color, shape }} />
+      <DeckPreview
+        deck={{ ...deck, title, color, shape }}
+        titleSlot={(
+          <label className="deck__title-edit">
+            <input
+              className="deck__title deck__title-input"
+              name="alle-deck-name"
+              autoComplete="off"
+              aria-label="Deck name"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+            />
+            <Icon name="edit" className="deck__title-pencil" />
+          </label>
+        )}
+      />
+      <p className="field__hint deck__title-hint">Tap the name to rename the deck.</p>
 
       <fieldset className="picker">
         <legend className="field__label">Colour</legend>
@@ -581,9 +688,6 @@ function CoverForm({ deck, onSave }) {
         </div>
       </fieldset>
 
-      <Field label="Deck name">
-        <input className="input" name="alle-deck-name" autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} />
-      </Field>
       {canChoose && (
         <div className="builder__group">
           <span className="field__label" id="answer-label">Answer by</span>
@@ -601,9 +705,11 @@ function CoverForm({ deck, onSave }) {
         </select>
       </Field>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <p className={`autosave ${status ? 'is-visible' : ''}`} role="status" aria-live="polite">
-        {status === 'saving' ? 'Saving…' : status === 'saved' ? '✓ Saved' : ''}
-      </p>
+      {status === 'saved' && <div className="toast toast--notice" role="status">✓ Changes saved</div>}
+      <SheetActions>
+        <Button onClick={onDone}>Done</Button>
+      </SheetActions>
+      <p className="field__hint autosave-hint">Changes save as you go.</p>
     </div>
   );
 }
@@ -644,6 +750,105 @@ function ShufflePicker({ decks, onStart }) {
             : `Shuffle ${chosen.size} ${chosen.size === 1 ? 'deck' : 'decks'}`}
         </Button>
       </SheetActions>
+    </div>
+  );
+}
+
+/** A list of deck cards: draggable on desktop, simple grid elsewhere. */
+function DeckGrid({ decks, canDrag, onReorder, renderDeck }) {
+  if (!decks.length) return null;
+  if (canDrag) return <SortableDecks decks={decks} onReorder={onReorder} renderDeck={renderDeck} />;
+  return decks.map((deck) => <div key={deck.id}>{renderDeck(deck)}</div>);
+}
+
+/** A collapsible group of decks, titled like "My study decks". */
+function GroupSection({ group, count, onToggle, items, children }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const reduce = useReducedMotion();
+  const open = !group.collapsed;
+  return (
+    <section className="group" aria-label={group.title}>
+      <div className="home__title-row group__head">
+        <button type="button" className="group__toggle" aria-expanded={open} onClick={onToggle}>
+          <h2 className="home__title group__title">{group.title}</h2>
+          <span className="group__count">{count}</span>
+          <Icon name="chevron" className={`group__chevron ${open ? '' : 'is-closed'}`} />
+        </button>
+        <div className="group__menu">
+          <IconButton icon="more" label={`Options for group ${group.title}`} onClick={() => setMenuOpen(true)} />
+          <Menu open={menuOpen} onClose={() => setMenuOpen(false)} items={items} className="menu--deck" />
+        </div>
+      </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            className="deck-list group__decks"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
+function GroupNameForm({ initial, submitLabel, hint, onSubmit }) {
+  const [title, setTitle] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  return (
+    <form className="sheet__body" onSubmit={async (e) => {
+      e.preventDefault(); if (!title.trim()) return;
+      setBusy(true); setError('');
+      try { await onSubmit(title.trim()); } catch (err) { setError(err.message); setBusy(false); }
+    }}>
+      <Field label="Group name" hint={hint}>
+        <input className="input" autoFocus value={title} placeholder="e.g. Dutch course" onChange={(e) => setTitle(e.target.value)} />
+      </Field>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <SheetActions><Button type="submit" disabled={busy || !title.trim()}>{busy ? 'Saving…' : submitLabel}</Button></SheetActions>
+    </form>
+  );
+}
+
+function MoveToGroup({ deck, groups, onMove, onCreate }) {
+  const [creating, setCreating] = useState(!groups.length);
+  const [title, setTitle] = useState('');
+  const [error, setError] = useState('');
+  const run = async (fn) => { setError(''); try { await fn(); } catch (e) { setError(e.message); } };
+  return (
+    <div className="sheet__body">
+      <p className="sheet__text">Choose a group for “{deck.title}”.</p>
+      {groups.length > 0 && (
+        <div className="move-list">
+          {groups.map((g) => (
+            <button key={g.id} type="button" className={`move-list__item ${deck.group_id === g.id ? 'is-on' : ''}`} onClick={() => run(() => onMove(g.id))}>
+              <Icon name="folder" /><span>{g.title}</span>{deck.group_id === g.id && <Icon name="check" />}
+            </button>
+          ))}
+          {deck.group_id && (
+            <button type="button" className="move-list__item" onClick={() => run(() => onMove(null))}>
+              <Icon name="close" /><span>Remove from group</span>
+            </button>
+          )}
+        </div>
+      )}
+      {creating ? (
+        <form className="move-new" onSubmit={(e) => { e.preventDefault(); if (title.trim()) run(() => onCreate(title.trim())); }}>
+          <Field label="New group">
+            <input className="input" autoFocus value={title} placeholder="e.g. Dutch course" onChange={(e) => setTitle(e.target.value)} />
+          </Field>
+          <Button type="submit" disabled={!title.trim()}>Create and move</Button>
+        </form>
+      ) : (
+        <button type="button" className="text-btn" onClick={() => setCreating(true)}>+ New group</button>
+      )}
+      {error && <p className="form-error" role="alert">{error}</p>}
     </div>
   );
 }

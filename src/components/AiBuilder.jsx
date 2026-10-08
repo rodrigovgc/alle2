@@ -12,7 +12,7 @@ import {
   LEVELS, SIZES, SUBJECTS, buildPrompt, describeTopic, presetFor,
 } from '../lib/prompt.js';
 
-const STEPS = ['subject', 'topic', 'sides', 'size', 'prompt', 'paste'];
+const STEPS = ['subject', 'topic', 'sides', 'size', 'finish'];
 const LANGS = ['Dutch', 'French', 'Spanish', 'Portuguese', 'German', 'Italian'];
 const TOPIC_HINTS = {
   science: 'e.g. Cell biology',
@@ -20,20 +20,30 @@ const TOPIC_HINTS = {
   math: 'e.g. Multiplication tables',
   other: 'e.g. Wine regions of Portugal',
 };
+// A real example for the front/back step ("thank you" in the language being learned).
+const THANK_YOU = { dutch: 'dank je', french: 'merci', spanish: 'gracias', portuguese: 'obrigado', german: 'danke', italian: 'grazie' };
+
+/** What the deck will be called unless the person renames it. */
+export function defaultDeckName(v) {
+  if (v.subject === 'language') return v.learning.trim() || 'New language';
+  if (v.topic?.trim()) return v.topic.trim();
+  return SUBJECTS.find((s) => s.id === v.subject)?.label ?? 'New deck';
+}
 
 /**
- * Six short steps: subject → topic → front & back → size → prompt → paste.
- * The prompt is a fixed template with the answers filled in, so it runs in
- * the browser at no cost. The last step reads the AI's reply and makes the deck.
+ * Five short steps: subject → topic → front & back → size → finish.
+ * The finish step has everything in one place: an overview, the prompt to copy
+ * (or open straight in an AI chat), and the box to paste the reply into.
+ * The prompt is a fixed template filled in the browser, so it costs nothing.
  */
 export function AiBuilder({ onCreate, pasteOnly = false }) {
   const reduce = useReducedMotion();
-  const [step, setStep] = useState(pasteOnly ? STEPS.indexOf('paste') : 0);
+  const [step, setStep] = useState(pasteOnly ? STEPS.indexOf('finish') : 0);
   const [dir, setDir] = useState(1);
   const [v, setV] = useState({
-    subject: null, known: 'English', learning: '', topic: '',
+    subject: null, known: 'English', learning: '', topic: '', focus: '',
     presetIndex: 0, front: '', back: '', frontHint: '', backHint: '',
-    count: 20, level: 'Beginner', alternatives: true,
+    count: 20, level: 'Beginner', alternatives: true, name: '',
   });
   const set = (patch) => setV((cur) => ({ ...cur, ...patch }));
 
@@ -42,15 +52,15 @@ export function AiBuilder({ onCreate, pasteOnly = false }) {
     v.subject === 'language' ? v.known.trim() && v.learning.trim() : v.subject === 'other' || v.topic.trim(),
     v.front.trim() && v.back.trim(),
     true,
-    true,
-    false, // the paste step has its own button
+    false, // the finish step has its own button
   ];
 
   function go(delta) {
     const nextStep = step + delta;
-    // Entering "front & back": start from the preset for this subject.
+    // Entering "front & back": start from the preset for this subject, and
+    // name the deck after what's being learned (editable at the end).
     if (STEPS[nextStep] === 'sides' && delta > 0) {
-      set(presetFor(v.subject, v, v.presetIndex));
+      set({ ...presetFor(v.subject, v, v.presetIndex), name: defaultDeckName(v) });
     }
     setDir(delta);
     setStep(nextStep);
@@ -63,15 +73,21 @@ export function AiBuilder({ onCreate, pasteOnly = false }) {
         animate: { opacity: 1, x: 0 },
         exit: { opacity: 0, x: -24 * dir, transition: { duration: 0.12 } },
       };
+  const showDeck = !pasteOnly && ['sides', 'size'].includes(STEPS[step]);
 
   return (
     <form
       className="sheet__body builder"
       onSubmit={(e) => { e.preventDefault(); if (valid[step]) go(1); }}
     >
-      <div className="builder__progress" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
-        {STEPS.map((s, i) => <span key={s} className={i <= step ? 'is-done' : ''} />)}
-      </div>
+      {!pasteOnly && (
+        <div className="builder__progress" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
+          {STEPS.map((s, i) => <span key={s} className={i <= step ? 'is-done' : ''} />)}
+        </div>
+      )}
+      {showDeck && (
+        <p className="builder__deck"><Icon name="edit" /> Your deck: <b>{v.name || defaultDeckName(v)}</b></p>
+      )}
 
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={step} className="builder__step" {...slide} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}>
@@ -79,12 +95,13 @@ export function AiBuilder({ onCreate, pasteOnly = false }) {
           {STEPS[step] === 'topic' && <TopicStep v={v} set={set} />}
           {STEPS[step] === 'sides' && <SidesStep v={v} set={set} />}
           {STEPS[step] === 'size' && <SizeStep v={v} set={set} />}
-          {STEPS[step] === 'prompt' && <PromptStep v={v} />}
-          {STEPS[step] === 'paste' && <PasteStep v={v} onCreate={onCreate} onBack={pasteOnly ? null : () => go(-1)} />}
+          {STEPS[step] === 'finish' && (
+            <FinishStep v={v} set={set} pasteOnly={pasteOnly} onCreate={onCreate} onBack={pasteOnly ? null : () => go(-1)} />
+          )}
         </motion.div>
       </AnimatePresence>
 
-      {STEPS[step] !== 'paste' && (
+      {STEPS[step] !== 'finish' && (
         <SheetActions>
           <Button type="submit" disabled={!valid[step]}>
             Continue
@@ -95,8 +112,6 @@ export function AiBuilder({ onCreate, pasteOnly = false }) {
     </form>
   );
 }
-
-/* ---- Steps -------------------------------------------------------------- */
 
 function StepHead({ title, text }) {
   return (
@@ -139,6 +154,8 @@ function Chips({ options, value, onChange, label }) {
   );
 }
 
+/* ---- Steps -------------------------------------------------------------- */
+
 function SubjectStep({ v, set }) {
   return (
     <>
@@ -166,6 +183,16 @@ function SubjectStep({ v, set }) {
   );
 }
 
+/** Optional focus: changes which cards the AI writes, not the deck's name. */
+function FocusField({ v, set, placeholder }) {
+  return (
+    <Field label="Focus (optional)" hint="Narrows which cards the AI writes. Your deck’s name stays the same.">
+      <input className="input" value={v.focus} placeholder={placeholder}
+        onChange={(e) => set({ focus: e.target.value })} />
+    </Field>
+  );
+}
+
 function TopicStep({ v, set }) {
   if (v.subject === 'language') {
     return (
@@ -179,16 +206,15 @@ function TopicStep({ v, set }) {
             onChange={(e) => set({ learning: e.target.value })} />
         </Field>
         <Chips options={LANGS} value={v.learning} onChange={(l) => set({ learning: l })} label="Popular languages" />
+        <FocusField v={v} set={set} placeholder="e.g. food and ordering in a café" />
       </>
     );
   }
   if (v.subject === 'other') {
     return (
       <>
-        <StepHead title="Anything more specific?" text="Optional. A narrower topic gives better cards." />
-        <Field label="Topic">
-          <input className="input" value={v.topic} onChange={(e) => set({ topic: e.target.value })} />
-        </Field>
+        <StepHead title={`Anything in particular about ${v.topic.trim() || 'it'}?`} text="You can skip this. The AI will cover the basics." />
+        <FocusField v={v} set={set} placeholder="e.g. the Douro valley" />
       </>
     );
   }
@@ -204,14 +230,40 @@ function TopicStep({ v, set }) {
   );
 }
 
+function exampleFor(v) {
+  if (v.subject === 'language') {
+    const back = THANK_YOU[v.learning.trim().toLowerCase()];
+    if (back && /^english$/i.test(v.known.trim())) return ['thank you', back];
+    return [null, null];
+  }
+  const ok = (x) => x && x !== '…';
+  return [ok(v.exampleFront) ? v.exampleFront : null, ok(v.exampleBack) ? v.exampleBack : null];
+}
+
 function SidesStep({ v, set }) {
   const swap = () => set({
     front: v.back, back: v.front, frontHint: v.backHint, backHint: v.frontHint,
+    exampleFront: v.exampleBack, exampleBack: v.exampleFront,
   });
+  const [ex1, ex2] = exampleFor(v);
+  const swapped = v.subject === 'language' && v.front.trim() === v.learning.trim();
+  const [shownFront, shownBack] = swapped ? [ex2, ex1] : [ex1, ex2];
   return (
     <>
-      <StepHead title="Front and back" />
-      <FlipPreview front={v.front} back={v.back} />
+      <StepHead title="What goes on each side?" text="Every card has a front you look at, and a back with the answer you try to remember." />
+      <div className="side-demo" aria-label="Example card">
+        <div className="side-demo__card">
+          <span className="side-demo__label">Front · you see</span>
+          <span className="side-demo__name">{v.front || 'Front'}</span>
+          <span className="side-demo__text">{shownFront || v.frontHint || '…'}</span>
+        </div>
+        <Icon name="arrow" className="side-demo__arrow" />
+        <div className="side-demo__card side-demo__card--back">
+          <span className="side-demo__label">Back · you answer</span>
+          <span className="side-demo__name">{v.back || 'Back'}</span>
+          <span className="side-demo__text">{shownBack || v.backHint || '…'}</span>
+        </div>
+      </div>
       <div className="builder__sides">
         <Field label="Front">
           <input className="input" value={v.front} onChange={(e) => set({ front: e.target.value, frontHint: '' })} />
@@ -225,41 +277,12 @@ function SidesStep({ v, set }) {
   );
 }
 
-function FlipPreview({ front, back }) {
-  const reduce = useReducedMotion();
-  const [flipped, setFlipped] = useState(false);
-  useEffect(() => {
-    if (reduce) return undefined;
-    const id = setInterval(() => setFlipped((f) => !f), 2200);
-    return () => clearInterval(id);
-  }, [reduce]);
-
-  return (
-    <button type="button" className="mini-card" onClick={() => setFlipped((f) => !f)} aria-label="Flip the example card">
-      <motion.span
-        className="mini-card__flipper"
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-      >
-        <span className="mini-card__face">
-          <span className="mini-card__side">Front</span>
-          <span className="mini-card__text">{front || 'Column A'}</span>
-        </span>
-        <span className="mini-card__face mini-card__face--back">
-          <span className="mini-card__side">Back</span>
-          <span className="mini-card__text">{back || 'Column B'}</span>
-        </span>
-      </motion.span>
-    </button>
-  );
-}
-
 function SizeStep({ v, set }) {
   return (
     <>
-      <StepHead title="Deck settings" />
+      <StepHead title="How many cards, and how hard?" />
       <div className="builder__group">
-        <span className="field__label" id="size-label">How many cards?</span>
+        <span className="field__label" id="size-label">Number of cards</span>
         <Segmented
           labelledBy="size-label"
           options={SIZES.map((n) => ({ value: n, label: String(n) }))}
@@ -280,53 +303,33 @@ function SizeStep({ v, set }) {
   );
 }
 
-function PromptStep({ v }) {
-  const prompt = useMemo(() => buildPrompt(v), [v]);
+const AI_LINKS = [
+  { name: 'ChatGPT', url: (p) => `https://chatgpt.com/?q=${encodeURIComponent(p)}` },
+  { name: 'Claude', url: (p) => `https://claude.ai/new?q=${encodeURIComponent(p)}` },
+  { name: 'Gemini', url: () => 'https://gemini.google.com/app' },
+];
+
+/** Overview, prompt and paste box, all on one page. */
+function FinishStep({ v, set, pasteOnly, onCreate, onBack }) {
+  const prompt = useMemo(() => (pasteOnly ? '' : buildPrompt({ ...v, topicFocus: v.focus })), [v, pasteOnly]);
   const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(prompt);
-    } catch {
-      // Older browsers: select the text so the user can copy it themselves.
-      const el = document.getElementById('ai-prompt');
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      window.getSelection()?.removeAllRanges();
-      window.getSelection()?.addRange(range);
-      document.execCommand?.('copy');
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  }
-
-  return (
-    <>
-      <StepHead
-        title="Your prompt is ready"
-        text="Copy it into ChatGPT, Claude, Gemini or any AI chat. When it replies, copy its whole answer and come back here."
-      />
-      <div className="prompt-box">
-        <pre className="prompt-box__text" id="ai-prompt">{prompt}</pre>
-        <button
-          type="button"
-          className="prompt-box__copy"
-          aria-label={copied ? 'Prompt copied' : 'Copy prompt'}
-          onClick={copy}
-        >
-          <Icon name={copied ? 'check' : 'copy'} />
-        </button>
-        <span className="visually-hidden" role="status">{copied ? 'Prompt copied' : ''}</span>
-      </div>
-    </>
-  );
-}
-
-function PasteStep({ v, onCreate, onBack }) {
   const [raw, setRaw] = useState('');
-  const [name, setName] = useState(() => (v.subject === 'language' ? v.learning : (v.topic || (v.subject ? describeTopic(v) : ''))));
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [name, setName] = useState(() => v.name || (v.subject ? defaultDeckName(v) : ''));
+
+  async function copy() {
+    try { await navigator.clipboard.writeText(prompt); } catch {
+      const el = document.getElementById('ai-prompt');
+      if (el) {
+        const range = document.createRange(); range.selectNodeContents(el);
+        window.getSelection()?.removeAllRanges(); window.getSelection()?.addRange(range);
+        document.execCommand?.('copy');
+      }
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
+  }
 
   const parsed = useMemo(() => {
     if (!raw.trim()) return null;
@@ -355,14 +358,58 @@ function PasteStep({ v, onCreate, onBack }) {
     }
   }
 
+  const facts = [`${v.count} cards`, v.level, `${v.front} → ${v.back}`, v.focus.trim() && `Focus: ${v.focus.trim()}`].filter(Boolean);
+
   return (
     <>
-      <StepHead title="Paste the cards" text="Paste the AI’s whole reply. Alle picks out the cards." />
+      {pasteOnly ? (
+        <StepHead title="Paste the AI’s reply" text="Paste the whole reply from ChatGPT, Claude or any AI. Alle picks out the cards." />
+      ) : (
+        <>
+          <StepHead title="Get your cards" />
+          <div className="finish-summary">
+            <label className="finish-summary__name">
+              <span className="visually-hidden">Deck name</span>
+              <input className="input" value={name} onChange={(e) => { setName(e.target.value); set({ name: e.target.value }); }} aria-label="Deck name" />
+            </label>
+            <p className="finish-summary__facts">{facts.join(' · ')}</p>
+          </div>
+
+          <ol className="finish-steps">
+            <li>
+              <b>Copy the prompt</b>
+              <div className="finish-steps__row">
+                <Button variant="secondary" icon={copied ? 'check' : 'copy'} onClick={copy}>{copied ? 'Copied' : 'Copy prompt'}</Button>
+              </div>
+              <details className="finish-prompt">
+                <summary>See the prompt</summary>
+                <pre className="prompt-box__text" id="ai-prompt">{prompt}</pre>
+              </details>
+            </li>
+            <li>
+              <b>Paste it into an AI chat</b>
+              <span className="finish-steps__hint">Or open it with the prompt ready:</span>
+              <div className="finish-steps__row">
+                {AI_LINKS.map((a) => (
+                  <a key={a.name} className="ai-link" href={a.url(prompt)} target="_blank" rel="noreferrer" onClick={copy}>
+                    {a.name} <Icon name="arrow" />
+                  </a>
+                ))}
+              </div>
+            </li>
+            <li>
+              <b>Paste the AI’s reply here</b>
+            </li>
+          </ol>
+        </>
+      )}
+
       <textarea
         className="input input--area"
-        rows={5}
+        rows={4}
         value={raw}
-        placeholder={`${v.front || 'Column A'},${v.back || 'Column B'}\n…`}
+        aria-label="The AI’s reply"
+        placeholder={pasteOnly ? 'Paste the reply here' : `${v.front || 'Front'},${v.back || 'Back'}\n…`}
         autoCapitalize="off"
         autoCorrect="off"
         spellCheck={false}
@@ -374,7 +421,7 @@ function PasteStep({ v, onCreate, onBack }) {
           <p className="preview-list__head">
             {parsed.deck.cards.length} cards · {parsed.deck.frontLabel} → {parsed.deck.backLabel}
           </p>
-          {parsed.deck.cards.slice(0, 5).map((c, i) => (
+          {parsed.deck.cards.slice(0, 4).map((c, i) => (
             <div key={i} className="preview-list__row">
               {imageSrc(c.front)
                 ? <img className={`preview-list__img ${needsFrame(c.front) ? 'is-framed' : ''}`} src={imageSrc(c.front)} alt={c.front} />
@@ -385,7 +432,7 @@ function PasteStep({ v, onCreate, onBack }) {
           <p className="field__hint">Check a few answers. AI can make mistakes.</p>
         </div>
       )}
-      {parsed?.deck && (
+      {pasteOnly && parsed?.deck && (
         <Field label="Deck name">
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
         </Field>

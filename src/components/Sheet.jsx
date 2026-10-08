@@ -94,7 +94,11 @@ function SheetFrame({ title, onClose, children }) {
         <h2 className="sheet__title">{title}</h2>
         <IconButton icon="close" label="Close" onClick={onClose} className="icon-btn--inner" />
       </header>
-      <div className="sheet__scroll" ref={scrollRef}>{children}</div>
+      <div
+        className="sheet__scroll"
+        ref={scrollRef}
+        onScroll={(e) => e.currentTarget.parentElement?.classList.toggle('is-scrolled', e.currentTarget.scrollTop > 2)}
+      >{children}</div>
     </>
   );
 }

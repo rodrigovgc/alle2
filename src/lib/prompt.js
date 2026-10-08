@@ -54,6 +54,7 @@ export function buildPrompt(v) {
 
   return [
     `Make ${v.count} flashcards for learning ${describeTopic(v)}. Level: ${v.level.toLowerCase()}.`,
+    ...(v.focus?.trim() ? [`Focus on: ${v.focus.trim()}.`] : []),
     '',
     'Each flashcard has two sides:',
     `- Front ("${a}"): ${v.frontHint || 'the prompt'}.`,

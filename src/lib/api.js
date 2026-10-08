@@ -173,3 +173,27 @@ export async function shareDeck(deck) {
 export async function stopSharing(deckId) {
   check(await supabase.from('decks').update({ share_id: null }).eq('id', deckId).select('id').single());
 }
+
+/* ---- Deck groups (supabase/010_groups.sql) ------------------------------ */
+const missingGroups = (e) => /deck_groups|group_id/.test(e?.message || '');
+
+/** Groups in their order. Before 010 runs there are none (and no error). */
+export async function listGroups() {
+  const { data, error } = await supabase.from('deck_groups').select('*').order('position', { ascending: true });
+  if (error) { if (missingGroups(error)) return []; throw error; }
+  return data || [];
+}
+export async function createGroup(group) {
+  const { data, error } = await supabase.from('deck_groups').insert(group).select('*').single();
+  if (error) {
+    if (missingGroups(error)) throw new Error('Groups need one database update. Run supabase/010_groups.sql in Supabase.');
+    throw error;
+  }
+  return data;
+}
+export async function updateGroup(id, patch) {
+  check(await supabase.from('deck_groups').update(patch).eq('id', id).select('id').single());
+}
+export async function removeGroup(id) {
+  check(await supabase.from('deck_groups').delete().eq('id', id));
+}
