@@ -649,3 +649,7 @@
 /* Same alignment without a negative margin (it made the heading 6px too narrow and clipped the name) */
 .group__head .group__title { padding-left: calc(var(--gutter) - 6px); }
 .gname { margin: 0; }
+/* Title and chevron share one centre: the spacing lives on the row, not the title */
+.group__head { padding-top: var(--space-6); padding-bottom: var(--space-4); }
+.group__head .group__title { padding-top: 0; padding-bottom: 0; }
+.group__chevron-btn { align-self: center; }

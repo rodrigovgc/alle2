@@ -177,6 +177,7 @@ function SortableDeck({ id, disabled, children }) {
 function GroupSection({ group, items, onToggle, onRename, children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [animating, setAnimating] = useState(false);
   const reduce = useReducedMotion();
   const open = !group.collapsed;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: G(group.id), disabled: editing });
@@ -203,9 +204,13 @@ function GroupSection({ group, items, onToggle, onRename, children }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
-            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0, overflow: 'hidden' }}
-            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto', transitionEnd: { overflow: 'visible' } }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0, overflow: 'hidden' }}
+            // Clip only while opening or closing, so deck menus can reach past the group
+            style={{ overflow: animating ? 'hidden' : 'visible' }}
+            onAnimationStart={() => setAnimating(true)}
+            onAnimationComplete={() => setAnimating(false)}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
             {children}
