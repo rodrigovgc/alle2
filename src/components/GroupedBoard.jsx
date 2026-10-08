@@ -195,7 +195,7 @@ function GroupSection({ group, items, onToggle, onRename, children }) {
         <span className="group__spacer" />
         <div className="group__menu">
           <button type="button" className="group__more" aria-label={`Options for group ${group.title}`} onClick={() => setMenuOpen(true)}>
-            <Icon name="more" />
+            <Icon name="settings" />
           </button>
           <Menu open={menuOpen} onClose={() => setMenuOpen(false)} items={items} className="menu--deck" />
         </div>
@@ -227,33 +227,31 @@ function GroupName({ title, editing, setEditing, onRename }) {
     const v = value.trim();
     if (v && v !== title) onRename(v); else setValue(title);
   };
-  if (editing) {
-    return (
-      <span className="group__title-edit">
-        {/* the hidden copy sets the width, so the field only grows when the text does */}
-        <span className="home__title group__title group__title-sizer" aria-hidden="true">{value || ' '}</span>
-        <input
-          ref={ref}
-          className="home__title group__title group__title-input"
-          size={1}
-          value={value}
-          aria-label="Group name"
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={save}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur();
-            if (e.key === 'Escape') { setValue(title); setEditing(false); }
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-        />
-      </span>
-    );
-  }
   return (
     <h2 className="home__title group__title">
-      <button type="button" className="group__name" onClick={() => setEditing(true)} aria-label={`Rename group ${title}`}>{title}</button>
+      {editing ? (
+        <span className="gname-edit">
+          <span className="gname gname--sizer" aria-hidden="true">{value || ' '}</span>
+          <input
+            ref={ref}
+            className="gname gname--input"
+            size={1}
+            value={value}
+            aria-label="Group name"
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={save}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+              if (e.key === 'Escape') { setValue(title); setEditing(false); }
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          />
+        </span>
+      ) : (
+        <button type="button" className="gname gname--button" onClick={() => setEditing(true)} aria-label={`Rename group ${title}`}>{title}</button>
+      )}
     </h2>
   );
 }

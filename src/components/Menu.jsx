@@ -40,7 +40,9 @@ export function Menu({ open, onClose, items, className = '', style, tint }) {
                   role={hasChecks ? 'menuitemradio' : 'menuitem'}
                   aria-checked={hasChecks ? !!item.checked : undefined}
                   className={`menu__item ${item.danger ? 'menu__item--danger' : ''}`}
-                  onClick={() => { onClose(); item.onSelect(); }}
+                  disabled={item.disabled}
+                  title={item.disabled ? item.hint : undefined}
+                  onClick={() => { if (item.disabled) return; onClose(); item.onSelect(); }}
                 >
                   {hasChecks ? (
                     <span className="menu__check">{item.checked && <Icon name="check" />}</span>

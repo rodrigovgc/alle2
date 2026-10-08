@@ -5,6 +5,7 @@ import { Button, IconButton } from '../components/Button.jsx';
 import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
 import { GroupedBoard } from '../components/GroupedBoard.jsx';
+import { AutoInput } from '../components/AutoInput.jsx';
 import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
 import { useScrollShrink } from '../lib/useScrollShrink.js';
@@ -245,17 +246,13 @@ export function Home({
             onReorderGroups={onReorderGroups}
             onDecksChange={onDecksChange}
             menuItemsFor={(g, inGroup) => [
-              ...(inGroup.length ? [{ label: 'Shuffle this group', icon: 'shuffle', onSelect: () => onShuffle(inGroup.map((d) => d.id)) }] : []),
-              ...(inGroup.length > 1 ? [
-                { label: 'Reorder decks', icon: 'sort', onSelect: () => startReorder(inGroup, `Reorder ${g.title}`) },
-                { label: 'Repaint decks', icon: 'repaint', onSelect: () => onRainbow(inGroup.map((d) => d.id)) },
-              ] : []),
+              { label: 'Shuffle this group', icon: 'shuffle', disabled: !inGroup.length, onSelect: () => onShuffle(inGroup.map((d) => d.id)) },
+              { label: 'Reorder decks', icon: 'sort', disabled: inGroup.length < 2, onSelect: () => startReorder(inGroup, `Reorder ${g.title}`) },
+              { label: 'Repaint decks', icon: 'repaint', disabled: !inGroup.length, onSelect: () => onRainbow(inGroup.map((d) => d.id)) },
               { label: 'New group', icon: 'folder', onSelect: () => setSheet({ type: 'group-new', after: g.id }) },
-              ...(inGroup.length ? [{ label: 'Share group', icon: 'share', onSelect: () => setSheet({ type: 'group-share', group: g }) }] : []),
-              ...(sortedGroups.length > 1 ? [
-                { divider: true },
-                { label: 'Delete group', icon: 'trash', danger: true, onSelect: () => setSheet({ type: 'group-delete', group: g, count: inGroup.length }) },
-              ] : []),
+              { label: 'Share group', icon: 'share', disabled: !inGroup.length, onSelect: () => setSheet({ type: 'group-share', group: g }) },
+              { divider: true },
+              { label: 'Delete group', icon: 'trash', danger: true, disabled: sortedGroups.length < 2, onSelect: () => setSheet({ type: 'group-delete', group: g, count: inGroup.length }) },
             ]}
           />
         )}
@@ -304,7 +301,7 @@ export function Home({
 
       {decks.length > 0 && !reordering && (
         <div className={`home__cta ${ctaCompact ? 'is-compact' : ''}`}>
-          <Button icon="shuffle" onClick={() => decks.length > 1 ? setSheet({ type: 'shuffle' }) : onShuffle(decks.map((d) => d.id))}>Shuffle decks</Button>
+          <Button icon="plus" onClick={() => setSheet({ type: 'choose' })}>Add new deck</Button>
         </div>
       )}
 
@@ -668,18 +665,14 @@ function CoverForm({ deck, onSave, onDone }) {
       <DeckPreview
         deck={{ ...deck, title, color, shape }}
         titleSlot={(
-          <label className="deck__title-edit">
-            <input
-              className="deck__title deck__title-input"
-              name="alle-deck-name"
-              autoComplete="off"
-              aria-label="Deck name"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-            />
-            <Icon name="edit" className="deck__title-pencil" />
-          </label>
+          <AutoInput
+            className="deck__title deck__title-auto"
+            label="Deck name"
+            name="alle-deck-name"
+            autoComplete="off"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         )}
       />
       <p className="field__hint deck__title-hint">Tap the name to rename the deck.</p>

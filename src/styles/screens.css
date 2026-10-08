@@ -632,3 +632,20 @@
 .group__more:hover { background: var(--color-surface); }
 .group__more .icon { width: 20px; height: 20px; }
 .group__title-edit .group__title-input { min-width: 0; }
+
+/* Group name: viewing and renaming use exactly the same box, so nothing moves */
+.group__head { gap: 2px; }
+.group__head .group__title { margin: 0; display: flex; align-items: center; min-width: 0; line-height: 1.25; }
+.gname { display: block; margin: 0 0 0 -6px; padding: 2px 6px; border: 0; border-radius: 8px; background: transparent;
+  font: inherit; line-height: inherit; letter-spacing: inherit; color: inherit; text-align: left; box-shadow: none; }
+.gname--button { cursor: text; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gname--button:hover { background: var(--color-surface); }
+.gname-edit { display: inline-grid; min-width: 0; max-width: 100%; }
+.gname-edit > .gname { grid-area: 1 / 1; }
+.gname--sizer { visibility: hidden; white-space: pre; overflow: hidden; }
+.gname--input { width: 100%; min-width: 0; outline: none; background: var(--color-surface); }
+.group__chevron-btn { margin-left: 0; width: 28px; height: 28px; }
+.group__head .group__title { padding-right: 0; }
+/* Same alignment without a negative margin (it made the heading 6px too narrow and clipped the name) */
+.group__head .group__title { padding-left: calc(var(--gutter) - 6px); }
+.gname { margin: 0; }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Button, IconButton } from './Button.jsx';
+import { Button } from './Button.jsx';
 import { Icon } from './Icon.jsx';
+import { AutoInput } from './AutoInput.jsx';
 import { Field, SheetActions } from './Sheet.jsx';
 import { Segmented } from './Segmented.jsx';
 import { DeckImportError, parseLooseTable } from '../lib/csv.js';
@@ -239,24 +240,13 @@ function exampleFor(v) {
 /** The deck's name as the heading, renamed in place. */
 function DeckNameHeading({ v, set }) {
   return (
-    <label className="deck-heading">
-      <input
-        className="deck-heading__input"
-        value={v.name}
-        aria-label="Deck name"
-        onChange={(e) => set({ name: e.target.value })}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
-      />
-      <Icon name="edit" className="deck-heading__pencil" />
-    </label>
+    <h3 className="deck-heading">
+      <AutoInput label="Deck name" value={v.name} onChange={(e) => set({ name: e.target.value })} />
+    </h3>
   );
 }
 
 function SidesStep({ v, set }) {
-  const swap = () => set({
-    front: v.back, back: v.front, frontHint: v.backHint, backHint: v.frontHint,
-    exampleFront: v.exampleBack, exampleBack: v.exampleFront,
-  });
   const [ex1, ex2] = exampleFor(v);
   const swapped = v.subject === 'language' && v.front.trim() === v.learning.trim();
   const topic = (v.name || defaultDeckName(v)).toLowerCase();
@@ -270,19 +260,17 @@ function SidesStep({ v, set }) {
         <div className="sheet-mock__grid">
           <span className="sheet-mock__col">A</span>
           <span className="sheet-mock__col">B</span>
-          <input className="sheet-mock__cell sheet-mock__cell--head" value={v.front} aria-label="Column A name (what you see)"
-            onChange={(e) => set({ front: e.target.value, frontHint: '' })} />
-          <input className="sheet-mock__cell sheet-mock__cell--head" value={v.back} aria-label="Column B name (what you answer)"
-            onChange={(e) => set({ back: e.target.value, backHint: '' })} />
+          <span className="sheet-mock__cell sheet-mock__cell--head">
+            <AutoInput label="Column A name (what you see)" value={v.front} onChange={(e) => set({ front: e.target.value, frontHint: '' })} />
+          </span>
+          <span className="sheet-mock__cell sheet-mock__cell--head">
+            <AutoInput label="Column B name (what you answer)" value={v.back} onChange={(e) => set({ back: e.target.value, backHint: '' })} />
+          </span>
           <span className="sheet-mock__cell">{shownFront || `A question about ${topic}`}</span>
           <span className="sheet-mock__cell">{shownBack || 'Its answer'}</span>
           <span className="sheet-mock__cell sheet-mock__cell--faint">…</span>
           <span className="sheet-mock__cell sheet-mock__cell--faint">…</span>
         </div>
-      </div>
-      <div className="sheet-mock__foot">
-        <span>Tap a column name to change it.</span>
-        <button type="button" className="text-btn sheet-mock__swap" onClick={swap}><Icon name="swap" /> Swap columns</button>
       </div>
     </>
   );

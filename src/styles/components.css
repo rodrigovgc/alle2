@@ -365,7 +365,7 @@ select.input { background-image: none; }
 
 /* ---- AI builder --------------------------------------------------------- */
 .builder { gap: var(--space-5); }
-.builder__progress { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-1); flex: none; }
+.builder__progress { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--space-1); flex: none; }   /* fills the width for any number of steps */
 .builder__progress span {
   height: var(--size-progress); border-radius: var(--radius-pill);
   background: var(--progress-track);
@@ -842,3 +842,22 @@ select.input { background-image: none; }
 .sheet--popup .sheet__actions, .shuffle-body .sheet__actions { padding-top: var(--space-3); }
 /* Bottom sheets clip to their rounded top, so nothing pokes out while scrolling */
 .sheet { overflow: hidden; }
+
+.menu__item:disabled { opacity: .38; cursor: default; }
+.menu__item:disabled:hover { background: transparent; }
+
+/* A field as wide as its text, pencil right after it */
+.autoinput { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; cursor: text; vertical-align: middle; }
+.autoinput__field { display: inline-grid; min-width: 0; max-width: 100%; margin-left: -6px; }
+.autoinput__field > * { grid-area: 1 / 1; font: inherit; letter-spacing: inherit; line-height: inherit; padding: 1px 6px; margin: 0; border: 0; border-radius: 8px; }
+.autoinput__sizer { visibility: hidden; white-space: pre; overflow: hidden; }
+.autoinput__input { width: 100%; min-width: 0; background: transparent; color: inherit; outline: none; text-overflow: ellipsis; transition: background var(--duration-fast); }
+.autoinput__input:hover { background: color-mix(in srgb, currentColor 7%, transparent); }
+.autoinput__input:focus { background: color-mix(in srgb, currentColor 10%, transparent); }
+.autoinput__pencil { flex: none; width: 0.8em; height: 0.8em; max-width: 18px; max-height: 18px; min-width: 13px; min-height: 13px; opacity: .55; }
+
+/* Where the auto-width field is used */
+.deck-heading { margin: 0; font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); line-height: 1.2; }
+.deck__title-auto { position: relative; z-index: 1; margin-bottom: var(--space-3); color: var(--deck-ink); -webkit-line-clamp: unset; display: inline-flex; }
+.sheet-mock__cell--head { display: flex; align-items: center; min-width: 0; background: color-mix(in srgb, var(--deck-green) 35%, var(--card-bg)); font-weight: var(--font-weight-semibold); padding: 6px 10px; }
+.sheet-mock__cell--head .autoinput__field { margin-left: -6px; }
