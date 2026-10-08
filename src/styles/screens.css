@@ -562,7 +562,7 @@
 @keyframes authPulse { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .auth__dot { animation: none; } }
 /* Secondary buttons on the beige page (sign-in screens) use the darker beige */
-.auth .btn--secondary { background: var(--color-surface-deep); }
+.auth .btn--secondary { background: var(--color-surface); }
 
 /* Pull to refresh (home-screen app only) */
 .home { position: relative; transition: transform 0.3s var(--ease-out); }
@@ -600,3 +600,21 @@
 .move-list__item span { flex: 1; }
 .move-list__item.is-on { background: color-mix(in srgb, var(--cta-bg) 8%, var(--choice-bg)); font-weight: var(--font-weight-semibold); }
 .move-new { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* Grouped home: sections, then decks without a group */
+.deck-board { display: flex; flex-direction: column; gap: var(--space-6); }
+.deck-board > .group { margin-top: 0; }
+.group.is-dragging { position: relative; z-index: 5; opacity: .92; }
+.group__head { cursor: grab; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.group.is-dragging .group__head { cursor: grabbing; }
+.group__name { padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-align: left; cursor: text; border-radius: 8px; }
+.group__name:hover { background: var(--color-surface); box-shadow: 0 0 0 4px var(--color-surface); }
+.group__title-input { flex: 0 1 auto; min-width: 0; width: 100%; max-width: 70%; margin: 0; padding: 0 6px; border: 0; border-radius: 8px; background: var(--color-surface); outline: none; }
+.group__chevron-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; }
+.group__chevron-btn:hover { background: var(--color-surface); }
+.group__spacer { flex: 1; }
+.group__title--none { color: var(--text-secondary); }
+.group__decks.is-over { outline: 2px dashed var(--border-subtle); outline-offset: 6px; border-radius: var(--radius-deck); }
+.sortable-deck.is-static { cursor: auto; }
+.group__head { justify-content: flex-start; }
+.group__head .group__title { flex: 0 1 auto; min-width: 0; }

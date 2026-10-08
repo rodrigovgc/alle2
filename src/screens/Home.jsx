@@ -4,6 +4,7 @@ import { Logo, Icon, DeckShape } from '../components/Icon.jsx';
 import { Button, IconButton } from '../components/Button.jsx';
 import { DeckCard, DeckPreview } from '../components/DeckCard.jsx';
 import { Menu } from '../components/Menu.jsx';
+import { GroupedBoard } from '../components/GroupedBoard.jsx';
 import { Sheet, Field, SheetActions } from '../components/Sheet.jsx';
 import { AiBuilder } from '../components/AiBuilder.jsx';
 import { useScrollShrink } from '../lib/useScrollShrink.js';
@@ -26,6 +27,7 @@ export function Home({
   onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onRainbow, onRefresh, onSignOut, user, onUserUpdated,
   onShareDeck, onStopSharing, onHelp,
   groups = [], onCreateGroup, onUpdateGroup, onMoveGroup, onDeleteGroup, onMoveDeck,
+  onReorderGroups, onDecksChange, onShareGroup, onStopSharingGroup,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -208,7 +210,7 @@ export function Home({
         </div>
       )}
 
-      <section className="deck-list" aria-busy={loading}>
+      <section className={grouped ? 'deck-board' : 'deck-list'} aria-busy={loading}>
         {loading && !decks.length && <div className="deck deck--skeleton" aria-hidden="true" />}
         {!loading && !decks.length && (
           <div className="start" aria-label="Get started">
@@ -232,7 +234,25 @@ export function Home({
           <p className="empty__body">No decks match “{query}”.</p>
         )}
         {reordering && <ReorderList decks={order} mode={colorMode} onChange={setOrder} />}
-        {grouped && <DeckGrid decks={ungrouped} canDrag={canDrag} onReorder={reorderSubset} renderDeck={renderDeck} />}
+        {grouped && (
+          <GroupedBoard
+            groups={sortedGroups}
+            decks={decks}
+            renderDeck={renderDeck}
+            canDragDecks={canDrag}
+            onToggle={(g) => onUpdateGroup(g.id, { collapsed: !g.collapsed })}
+            onRename={(g, title) => onUpdateGroup(g.id, { title })}
+            onReorderGroups={onReorderGroups}
+            onDecksChange={onDecksChange}
+            menuItemsFor={(g, inGroup) => [
+              ...(inGroup.length ? [{ label: 'Shuffle this group', icon: 'shuffle', onSelect: () => onShuffle(inGroup.map((d) => d.id)) }] : []),
+              ...(inGroup.length ? [{ label: 'Share group', icon: 'share', onSelect: () => setSheet({ type: 'group-share', group: g }) }] : []),
+              { label: 'Ungroup', icon: 'folder', onSelect: () => onDeleteGroup(g.id, { withDecks: false }) },
+              { divider: true },
+              { label: 'Delete group', icon: 'trash', danger: true, onSelect: () => setSheet({ type: 'group-delete', group: g, count: inGroup.length }) },
+            ]}
+          />
+        )}
         {!grouped && !reordering && canDrag && !query && (
           <SortableDecks decks={decks} onReorder={onReorder} renderDeck={(deck) => (
               <DeckCard
@@ -275,30 +295,6 @@ export function Home({
           ))}
         </AnimatePresence>}
       </section>
-
-      {grouped && sortedGroups.map((g, i) => {
-        const inGroup = decks.filter((d) => d.group_id === g.id);
-        return (
-          <GroupSection
-            key={g.id}
-            group={g}
-            count={inGroup.length}
-            onToggle={() => onUpdateGroup(g.id, { collapsed: !g.collapsed })}
-            items={[
-              ...(inGroup.length ? [{ label: 'Shuffle this group', icon: 'shuffle', onSelect: () => onShuffle(inGroup.map((d) => d.id)) }] : []),
-              { label: 'Rename group', icon: 'edit', onSelect: () => setSheet({ type: 'group-rename', group: g }) },
-              ...(i > 0 ? [{ label: 'Move up', icon: 'sort', onSelect: () => onMoveGroup(g.id, -1) }] : []),
-              ...(i < sortedGroups.length - 1 ? [{ label: 'Move down', icon: 'sort', onSelect: () => onMoveGroup(g.id, 1) }] : []),
-              { divider: true },
-              { label: 'Delete group', icon: 'trash', danger: true, onSelect: () => setSheet({ type: 'group-delete', group: g }) },
-            ]}
-          >
-            {inGroup.length
-              ? <DeckGrid decks={inGroup} canDrag={canDrag} onReorder={reorderSubset} renderDeck={renderDeck} />
-              : <p className="group__empty">No decks yet. Use a deck’s ⋯ menu and choose Move to group.</p>}
-          </GroupSection>
-        );
-      })}
 
       {decks.length > 0 && !reordering && (
         <div className={`home__cta ${ctaCompact ? 'is-compact' : ''}`}>
@@ -469,15 +465,33 @@ export function Home({
         )}
       </Sheet>
 
-      <Sheet open={sheet?.type === 'group-delete'} onClose={close} title="Delete group?" variant="dialog">
+      <Sheet open={sheet?.type === 'group-delete'} onClose={close} title="Delete group and its decks?" variant="dialog">
         {sheet?.group && (
           <div className="sheet__body">
-            <p className="sheet__text">“{sheet.group.title}” will be removed. Its decks stay, they just won’t be in a group.</p>
+            <p className="sheet__text">
+              {sheet.count
+                ? <>“{sheet.group.title}” and its {sheet.count} {sheet.count === 1 ? 'deck' : 'decks'} will be deleted, with their progress. This can’t be undone.</>
+                : <>“{sheet.group.title}” will be deleted.</>}
+            </p>
+            {sheet.count > 0 && <p className="field__hint">To keep the decks, choose Ungroup instead.</p>}
             <SheetActions>
-              <Button variant="danger" onClick={async () => { await onDeleteGroup(sheet.group.id); close(); }}>Delete group</Button>
-              <Button variant="secondary" onClick={close}>Cancel</Button>
+              <Button variant="danger" onClick={async () => { await onDeleteGroup(sheet.group.id, { withDecks: true }); close(); }}>
+                {sheet.count ? `Delete group and ${sheet.count} ${sheet.count === 1 ? 'deck' : 'decks'}` : 'Delete group'}
+              </Button>
+              {sheet.count > 0 && <Button variant="secondary" onClick={async () => { await onDeleteGroup(sheet.group.id, { withDecks: false }); close(); }}>Ungroup instead</Button>}
             </SheetActions>
           </div>
+        )}
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'group-share'} onClose={close} title="Share group" variant="dialog">
+        {sheet?.group && (
+          <ShareSheet
+            deck={sheet.group}
+            onShare={onShareGroup}
+            onStop={async () => { await onStopSharingGroup(sheet.group.id); close(); }}
+            text={`Anyone with this link can add copies of all the decks in “${sheet.group.title}” to their own Alle. Your progress stays private.`}
+          />
         )}
       </Sheet>
 
@@ -709,7 +723,6 @@ function CoverForm({ deck, onSave, onDone }) {
       <SheetActions>
         <Button onClick={onDone}>Done</Button>
       </SheetActions>
-      <p className="field__hint autosave-hint">Changes save as you go.</p>
     </div>
   );
 }
@@ -754,48 +767,7 @@ function ShufflePicker({ decks, onStart }) {
   );
 }
 
-/** A list of deck cards: draggable on desktop, simple grid elsewhere. */
-function DeckGrid({ decks, canDrag, onReorder, renderDeck }) {
-  if (!decks.length) return null;
-  if (canDrag) return <SortableDecks decks={decks} onReorder={onReorder} renderDeck={renderDeck} />;
-  return decks.map((deck) => <div key={deck.id}>{renderDeck(deck)}</div>);
-}
 
-/** A collapsible group of decks, titled like "My study decks". */
-function GroupSection({ group, count, onToggle, items, children }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const reduce = useReducedMotion();
-  const open = !group.collapsed;
-  return (
-    <section className="group" aria-label={group.title}>
-      <div className="home__title-row group__head">
-        <button type="button" className="group__toggle" aria-expanded={open} onClick={onToggle}>
-          <h2 className="home__title group__title">{group.title}</h2>
-          <span className="group__count">{count}</span>
-          <Icon name="chevron" className={`group__chevron ${open ? '' : 'is-closed'}`} />
-        </button>
-        <div className="group__menu">
-          <IconButton icon="more" label={`Options for group ${group.title}`} onClick={() => setMenuOpen(true)} />
-          <Menu open={menuOpen} onClose={() => setMenuOpen(false)} items={items} className="menu--deck" />
-        </div>
-      </div>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            className="deck-list group__decks"
-            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
-            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            style={{ overflow: 'hidden' }}
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
-  );
-}
 
 function GroupNameForm({ initial, submitLabel, hint, onSubmit }) {
   const [title, setTitle] = useState(initial);
@@ -854,7 +826,7 @@ function MoveToGroup({ deck, groups, onMove, onCreate }) {
 }
 
 /** Share a deck by link: anyone with it can add a copy. */
-function ShareSheet({ deck, onShare, onStop }) {
+function ShareSheet({ deck, onShare, onStop, text }) {
   const [link, setLink] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -872,7 +844,7 @@ function ShareSheet({ deck, onShare, onStop }) {
   }
   return (
     <div className="sheet__body">
-      <p className="sheet__text">Anyone with this link can add a copy of “{deck.title}” to their own Alle. Your progress stays private.</p>
+      <p className="sheet__text">{text || `Anyone with this link can add a copy of “${deck.title}” to their own Alle. Your progress stays private.`}</p>
       {error && <p className="form-error" role="alert">{error}</p>}
       <input className="input share-link" readOnly value={link || 'Creating link…'} onFocus={(e) => e.target.select()} aria-label="Share link" />
       <SheetActions>

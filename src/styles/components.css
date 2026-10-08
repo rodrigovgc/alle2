@@ -660,7 +660,7 @@ select.input { background-image: none; }
 .sheet--popup .sheet__actions::before, .shuffle-body .sheet__actions::before {
   content: ""; position: absolute; z-index: -1;
   left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1);
-  top: calc(var(--space-3) * -1); bottom: calc(var(--kb, 0px) * -1 - 40px);
+  top: calc(var(--space-3) * -1); bottom: 0;   /* no overhang: it made popups scroll for nothing */
   background: color-mix(in srgb, var(--card-bg) 82%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5);
   box-shadow: 0 -1px 0 var(--border-subtle);
@@ -792,3 +792,46 @@ select.input { background-image: none; }
 .ai-link .icon { width: 14px; height: 14px; }
 .finish-prompt summary { cursor: pointer; font-size: var(--font-size-caption); color: var(--text-secondary); width: max-content; }
 .finish-prompt .prompt-box__text { margin-top: var(--space-2); max-height: 160px; overflow: auto; padding: var(--space-3); border-radius: var(--radius-field); background: var(--color-surface); font-size: 12px; white-space: pre-wrap; }
+/* Desktop popups: the eight shapes fit in one row (no needless scrolling) */
+.sheet--popup .shapes { grid-template-columns: repeat(8, 1fr); gap: var(--space-2); }
+.sheet--popup .shape__tile svg, .sheet--popup .shape__tile .deck-shape { max-width: 70%; max-height: 70%; }
+
+/* AI builder: the deck name as the step heading, renamed in place */
+.deck-heading { display: flex; align-items: center; gap: var(--space-2); cursor: text; }
+.deck-heading__input {
+  flex: 1 1 0; width: 0; min-width: 0; margin: 0 0 0 -6px; padding: 2px 6px; border: 0; border-radius: 10px; background: transparent;
+  font: inherit; font-size: var(--font-size-large-title); font-weight: var(--font-weight-bold); letter-spacing: var(--letter-spacing-title); color: var(--text-primary);
+  outline: none; transition: background var(--duration-fast);
+}
+.deck-heading__input:hover { background: var(--color-surface); }
+.deck-heading__input:focus { background: var(--color-surface); }
+.deck-heading__pencil { flex: none; width: 18px; height: 18px; color: var(--text-tertiary); }
+
+/* A small Google Sheet: the header cells are the column names you edit */
+.sheet-mock { border-radius: 12px; border: 1px solid var(--border-subtle); background: var(--card-bg); overflow: hidden; font-size: var(--font-size-small); }
+.sheet-mock__bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); font-weight: var(--font-weight-semibold); }
+.sheet-mock__bar i { width: 14px; height: 14px; border-radius: 3px; background: #1E8E3E; flex: none; }
+.sheet-mock__grid { display: grid; grid-template-columns: 1fr 1fr; }
+.sheet-mock__col { padding: 3px 10px; background: var(--color-surface); color: var(--text-tertiary); font-size: 11px; text-align: center; border-bottom: 1px solid var(--border-subtle); }
+.sheet-mock__col + .sheet-mock__col, .sheet-mock__cell:nth-child(even) { border-left: 1px solid var(--border-subtle); }
+.sheet-mock__cell { min-width: 0; padding: 9px 10px; border-bottom: 1px solid var(--border-subtle); overflow-wrap: anywhere; line-height: 1.3; }
+.sheet-mock__cell--head { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sheet-mock__cell--head {
+  border: 0; border-bottom: 1px solid var(--border-subtle); border-radius: 0; background: color-mix(in srgb, var(--deck-green) 35%, var(--card-bg));
+  font: inherit; font-weight: var(--font-weight-semibold); color: var(--text-primary); outline: none;
+}
+.sheet-mock__cell--head:nth-child(4) { border-left: 1px solid var(--border-subtle); }
+.sheet-mock__cell--head:focus { box-shadow: inset 0 0 0 2px #1E8E3E; }
+.sheet-mock__cell--faint { color: var(--text-tertiary); border-bottom: 0; }
+.sheet-mock__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: calc(var(--space-2) * -1); font-size: var(--font-size-caption); color: var(--text-tertiary); }
+.sheet-mock__swap { display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-size-caption); }
+.sheet-mock__swap .icon { width: 14px; height: 14px; }
+
+/* Final step: two blocks */
+.finish-facts { margin-top: calc(var(--space-3) * -1); font-size: var(--font-size-caption); color: var(--text-secondary); }
+.finish-block { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-field); background: var(--color-surface); }
+.finish-block__title { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--font-weight-semibold); }
+.finish-block__n { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--text-primary); color: var(--color-background); font-size: 12px; }
+.finish-block__links { font-size: var(--font-size-caption); color: var(--text-secondary); margin-top: calc(var(--space-1) * -1); }
+.finish-block__links a { color: var(--text-primary); font-weight: 500; }
+.finish-block .finish-prompt { margin-top: calc(var(--space-1) * -1); }

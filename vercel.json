@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/g/:code",
+      "destination": "/api/share?code=:code&kind=group"
+    },
+    {
       "source": "/s/:code",
       "destination": "/api/share?code=:code"
     },

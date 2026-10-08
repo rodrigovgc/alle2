@@ -33,7 +33,7 @@ export default function App() {
     const intent = readIntent();
     if (!intent) return;
     // Shared decks can only be read once signed in, so name ready-made ones only.
-    if (intent.type === 'share') { setIntentTitle('__shared__'); return; }
+    if (intent.type === 'share' || intent.type === 'group') { setIntentTitle(intent.type === 'group' ? '__group__' : '__shared__'); return; }
     resolveIntent(intent).then((r) => r && setIntentTitle(r.title)).catch(() => {});
   }, []);
   const [choosingPassword, setChoosingPassword] = useState(false);
@@ -62,6 +62,7 @@ export default function App() {
     return (
       <Auth notice={linkNotice || (
         intentTitle === '__shared__' ? 'Sign in or create an account to add the deck someone shared with you.'
+          : intentTitle === '__group__' ? 'Sign in or create an account to add the decks someone shared with you.'
           : intentTitle ? `Sign in or create an account to add “${intentTitle}” to your decks.`
             : '')} />
     );
@@ -166,6 +167,22 @@ function Library({ user, onUser }) {
     setIncoming(null); clearIntent();
     try {
       if (r.kind === 'ready') { await addReadyMade(r.key); return; }
+      if (r.kind === 'group') {
+        const position = Math.max(0, ...groups.map((g) => g.position ?? 0)) + 1;
+        const g = await api.createGroup({ title: r.title, position });
+        setGroups((all) => [...all, g]);
+        let soFar = [...decks];
+        for (const d of r.decks) {
+          const created = await saveNewDeck({
+            title: d.title, front_label: d.front_label, back_label: d.back_label, lang: d.lang,
+            csv_url: d.csv_url, cards: d.cards, answer_mode: d.answer_mode ?? 'choice', group_id: g.id,
+            ...pickDeckLook(soFar),
+          }, 'shared');
+          if (created) soFar = [...soFar, created];
+        }
+        setNotice(`Added “${r.title}” with ${r.decks.length} ${r.decks.length === 1 ? 'deck' : 'decks'}.`);
+        return;
+      }
       const d = r.deck;
       const created = await saveNewDeck({
         title: d.title, front_label: d.front_label, back_label: d.back_label, lang: d.lang,
@@ -371,10 +388,44 @@ function Library({ user, onUser }) {
           setGroups(renum);
           try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); } catch (e) { setError(api.friendlyError(e)); }
         }}
-        onDeleteGroup={async (id) => {
-          await api.removeGroup(id);
-          setGroups((all) => all.filter((g) => g.id !== id));
-          setDecks((all) => all.map((d) => (d.group_id === id ? { ...d, group_id: null } : d)));
+        onDeleteGroup={async (id, { withDecks = false } = {}) => {
+          try {
+            if (withDecks) {
+              const doomed = decks.filter((d) => d.group_id === id).map((d) => d.id);
+              for (const deckId of doomed) await api.removeDeck(deckId);
+              setDecks((all) => all.filter((d) => !doomed.includes(d.id)));
+              setProgress((all) => all.filter((p) => !doomed.includes(p.deck_id)));
+            } else {
+              // Ungroup: the decks stay, just without a group
+              setDecks((all) => all.map((d) => (d.group_id === id ? { ...d, group_id: null } : d)));
+            }
+            await api.removeGroup(id);
+            setGroups((all) => all.filter((g) => g.id !== id));
+          } catch (e) { setError(api.friendlyError(e)); }
+        }}
+        onReorderGroups={async (ordered) => {
+          const renum = ordered.map((g, k) => ({ ...g, position: k + 1 }));
+          setGroups(renum);
+          try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); } catch (e) { setError(api.friendlyError(e)); }
+        }}
+        onDecksChange={async (ordered) => {
+          // A deck dragged into another group, out of one, or to a new place
+          const before = Object.fromEntries(decks.map((d) => [d.id, d.group_id || null]));
+          setDecks(ordered);
+          try {
+            await Promise.all(ordered.filter((d) => (d.group_id || null) !== before[d.id]).map((d) => api.updateDeck(d.id, { group_id: d.group_id })));
+            setDecks(await api.saveOrder(ordered));
+          } catch (e) { setError(api.friendlyError(e)); }
+        }}
+        onShareGroup={async (group) => {
+          const r = await api.shareGroup(group);
+          setGroups((all) => all.map((g) => (g.id === group.id ? { ...g, share_id: r.id } : g)));
+          track('group_shared', {});
+          return r;
+        }}
+        onStopSharingGroup={async (id) => {
+          await api.stopSharingGroup(id);
+          setGroups((all) => all.map((g) => (g.id === id ? { ...g, share_id: null } : g)));
         }}
         onMoveDeck={async (deckId, groupId) => {
           setDecks((all) => all.map((d) => (d.id === deckId ? { ...d, group_id: groupId } : d)));
@@ -438,22 +489,25 @@ function Library({ user, onUser }) {
 
       {touring && <Onboarding onDone={finishTour} />}
 
-      <Sheet open={!!incoming && !touring} onClose={() => { setIncoming(null); clearIntent(); }} title="Add this deck?" variant="dialog">
+      <Sheet open={!!incoming && !touring} onClose={() => { setIncoming(null); clearIntent(); }} title={incoming?.kind === 'group' ? 'Add these decks?' : 'Add this deck?'} variant="dialog">
         {incoming && (
           <div className="sheet__body">
             <DeckPreview deck={{
               title: incoming.title,
-              front_label: incoming.deck?.front_label || '', back_label: incoming.deck?.back_label || '',
+              front_label: incoming.kind === 'group' ? `${incoming.decks.length} decks` : (incoming.deck?.front_label || ''),
+              back_label: incoming.kind === 'group' ? 'group' : (incoming.deck?.back_label || ''),
               ...pickDeckLook(decks),   // the colour it will really get
-              cards: incoming.deck?.cards || [],
+              cards: incoming.kind === 'group' ? incoming.decks.flatMap((d) => d.cards || []) : (incoming.deck?.cards || []),
             }} />
             <p className="sheet__text">
               {incoming.kind === 'shared'
                 ? 'Someone shared this deck with you. Add a copy to your decks to start studying it.'
-                : 'Add this ready-made deck to your decks.'}
+                : incoming.kind === 'group'
+                  ? `Someone shared a group of ${incoming.decks.length} ${incoming.decks.length === 1 ? 'deck' : 'decks'} with you: ${incoming.decks.map((d) => d.title).join(', ')}.`
+                  : 'Add this ready-made deck to your decks.'}
             </p>
             <SheetActions>
-              <Button onClick={acceptIncoming}>Add to my decks</Button>
+              <Button onClick={acceptIncoming}>{incoming.kind === 'group' ? `Add ${incoming.decks.length} ${incoming.decks.length === 1 ? 'deck' : 'decks'}` : 'Add to my decks'}</Button>
               <Button variant="secondary" onClick={() => { setIncoming(null); clearIntent(); }}>Not now</Button>
             </SheetActions>
           </div>

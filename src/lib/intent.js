@@ -14,12 +14,15 @@ export function captureIntent() {
   // /s/<code> is normally answered by the preview page, which forwards to ?share=;
   // if the app is opened on that address directly, read the code from the path.
   const fromPath = url.pathname.match(/^\/s\/([0-9a-f-]{36})\/?$/i);
+  const groupPath = url.pathname.match(/^\/g\/([0-9a-f-]{36})\/?$/i);
   const share = url.searchParams.get('share') || (fromPath && fromPath[1]);
+  const group = url.searchParams.get('sharegroup') || (groupPath && groupPath[1]);
   const add = url.searchParams.get('add');
-  if (!share && !add) return;
-  try { localStorage.setItem(KEY, JSON.stringify(share ? { type: 'share', id: share } : { type: 'add', id: add })); } catch { /* storage off */ }
-  url.searchParams.delete('share'); url.searchParams.delete('add');
-  window.history.replaceState(null, '', (fromPath ? '/' : url.pathname) + url.search + url.hash);
+  if (!share && !add && !group) return;
+  const intent = group ? { type: 'group', id: group } : share ? { type: 'share', id: share } : { type: 'add', id: add };
+  try { localStorage.setItem(KEY, JSON.stringify(intent)); } catch { /* storage off */ }
+  url.searchParams.delete('share'); url.searchParams.delete('add'); url.searchParams.delete('sharegroup');
+  window.history.replaceState(null, '', (fromPath || groupPath ? '/' : url.pathname) + url.search + url.hash);
 }
 
 export function readIntent() {
@@ -50,6 +53,10 @@ export async function resolveIntent(intent) {
     return { kind: 'ready', key: r.key, title: r.title, deck: { front_label: front, back_label: back, cards } };
   }
   if (!/^[0-9a-f-]{36}$/i.test(intent.id)) return null;
+  if (intent.type === 'group') {
+    const { data, error } = await supabase.rpc('get_shared_group', { sid: intent.id });
+    return !error && data && data.title ? { kind: 'group', title: data.title, decks: data.decks || [] } : null;
+  }
   const { data, error } = await supabase.rpc('get_shared_deck', { sid: intent.id });
   const deck = !error && Array.isArray(data) ? data[0] : null;
   return deck ? { kind: 'shared', title: deck.title, deck } : null;

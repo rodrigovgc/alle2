@@ -197,3 +197,20 @@ export async function updateGroup(id, patch) {
 export async function removeGroup(id) {
   check(await supabase.from('deck_groups').delete().eq('id', id));
 }
+
+/** Share a whole group: one link, anyone signed in can add copies of its decks. */
+export async function shareGroup(group) {
+  let id = group.share_id;
+  if (!id) {
+    id = crypto.randomUUID();
+    const res = await supabase.from('deck_groups').update({ share_id: id }).eq('id', group.id).select('share_id').single();
+    if (res.error) {
+      if (/share_id/.test(res.error.message)) throw new Error('Sharing groups needs one database update. Run supabase/011_share_groups.sql in Supabase.');
+      throw res.error;
+    }
+  }
+  return { id, url: `${window.location.origin}/g/${id}` };
+}
+export async function stopSharingGroup(groupId) {
+  check(await supabase.from('deck_groups').update({ share_id: null }).eq('id', groupId).select('id').single());
+}

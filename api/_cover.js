@@ -17,7 +17,7 @@ export function coverElement(deck) {
   const color = FILL[deck?.color] ? deck.color : 'lime';
   const title = deck?.title || 'A deck on Alle';
   const size = title.length > 34 ? 60 : title.length > 22 ? 72 : 88;
-  const count = deck ? `${deck.card_count} ${deck.card_count === 1 ? 'card' : 'cards'}` : '';
+  const count = deck ? (deck.countLabel || `${deck.card_count} ${deck.card_count === 1 ? 'card' : 'cards'}`) : '';
   const hasLabels = Boolean(deck?.front_label && deck?.back_label);
   const arrowSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="rgba(12,12,12,0.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const arrow = { type: 'img', props: { src: `data:image/svg+xml;base64,${btoa(arrowSvg)}`, width: 30, height: 30, style: { margin: '0 14px' } } };
@@ -28,7 +28,7 @@ export function coverElement(deck) {
     // Alle wordmark + "shared with you"
     h('div', { alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 },
       logo,
-      h('div', { fontSize: 28, color: '#67645C' }, 'A deck shared with you')),
+      h('div', { fontSize: 28, color: '#67645C' }, deck?.tagline || 'A deck shared with you')),
     // The deck card
     h('div', { position: 'relative', flex: 1, borderRadius: 52, background: FILL[color], padding: '52px 60px', flexDirection: 'column', overflow: 'hidden' },
       shapeImage(deck?.shape, color),

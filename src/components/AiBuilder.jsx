@@ -73,7 +73,6 @@ export function AiBuilder({ onCreate, pasteOnly = false }) {
         animate: { opacity: 1, x: 0 },
         exit: { opacity: 0, x: -24 * dir, transition: { duration: 0.12 } },
       };
-  const showDeck = !pasteOnly && ['sides', 'size'].includes(STEPS[step]);
 
   return (
     <form
@@ -84,9 +83,6 @@ export function AiBuilder({ onCreate, pasteOnly = false }) {
         <div className="builder__progress" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
           {STEPS.map((s, i) => <span key={s} className={i <= step ? 'is-done' : ''} />)}
         </div>
-      )}
-      {showDeck && (
-        <p className="builder__deck"><Icon name="edit" /> Your deck: <b>{v.name || defaultDeckName(v)}</b></p>
       )}
 
       <AnimatePresence mode="wait" initial={false}>
@@ -240,6 +236,22 @@ function exampleFor(v) {
   return [ok(v.exampleFront) ? v.exampleFront : null, ok(v.exampleBack) ? v.exampleBack : null];
 }
 
+/** The deck's name as the heading, renamed in place. */
+function DeckNameHeading({ v, set }) {
+  return (
+    <label className="deck-heading">
+      <input
+        className="deck-heading__input"
+        value={v.name}
+        aria-label="Deck name"
+        onChange={(e) => set({ name: e.target.value })}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      />
+      <Icon name="edit" className="deck-heading__pencil" />
+    </label>
+  );
+}
+
 function SidesStep({ v, set }) {
   const swap = () => set({
     front: v.back, back: v.front, frontHint: v.backHint, backHint: v.frontHint,
@@ -247,31 +259,30 @@ function SidesStep({ v, set }) {
   });
   const [ex1, ex2] = exampleFor(v);
   const swapped = v.subject === 'language' && v.front.trim() === v.learning.trim();
+  const topic = (v.name || defaultDeckName(v)).toLowerCase();
   const [shownFront, shownBack] = swapped ? [ex2, ex1] : [ex1, ex2];
   return (
     <>
-      <StepHead title="What goes on each side?" text="Every card has a front you look at, and a back with the answer you try to remember." />
-      <div className="side-demo" aria-label="Example card">
-        <div className="side-demo__card">
-          <span className="side-demo__label">Front · you see</span>
-          <span className="side-demo__name">{v.front || 'Front'}</span>
-          <span className="side-demo__text">{shownFront || v.frontHint || '…'}</span>
-        </div>
-        <Icon name="arrow" className="side-demo__arrow" />
-        <div className="side-demo__card side-demo__card--back">
-          <span className="side-demo__label">Back · you answer</span>
-          <span className="side-demo__name">{v.back || 'Back'}</span>
-          <span className="side-demo__text">{shownBack || v.backHint || '…'}</span>
+      <DeckNameHeading v={v} set={set} />
+      <p className="step-head__text">Each row of this sheet becomes a card. You’ll see the left column, and answer with the right.</p>
+      <div className="sheet-mock" role="group" aria-label="Your cards, as a sheet">
+        <div className="sheet-mock__bar"><i /> {v.name || defaultDeckName(v)}</div>
+        <div className="sheet-mock__grid">
+          <span className="sheet-mock__col">A</span>
+          <span className="sheet-mock__col">B</span>
+          <input className="sheet-mock__cell sheet-mock__cell--head" value={v.front} aria-label="Column A name (what you see)"
+            onChange={(e) => set({ front: e.target.value, frontHint: '' })} />
+          <input className="sheet-mock__cell sheet-mock__cell--head" value={v.back} aria-label="Column B name (what you answer)"
+            onChange={(e) => set({ back: e.target.value, backHint: '' })} />
+          <span className="sheet-mock__cell">{shownFront || `A question about ${topic}`}</span>
+          <span className="sheet-mock__cell">{shownBack || 'Its answer'}</span>
+          <span className="sheet-mock__cell sheet-mock__cell--faint">…</span>
+          <span className="sheet-mock__cell sheet-mock__cell--faint">…</span>
         </div>
       </div>
-      <div className="builder__sides">
-        <Field label="Front">
-          <input className="input" value={v.front} onChange={(e) => set({ front: e.target.value, frontHint: '' })} />
-        </Field>
-        <IconButton icon="swap" label="Swap front and back" className="icon-btn--inner builder__swap" onClick={swap} />
-        <Field label="Back">
-          <input className="input" value={v.back} onChange={(e) => set({ back: e.target.value, backHint: '' })} />
-        </Field>
+      <div className="sheet-mock__foot">
+        <span>Tap a column name to change it.</span>
+        <button type="button" className="text-btn sheet-mock__swap" onClick={swap}><Icon name="swap" /> Swap columns</button>
       </div>
     </>
   );
@@ -366,41 +377,26 @@ function FinishStep({ v, set, pasteOnly, onCreate, onBack }) {
         <StepHead title="Paste the AI’s reply" text="Paste the whole reply from ChatGPT, Claude or any AI. Alle picks out the cards." />
       ) : (
         <>
-          <StepHead title="Get your cards" />
-          <div className="finish-summary">
-            <label className="finish-summary__name">
-              <span className="visually-hidden">Deck name</span>
-              <input className="input" value={name} onChange={(e) => { setName(e.target.value); set({ name: e.target.value }); }} aria-label="Deck name" />
-            </label>
-            <p className="finish-summary__facts">{facts.join(' · ')}</p>
+          <DeckNameHeading v={{ ...v, name }} set={(p) => { if ('name' in p) { setName(p.name); set(p); } }} />
+          <p className="finish-facts">{facts.join(' · ')}</p>
+          <div className="finish-block">
+            <p className="finish-block__title"><span className="finish-block__n">1</span>Copy the prompt and paste it into your AI chat</p>
+            <Button icon={copied ? 'check' : 'copy'} onClick={copy}>{copied ? 'Copied' : 'Copy prompt'}</Button>
+            <p className="finish-block__links">
+              Or open it in{' '}
+              {AI_LINKS.map((a, i) => (
+                <span key={a.name}>
+                  {i > 0 && (i === AI_LINKS.length - 1 ? ' or ' : ', ')}
+                  <a href={a.url(prompt)} target="_blank" rel="noreferrer" onClick={copy}>{a.name}</a>
+                </span>
+              ))}
+            </p>
+            <details className="finish-prompt">
+              <summary>See the prompt</summary>
+              <pre className="prompt-box__text" id="ai-prompt">{prompt}</pre>
+            </details>
           </div>
-
-          <ol className="finish-steps">
-            <li>
-              <b>Copy the prompt</b>
-              <div className="finish-steps__row">
-                <Button variant="secondary" icon={copied ? 'check' : 'copy'} onClick={copy}>{copied ? 'Copied' : 'Copy prompt'}</Button>
-              </div>
-              <details className="finish-prompt">
-                <summary>See the prompt</summary>
-                <pre className="prompt-box__text" id="ai-prompt">{prompt}</pre>
-              </details>
-            </li>
-            <li>
-              <b>Paste it into an AI chat</b>
-              <span className="finish-steps__hint">Or open it with the prompt ready:</span>
-              <div className="finish-steps__row">
-                {AI_LINKS.map((a) => (
-                  <a key={a.name} className="ai-link" href={a.url(prompt)} target="_blank" rel="noreferrer" onClick={copy}>
-                    {a.name} <Icon name="arrow" />
-                  </a>
-                ))}
-              </div>
-            </li>
-            <li>
-              <b>Paste the AI’s reply here</b>
-            </li>
-          </ol>
+          <p className="finish-block__title"><span className="finish-block__n">2</span>Paste the AI’s reply here</p>
         </>
       )}
 
