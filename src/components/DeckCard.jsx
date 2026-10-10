@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { DeckShape, Icon } from './Icon.jsx';
 import { Menu } from './Menu.jsx';
-import { deckColorVars, deckShape } from '../styles/tokens.js';
+import { deckColorVars, deckShape, pickDeckLook } from '../styles/tokens.js';
 
 /** Non-interactive copy of a deck card, used as the live preview in Edit deck. */
 export function DeckPreview({ deck, titleSlot = null }) {
@@ -16,6 +16,52 @@ export function DeckPreview({ deck, titleSlot = null }) {
         {titleSlot || <span className="deck__title">{deck.title || 'Untitled deck'}</span>}
         <span className="deck__count">{count} {count === 1 ? 'card' : 'cards'}</span>
         <DeckShape shape={deckShape(deck)} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A shared group, shown the way it will sit on the home screen: the group's
+ * name, then its decks as small cards in the colours they will really get.
+ */
+const GROUP_PREVIEW_MAX = 4;
+export function GroupPreview({ title, decks, existing = [] }) {
+  // Colour each deck the way acceptIncoming will: rainbow, after what's there.
+  let soFar = [...existing];
+  const looks = decks.map((d) => {
+    const look = pickDeckLook(soFar);
+    soFar = [...soFar, { ...d, ...look }];
+    return look;
+  });
+  const total = decks.reduce((n, d) => n + (d.cards?.length ?? 0), 0);
+  const shown = decks.slice(0, GROUP_PREVIEW_MAX);
+  const more = decks.length - shown.length;
+  return (
+    <div className="group-preview" aria-hidden="true">
+      <div className="group-preview__head">
+        <span className="group-preview__title">{title || 'Untitled group'}</span>
+        <span className="group-preview__meta">
+          {decks.length} {decks.length === 1 ? 'deck' : 'decks'} · {total} {total === 1 ? 'card' : 'cards'}
+        </span>
+      </div>
+      <div className="group-preview__decks">
+        {shown.map((d, i) => {
+          const look = looks[i];
+          const { fill, deep, ink, ink2 } = deckColorVars(look.color);
+          const count = d.cards?.length ?? 0;
+          return (
+            <div key={i} className="group-preview__deck" style={{ '--deck-fill': fill, '--deck-deep': deep, '--deck-ink': ink, '--deck-ink-2': ink2 }}>
+              <span className="group-preview__deck-meta">
+                {d.front_label}<Icon name="arrow" className="deck__arrow" />{d.back_label}
+                <span className="group-preview__dot">·</span>{count} {count === 1 ? 'card' : 'cards'}
+              </span>
+              <span className="group-preview__deck-title">{d.title || 'Untitled deck'}</span>
+              <DeckShape shape={look.shape} />
+            </div>
+          );
+        })}
+        {more > 0 && <span className="group-preview__more">+ {more} more {more === 1 ? 'deck' : 'decks'}</span>}
       </div>
     </div>
   );

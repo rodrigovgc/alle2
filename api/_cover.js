@@ -2,8 +2,9 @@
 // app's deck card: the deck's colour and shape, labels, title and card count.
 import { SHAPES, LOGO } from '../src/assets/svg.js';
 
-const FILL = { lime: '#E6F7A3', purple: '#CDC9FD', pink: '#FEBDDA', blue: '#BDDDFE', green: '#CBFEBD', yellow: '#FFF4AB', red: '#FEBDBD', beige: '#E8E5DA' };
-const DEEP = { lime: '#CBE86F', purple: '#B5B1FC', pink: '#F1ADCA', blue: '#ADCFF1', green: '#AEECB6', yellow: '#EFDC8F', red: '#EFA1A1', beige: '#D9D5C7' };
+// Same values as the light deck colours in src/styles/tokens.css
+const FILL = { lime: '#E1F77D', purple: '#C8C5FF', pink: '#FFB7D6', blue: '#B4D8FF', green: '#BDFFA7', yellow: '#FFEE9C', red: '#FFB9B8', beige: '#E8E5DA' };
+const DEEP = { lime: '#CDE458', purple: '#B4ADFF', pink: '#FA99C5', blue: '#92C6FB', green: '#A4ED8B', yellow: '#F6D93F', red: '#FC9C9C', beige: '#D9D5C7' };
 
 const h = (type, style, ...children) => ({ type, props: { style: { display: 'flex', ...style }, children: children.flat().filter((c) => c != null && c !== false) } });
 

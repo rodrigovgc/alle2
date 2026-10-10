@@ -528,13 +528,15 @@ select.input { background-image: none; }
   text-align: left;
   overflow: hidden;
   /* Living colour: a slow gradient drift in the deck's own colour */
-  background: linear-gradient(130deg, var(--deck-fill), color-mix(in srgb, var(--deck-fill) 82%, #fff) 50%, var(--deck-fill));
+  background: linear-gradient(130deg, var(--deck-fill), color-mix(in srgb, var(--deck-fill) var(--deck-sheen-mix), var(--deck-sheen, #fff)) 50%, var(--deck-fill));
   background-size: 200% 200%;
   border: 0;
   animation: deckDrift 9s ease-in-out infinite;
   box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--deck-deep) 55%, transparent);
   transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out);
 }
+/* Dark mode: the highlight is the deck's own lighter hue, not white (white greys it out) */
+:root[data-theme="dark"] .deck__surface { --deck-sheen: var(--deck-deep); }
 .deck__surface .deck-shape { transition: transform 0.4s var(--ease-out), opacity 0.4s; }
 @keyframes deckDrift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 @media (hover: hover) {
@@ -861,3 +863,45 @@ select.input { background-image: none; }
 .deck__title-auto { position: relative; z-index: 1; margin-bottom: var(--space-3); color: var(--deck-ink); -webkit-line-clamp: unset; display: inline-flex; }
 .sheet-mock__cell--head { display: flex; align-items: center; min-width: 0; background: color-mix(in srgb, var(--deck-green) 35%, var(--card-bg)); font-weight: var(--font-weight-semibold); padding: 6px 10px; }
 .sheet-mock__cell--head .autoinput__field { margin-left: -6px; }
+
+/* ---- Shared group preview (Add these decks?) -------------------------- */
+/* Reads like a group on home: its name, then its decks as small cards. */
+.group-preview {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-deck);
+  background: var(--color-surface);
+}
+.group-preview__head { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2) var(--space-3) var(--space-1); }
+.group-preview__title {
+  font-size: var(--font-size-small-title); font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-title); line-height: var(--line-height-tight);
+  color: var(--text-primary);
+}
+.group-preview__meta { font-size: var(--font-size-caption); color: var(--text-secondary); }
+.group-preview__decks { display: flex; flex-direction: column; gap: var(--space-2); }
+.group-preview__deck {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-3) calc(var(--size-group-preview-shape) + var(--space-6)) var(--space-3) var(--space-4);
+  border-radius: var(--radius-field);
+  background: var(--deck-fill);
+  color: var(--deck-ink);
+}
+.group-preview__deck-meta {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  font-size: var(--font-size-caption); color: var(--deck-ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.group-preview__deck-meta .deck__arrow { flex: none; }
+.group-preview__dot { margin: 0 2px; }
+.group-preview__deck-title {
+  font-size: var(--font-size-button); font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-title); line-height: var(--line-height-tight);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.group-preview__deck .deck-shape {
+  right: var(--space-4); top: 50%; bottom: auto; translate: 0 -50%;
+  width: var(--size-group-preview-shape); height: var(--size-group-preview-shape);
+}
+.group-preview__more { padding: var(--space-1) var(--space-3) var(--space-1); font-size: var(--font-size-caption); color: var(--text-secondary); }

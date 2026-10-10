@@ -11,7 +11,7 @@ import { Auth, NewPassword } from './screens/Auth.jsx';
 import { handleEmailLink } from './lib/emailLink.js';
 import { setPageMeta } from './lib/pageMeta.js';
 import { readIntent, resolveIntent, clearIntent } from './lib/intent.js';
-import { DeckPreview } from './components/DeckCard.jsx';
+import { DeckPreview, GroupPreview } from './components/DeckCard.jsx';
 import { Onboarding } from './components/Onboarding.jsx';
 import { Home } from './screens/Home.jsx';
 import { Study } from './screens/Study.jsx';
@@ -524,18 +524,22 @@ function Library({ user, onUser }) {
       <Sheet open={!!incoming && !touring} onClose={() => { setIncoming(null); clearIntent(); }} title={incoming?.kind === 'group' ? 'Add these decks?' : 'Add this deck?'} variant="dialog">
         {incoming && (
           <div className="sheet__body">
-            <DeckPreview deck={{
-              title: incoming.title,
-              front_label: incoming.kind === 'group' ? `${incoming.decks.length} decks` : (incoming.deck?.front_label || ''),
-              back_label: incoming.kind === 'group' ? 'group' : (incoming.deck?.back_label || ''),
-              ...pickDeckLook(decks),   // the colour it will really get
-              cards: incoming.kind === 'group' ? incoming.decks.flatMap((d) => d.cards || []) : (incoming.deck?.cards || []),
-            }} />
+            {incoming.kind === 'group'
+              ? <GroupPreview title={incoming.title} decks={incoming.decks} existing={decks} />
+              : (
+                <DeckPreview deck={{
+                  title: incoming.title,
+                  front_label: incoming.deck?.front_label || '',
+                  back_label: incoming.deck?.back_label || '',
+                  ...pickDeckLook(decks),   // the colour it will really get
+                  cards: incoming.deck?.cards || [],
+                }} />
+              )}
             <p className="sheet__text">
               {incoming.kind === 'shared'
                 ? 'Someone shared this deck with you. Add a copy to your decks to start studying it.'
                 : incoming.kind === 'group'
-                  ? `Someone shared a group of ${incoming.decks.length} ${incoming.decks.length === 1 ? 'deck' : 'decks'} with you: ${incoming.decks.map((d) => d.title).join(', ')}.`
+                  ? 'Someone shared this group with you. Add it to get your own copy of every deck in it, in a new group.'
                   : 'Add this ready-made deck to your decks.'}
             </p>
             <SheetActions>

@@ -182,7 +182,7 @@
   background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .sc-appicon { opacity: 0; animation: scIcon 7s cubic-bezier(.34,1.56,.64,1) infinite; }
-.sc-appicon__img { background: var(--deck-lime); gap: 2px; display: flex; align-items: center; justify-content: center; }
+.sc-appicon__img { background: var(--lime-100, #DCFB42); gap: 2px; display: flex; align-items: center; justify-content: center; }
 .sc-appicon__img i { width: 4px; height: 13px; border-radius: 1.5px; background: #0C0C0C; }
 @keyframes scIcon { 0%, 58% { opacity: 0; transform: scale(0.3); } 66%, 92% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
 
