@@ -38,7 +38,7 @@ function build(groups, decks) {
 
 export function GroupedBoard({
   groups, decks, renderDeck, canDragDecks, menuItemsFor,
-  onToggle, onRename, onReorderGroups, onDecksChange,
+  onToggle, onRename, onReorderGroups, onDecksChange, emptyFor,
 }) {
   const [items, setItems] = useState(() => build(groups, decks));
   const [active, setActive] = useState(null);
@@ -131,7 +131,7 @@ export function GroupedBoard({
             onRename={(title) => onRename(g, title)}
           >
             <DeckArea containerKey={g.id} ids={items[g.id] || []} byId={byId} renderDeck={renderDeck} canDrag={canDragDecks}
-              empty={canDragDecks ? 'No decks yet. Drag one here, or use a deck’s ⋯ menu and choose Move to group.' : 'No decks yet. Use a deck’s ⋯ menu and choose Move to group.'} />
+              empty={emptyFor ? emptyFor(g) : 'No decks yet.'} />
           </GroupSection>
         ))}
       </SortableContext>
@@ -153,7 +153,7 @@ function DeckArea({ containerKey, ids, byId, renderDeck, canDrag, empty }) {
       <div ref={setNodeRef} className={`deck-list group__decks ${isOver ? 'is-over' : ''}`}>
         {ids.length
           ? ids.map((id) => byId[id] && <SortableDeck key={id} id={id} disabled={!canDrag}>{renderDeck(byId[id])}</SortableDeck>)
-          : <p className="group__empty">{empty}</p>}
+          : <div className={`group__empty ${isOver ? 'is-over' : ''}`}>{empty}</div>}
       </div>
     </SortableContext>
   );

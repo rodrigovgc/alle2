@@ -28,7 +28,7 @@ export function Home({
   decks, loading, dueByDeck, colorMode,
   onAddSample, onColorMode, onStudyDeck, onShuffle,
   onAddDeck, onUpdateDeck, onRemoveDeck, onResetProgress, onReorder, onRainbow, onRefresh, onSignOut, user, onUserUpdated,
-  onShareDeck, onStopSharing, onHelp,
+  onShareDeck, onStopSharing, onHelp, onMoveDecks,
   groups = [], onCreateGroup, onUpdateGroup, onMoveGroup, onDeleteGroup, onMoveDeck,
   onReorderGroups, onDecksChange, onShareGroup, onStopSharingGroup,
 }) {
@@ -60,7 +60,12 @@ export function Home({
       [d.title, d.front_label, d.back_label].some((s) => s?.toLowerCase().includes(q)));
   }, [decks, query]);
 
-  const close = () => setSheet(null);
+  // A new deck made from an empty group's "Add a new deck" goes into that group
+  const [addTo, setAddTo] = useState(null);
+  const close = () => { setSheet(null); setAddTo(null); };
+  const addDeck = (deck) => onAddDeck(addTo ? { ...deck, group_id: addTo } : deck);
+  const addSample = (key) => onAddSample(key, addTo);
+  const addToTitle = addTo ? groups?.find((g) => g.id === addTo)?.title : null;
   const ctaCompact = useScrollShrink();
   // A mouse or trackpad: decks can be dragged into place directly.
   const canDrag = useMediaQuery('(hover: hover) and (pointer: fine)');
@@ -229,7 +234,7 @@ export function Home({
               <p className="start-tile__text">Pick a deck to see how studying works.</p>
               <div className="start-tile__samples">
                 {READY_MADE.map((r) => (
-                  <SampleCard key={r.key} title={r.title} color={r.color} shape={r.shape} onClick={() => onAddSample(r.key)} />
+                  <SampleCard key={r.key} title={r.title} color={r.color} shape={r.shape} onClick={() => addSample(r.key)} />
                 ))}
               </div>
             </section>
@@ -249,10 +254,32 @@ export function Home({
             onRename={(g, title) => onUpdateGroup(g.id, { title })}
             onReorderGroups={onReorderGroups}
             onDecksChange={onDecksChange}
+            emptyFor={(g) => {
+              const others = decks.filter((d) => d.group_id !== g.id).length;
+              return (
+                <>
+                  <p className="group__empty-title">This group is empty</p>
+                  <p className="group__empty-text">
+                    {canDrag ? 'Drag a deck here, or:' : 'Add a deck to it:'}
+                  </p>
+                  <div className="group__empty-actions">
+                    <button type="button" className="text-btn group__empty-link" onClick={() => { setAddTo(g.id); setSheet({ type: 'choose' }); }}>
+                      <Icon name="plus" />Add a new deck
+                    </button>
+                    {others > 0 && (
+                      <button type="button" className="text-btn group__empty-link" onClick={() => setSheet({ type: 'group-fill', group: g })}>
+                        <Icon name="swap" />Move decks here
+                      </button>
+                    )}
+                  </div>
+                </>
+              );
+            }}
             menuItemsFor={(g, inGroup) => [
               { label: 'Shuffle this group', icon: 'shuffle', disabled: !inGroup.length, onSelect: () => onShuffle(inGroup.map((d) => d.id)) },
               { label: 'Reorder decks', icon: 'sort', disabled: inGroup.length < 2, onSelect: () => startReorder(inGroup, `Reorder ${g.title}`) },
               { label: 'Repaint decks', icon: 'repaint', disabled: !inGroup.length, onSelect: () => onRainbow(inGroup.map((d) => d.id)) },
+              { label: 'Move decks here', icon: 'swap', disabled: inGroup.length === decks.length, onSelect: () => setSheet({ type: 'group-fill', group: g }) },
               { label: 'New group', icon: 'folder', onSelect: () => setSheet({ type: 'group-new', after: g.id }) },
               { label: 'Share group', icon: 'share', disabled: !inGroup.length, onSelect: () => setSheet({ type: 'group-share', group: g }) },
               { divider: true },
@@ -311,7 +338,10 @@ export function Home({
 
       <Sheet open={sheet?.type === 'choose'} onClose={close} title="Create your own deck" variant="dialog">
         <div className="sheet__body">
-          <p className="sheet__text">Import cards from Google Sheets or create a new deck with AI.</p>
+          <p className="sheet__text">
+            Import cards from Google Sheets or create a new deck with AI.
+            {addToTitle && <> It goes into “{addToTitle}”.</>}
+          </p>
           <SheetActions>
             <CreateChoices onAi={() => setSheet({ type: 'ai' })} onPaste={() => setSheet({ type: 'paste' })} onImport={() => setSheet({ type: 'add' })} />
             {remainingReadyMade.length > 0 && (
@@ -361,7 +391,7 @@ export function Home({
                       title={r.title}
                       color={r.color}
                       shape={r.shape}
-                      onClick={() => onAddSample(r.key)}
+                      onClick={() => addSample(r.key)}
                     />
                   </motion.div>
                 ))}
@@ -380,7 +410,7 @@ export function Home({
         <DeckUrlForm
           submitLabel="Import deck"
           onSubmit={async (parsed, extra) => {
-            await onAddDeck({
+            await addDeck({
               title: extra.title || parsed.backLabel,
               csv_url: parsed.csvUrl,
               front_label: parsed.frontLabel,
@@ -398,7 +428,7 @@ export function Home({
       <Sheet open={sheet?.type === 'ai'} onClose={close} title="Create with AI">
         <AiBuilder
           onCreate={async (deck) => {
-            await onAddDeck({ ...deck, ...pickDeckLook(decks) });
+            await addDeck({ ...deck, ...pickDeckLook(decks) });
             close();
           }}
         />
@@ -408,7 +438,7 @@ export function Home({
         <AiBuilder
           pasteOnly
           onCreate={async (deck) => {
-            await onAddDeck({ ...deck, ...pickDeckLook(decks) });
+            await addDeck({ ...deck, ...pickDeckLook(decks) });
             close();
           }}
         />
@@ -458,12 +488,23 @@ export function Home({
         )}
       </Sheet>
 
+      <Sheet open={sheet?.type === 'group-fill'} onClose={close} title={sheet?.group ? `Move decks to “${sheet.group.title}”` : 'Move decks'} variant="dialog">
+        {sheet?.type === 'group-fill' && (
+          <MoveDecksPicker
+            group={sheet.group}
+            decks={decks.filter((d) => d.group_id !== sheet.group.id)}
+            groups={sortedGroups}
+            onMove={async (ids) => { await onMoveDecks(ids, sheet.group.id); close(); }}
+          />
+        )}
+      </Sheet>
+
       <Sheet open={sheet?.type === 'group-new' || sheet?.type === 'group-rename'} onClose={close} title={sheet?.type === 'group-rename' ? 'Rename group' : 'New group'} variant="dialog">
         {(sheet?.type === 'group-new' || sheet?.type === 'group-rename') && (
           <GroupNameForm
             initial={sheet.group?.title || ''}
             submitLabel={sheet.type === 'group-rename' ? 'Save' : 'Create group'}
-            hint={sheet.type === 'group-new' ? 'Then add decks with each deck’s ⋯ menu → Move to group.' : null}
+            hint={sheet.type === 'group-new' ? 'Then drag decks into it, or use Move decks here to bring in several at once.' : null}
             onSubmit={async (title) => {
               if (sheet.type === 'group-rename') await onUpdateGroup(sheet.group.id, { title });
               else await onCreateGroup(title, sheet.after);
@@ -777,6 +818,56 @@ function ShufflePicker({ decks, onStart }) {
 }
 
 
+
+/** Pick several decks from other groups and move them into this one. */
+function MoveDecksPicker({ group, decks, groups, onMove }) {
+  const [chosen, setChosen] = useState(() => new Set());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const groupName = Object.fromEntries(groups.map((g) => [g.id, g.title]));
+  const toggle = (id) => setChosen((cur) => {
+    const next = new Set(cur);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const all = chosen.size === decks.length;
+  return (
+    <div className="sheet__body shuffle-body">
+      <div className="shuffle-head">
+        <p className="sheet__text">Pick the decks to move</p>
+        <button type="button" className="text-btn shuffle-head__all" onClick={() => setChosen(all ? new Set() : new Set(decks.map((d) => d.id)))}>
+          {all ? 'Clear all' : 'Select all'}
+        </button>
+      </div>
+      <div className="check-list shuffle-scroll">
+        {decks.map((deck) => {
+          const { fill, deep } = deckColorVars(deck.color);
+          const on = chosen.has(deck.id);
+          return (
+            <label key={deck.id} className={`check-row ${on ? 'is-on' : ''}`}>
+              <input type="checkbox" checked={on} onChange={() => toggle(deck.id)} />
+              <span className="check-row__dot" style={{ '--deck-fill': fill, '--deck-deep': deep }} />
+              <span className="check-row__text">
+                <span className="check-row__title">{deck.title}</span>
+                {groupName[deck.group_id] && <span className="check-row__meta">In {groupName[deck.group_id]}</span>}
+              </span>
+              <span className="check-row__box">{on && <Icon name="check" />}</span>
+            </label>
+          );
+        })}
+      </div>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <SheetActions>
+        <Button disabled={!chosen.size || busy} onClick={async () => {
+          setBusy(true); setError('');
+          try { await onMove([...chosen]); } catch (e) { setError(e.message); setBusy(false); }
+        }}>
+          {busy ? 'Moving…' : chosen.size ? `Move ${chosen.size} ${chosen.size === 1 ? 'deck' : 'decks'} to ${group.title}` : 'Choose decks to move'}
+        </Button>
+      </SheetActions>
+    </div>
+  );
+}
 
 function GroupNameForm({ initial, submitLabel, hint, onSubmit }) {
   const [title, setTitle] = useState(initial);

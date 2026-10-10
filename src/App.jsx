@@ -132,12 +132,13 @@ function Library({ user, onUser }) {
     }
   }, []);
 
-  const addReadyMade = async (key) => {
+  const addReadyMade = async (key, groupId = null) => {
+    const into = groupId ? { group_id: groupId } : {};
     try {
       const sample = SAMPLE_DECKS[key];
       if (sample) {
         // Keep the sample's own colour if it's free; otherwise a free one.
-        await saveNewDeck({ ...sample, ...pickDeckLook(decks) }, 'ready_made');
+        await saveNewDeck({ ...sample, ...pickDeckLook(decks), ...into }, 'ready_made');
         return;
       }
       // A library deck from the website: read its published sheet.
@@ -152,6 +153,7 @@ function Library({ user, onUser }) {
         answer_mode: 'choice',
         is_sample: true,
         ...pickDeckLook(decks),
+        ...into,
       }, 'library');
     } catch (e) { setError(api.friendlyError(e)); }
   };
@@ -478,6 +480,11 @@ function Library({ user, onUser }) {
         onStopSharingGroup={async (id) => {
           await api.stopSharingGroup(id);
           setGroups((all) => (all || []).map((g) => (g.id === id ? { ...g, share_id: null } : g)));
+        }}
+        onMoveDecks={async (ids, groupId) => {
+          setDecks((all) => all.map((d) => (ids.includes(d.id) ? { ...d, group_id: groupId } : d)));
+          await Promise.all(ids.map((id) => api.updateDeck(id, { group_id: groupId })));
+          announceSaved();
         }}
         onMoveDeck={async (deckId, groupId) => {
           setDecks((all) => all.map((d) => (d.id === deckId ? { ...d, group_id: groupId } : d)));

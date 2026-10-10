@@ -594,7 +594,29 @@
 .group__chevron.is-closed { transform: rotate(-90deg); }
 .group__menu { position: relative; flex: none; }
 .group__decks { margin-top: var(--space-3); }
-.group__empty { grid-column: 1 / -1; padding: var(--space-5); border-radius: var(--radius-deck); border: 1.5px dashed var(--border-subtle); color: var(--text-secondary); font-size: var(--font-size-small); text-align: center; }
+/* An empty group: a drop zone as tall as a deck card, with two ways to fill it */
+.group__empty {
+  grid-column: 1 / -1;
+  min-height: var(--size-deck-card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-deck);
+  border: 1.5px dashed var(--grey-300);
+  background: color-mix(in srgb, var(--color-surface) 60%, transparent);
+  color: var(--text-secondary); text-align: center;
+  transition: background var(--duration-base), border-color var(--duration-base);
+}
+.group__empty.is-over { border-color: var(--text-primary); background: var(--color-surface); }
+.group__decks.is-over:has(.group__empty) { outline: none; }
+.group__empty-title { font-size: var(--font-size-button); font-weight: var(--font-weight-semibold); color: var(--text-primary); }
+.group__empty-text { font-size: var(--font-size-small); }
+.group__empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2) var(--space-6); margin-top: var(--space-1); }
+.group__empty-link {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  min-height: var(--size-icon-button); padding: 0 var(--space-2);
+  font-size: var(--font-size-small); font-weight: var(--font-weight-medium); color: var(--text-primary);
+}
+.group__empty-link .icon { width: var(--size-icon-small); height: var(--size-icon-small); }
 .move-list { display: flex; flex-direction: column; gap: var(--space-2); }
 .move-list__item { display: flex; align-items: center; gap: var(--space-3); min-height: 52px; padding: 0 var(--space-4); border-radius: var(--radius-field); background: var(--choice-bg); text-align: left; font-size: var(--font-size-button); }
 .move-list__item span { flex: 1; }
