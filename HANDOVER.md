@@ -14,14 +14,14 @@ spaced repetition (Leitner boxes). Brand name is **Alle** (never "Alle Cards").
 
 | | Address | Repo | Vercel project |
 |---|---|---|---|
-| App | https://my.allecards.app | `rodrigovgc/alle2` | Alle2 |
+| App | https://my.allecards.app | `rodrigovgc/alle-app` | Alle2 (label only; may be renamed alle-app) |
 | Website | https://allecards.app (www redirects to it) | `rodrigovgc/alle-site` | alle-site |
 
 Database and sign-in: **Supabase** (project "Alle"). Emails: Supabase Auth via
 **Resend** SMTP from hello@allecards.app. Analytics on the website: Google
 Analytics + Hotjar, both only after cookie consent.
 
-Ignore the old repo `rodrigovgc/alle`; it's an earlier version.
+The app repo was called `alle2` until 8 Oct 2026 (GitHub redirects the old name).
 
 ---
 
@@ -29,15 +29,15 @@ Ignore the old repo `rodrigovgc/alle`; it's an earlier version.
 
 1. Rodrigo creates a **fine-grained GitHub token** (GitHub → Settings → Developer
    settings → Personal access tokens → Fine-grained tokens → Generate):
-   repository access **only `alle2` and `alle-site`**, permission
+   repository access **only `alle-app` and `alle-site`**, permission
    **Contents: Read and write**, 30-day expiry. He pastes it in the chat.
    (Delete the previous "Claude Alle" token: it was shared in an old chat.)
 2. Save it to a file without printing it, then clone both repos:
    ```bash
    umask 077; printf '%s' '<TOKEN>' > ~/.ghtoken
    mkdir -p ~/gh && cd ~/gh
-   for r in alle2 alle-site; do git clone -q "https://x-access-token:$(cat ~/.ghtoken)@github.com/rodrigovgc/$r.git"; done
-   git -C alle2 config user.name "Claude for Rodrigo"; git -C alle2 config user.email "rodrigovgc@users.noreply.github.com"
+   for r in alle-app alle-site; do git clone -q "https://x-access-token:$(cat ~/.ghtoken)@github.com/rodrigovgc/$r.git"; done
+   git -C alle-app config user.name "Claude for Rodrigo"; git -C alle-app config user.email "rodrigovgc@users.noreply.github.com"
    git -C alle-site config user.name "Claude for Rodrigo"; git -C alle-site config user.email "rodrigovgc@users.noreply.github.com"
    ```
    Always pipe git output through `sed "s/$(cat ~/.ghtoken)/***/g"` so the token never appears.
@@ -80,7 +80,7 @@ Ignore the old repo `rodrigovgc/alle`; it's an earlier version.
 
 ---
 
-## 4. The app (`alle2`)
+## 4. The app (`alle-app`)
 
 React + Vite, framer-motion, @dnd-kit, Supabase JS. Key places:
 
