@@ -33,9 +33,9 @@
   --deck-red:    #FFB9B8;  --deck-red-deep:    #FC9C9C;
   --deck-beige:  #F6F4EC;  --deck-beige-deep:  #E8E5DA;
 
-  /* Monochrome mode swaps every deck to these */
-  --deck-mono:      var(--color-background);
-  --deck-mono-deep: var(--grey-200);
+  /* Monochrome mode swaps every deck to these: beige in light mode */
+  --deck-mono:      var(--color-surface);
+  --deck-mono-deep: var(--color-surface-deep);
 
   /* ---- Verdict tags ------------------------------------------------------- */
   --tag-correct-bg: var(--deck-green);   --tag-correct-border: var(--deck-green-deep);

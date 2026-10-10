@@ -6,6 +6,7 @@ import { SAMPLE_DECKS, LIBRARY } from './lib/sampleDeck.js';
 import { answerMode } from './lib/srs.js';
 import { pickDeckLook } from './styles/tokens.js';
 import { track } from './lib/analytics.js';
+import { announceSaved, SAVED_EVENT } from './lib/saved.js';
 import { buildSession, collectCards, schedule } from './lib/srs.js';
 import { Auth, NewPassword } from './screens/Auth.jsx';
 import { handleEmailLink } from './lib/emailLink.js';
@@ -83,6 +84,18 @@ function Library({ user, onUser }) {
   const [screen, setScreen] = useState({ name: 'home' });
   const [caughtUp, setCaughtUp] = useState(null); // decks to practise anyway
   const [notice, setNotice] = useState('');
+  // "✓ Changes saved" after any change that saves on its own (see lib/saved.js)
+  const [savedAt, setSavedAt] = useState(0);
+  useEffect(() => {
+    const on = () => setSavedAt(Date.now());
+    window.addEventListener(SAVED_EVENT, on);
+    return () => window.removeEventListener(SAVED_EVENT, on);
+  }, []);
+  useEffect(() => {
+    if (!savedAt) return undefined;
+    const t = setTimeout(() => setSavedAt(0), 1800);
+    return () => clearTimeout(t);
+  }, [savedAt]);
   useEffect(() => {
     if (!notice) return undefined;
     const t = setTimeout(() => setNotice(''), 6000);
@@ -315,7 +328,7 @@ function Library({ user, onUser }) {
 
   async function setPrefs(patch) {
     onUser({ ...user, user_metadata: { ...prefs, ...patch } }); // optimistic
-    try { onUser(await api.updatePrefs(patch)); } catch (e) { setError(api.friendlyError(e)); }
+    try { onUser(await api.updatePrefs(patch)); announceSaved(); } catch (e) { setError(api.friendlyError(e)); }
   }
 
 
@@ -359,6 +372,7 @@ function Library({ user, onUser }) {
           await api.updateDeck(id, patch);
           // Merge the change into what's on screen (keeps ready-made decks current).
           setDecks((all) => all.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+          announceSaved();
         }}
         onRemoveDeck={async (id) => {
           await api.removeDeck(id);
@@ -389,6 +403,7 @@ function Library({ user, onUser }) {
             }, i * 90);
             api.updateDeck(deck.id, { color }).catch(() => {});
           });
+          announceSaved();
           track('rainbow_used', {});
         }}
         groups={groups}
@@ -406,7 +421,11 @@ function Library({ user, onUser }) {
         }}
         onUpdateGroup={async (id, patch) => {
           setGroups((all) => (all || []).map((g) => (g.id === id ? { ...g, ...patch } : g)));
-          try { await api.updateGroup(id, patch); } catch (e) { setError(api.friendlyError(e)); }
+          try {
+            await api.updateGroup(id, patch);
+            // Opening/closing a group isn't a change worth announcing
+            if (Object.keys(patch).some((k) => k !== 'collapsed')) announceSaved();
+          } catch (e) { setError(api.friendlyError(e)); }
         }}
         onMoveGroup={async (id, delta) => {
           // Swap places with the neighbouring group
@@ -416,7 +435,7 @@ function Library({ user, onUser }) {
           [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
           const renum = sorted.map((g, k) => ({ ...g, position: k + 1 }));
           setGroups(renum);
-          try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); } catch (e) { setError(api.friendlyError(e)); }
+          try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); announceSaved(); } catch (e) { setError(api.friendlyError(e)); }
         }}
         onDeleteGroup={async (id, { withDecks = false, moveTo = null } = {}) => {
           try {
@@ -438,7 +457,7 @@ function Library({ user, onUser }) {
         onReorderGroups={async (ordered) => {
           const renum = ordered.map((g, k) => ({ ...g, position: k + 1 }));
           setGroups(renum);
-          try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); } catch (e) { setError(api.friendlyError(e)); }
+          try { await Promise.all(renum.map((g) => api.updateGroup(g.id, { position: g.position }))); announceSaved(); } catch (e) { setError(api.friendlyError(e)); }
         }}
         onDecksChange={async (ordered) => {
           // A deck dragged into another group, out of one, or to a new place
@@ -447,6 +466,7 @@ function Library({ user, onUser }) {
           try {
             await Promise.all(ordered.filter((d) => (d.group_id || null) !== before[d.id]).map((d) => api.updateDeck(d.id, { group_id: d.group_id })));
             setDecks(await api.saveOrder(ordered));
+            announceSaved();
           } catch (e) { setError(api.friendlyError(e)); }
         }}
         onShareGroup={async (group) => {
@@ -461,7 +481,7 @@ function Library({ user, onUser }) {
         }}
         onMoveDeck={async (deckId, groupId) => {
           setDecks((all) => all.map((d) => (d.id === deckId ? { ...d, group_id: groupId } : d)));
-          try { await api.updateDeck(deckId, { group_id: groupId }); } catch (e) {
+          try { await api.updateDeck(deckId, { group_id: groupId }); announceSaved(); } catch (e) {
             setError(/group_id/.test(e.message) ? 'Groups need one database update. Run supabase/010_groups.sql in Supabase.' : api.friendlyError(e));
           }
         }}
@@ -469,6 +489,7 @@ function Library({ user, onUser }) {
           setDecks(ordered); // show the new order straight away
           try {
             setDecks(await api.saveOrder(ordered));
+            announceSaved();
           } catch (e) {
             setError(/position/.test(e.message)
               ? 'Saving the order needs one database update. Run supabase/004_position.sql in Supabase.'
@@ -554,6 +575,9 @@ function Library({ user, onUser }) {
         <div className="toast" role="alert" onClick={() => setError('')}>
           {error}
         </div>
+      )}
+      {!error && !notice && savedAt > 0 && (
+        <div className="toast toast--notice" role="status">✓ Changes saved</div>
       )}
       {!error && notice && (
         <div className="toast toast--notice" role="status" onClick={() => setNotice('')}>

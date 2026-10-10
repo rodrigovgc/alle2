@@ -1,0 +1,15 @@
+/* Base for the scenes when they're shown on the website: Alle's type and a
+   few resets, all scoped to .alle-scene so nothing leaks into the site. */
+.alle-scene {
+  font-family: var(--font-family);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-tight);
+  font-feature-settings: 'cv11', 'ss01';
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-align: left;
+}
+.alle-scene *, .alle-scene *::before, .alle-scene *::after { box-sizing: border-box; }
+.alle-scene p, .alle-scene small, .alle-scene b, .alle-scene h1, .alle-scene h2 { margin: 0; }
+.alle-scene .icon { width: var(--size-icon); height: var(--size-icon); flex: none; display: block; }
+.alle-scene .deck-shape { display: block; }

@@ -89,6 +89,14 @@ React + Vite, framer-motion, @dnd-kit, Supabase JS. Key places:
 - `src/screens/Home.jsx` — home screen, sheets (popups), menus.
 - `src/components/GroupedBoard.jsx` — groups with drag and drop (dnd-kit:
   MouseSensor 6px, TouchSensor long-press 350ms for group titles only).
+- `src/components/Scenes.jsx` + `src/styles/scenes.css` — the tour's animated
+  scenes. **One source for app and website**: the app build also publishes them
+  as `/embed/scenes.json` + `/embed/scenes.css` (plugin in `vite.config.js`,
+  CORS in `vercel.json`); the website's `public/scenes.js` loads them into any
+  `<div data-alle-scene="welcome|ready|sheets|ai|study|home">` (Help page,
+  homepage guides). Add `alle-scene--light` on light-only pages.
+- `src/lib/saved.js` — `announceSaved()` shows the "✓ Changes saved" toast
+  (App.jsx). Call it after any change that saves on its own.
 - `src/components/AiBuilder.jsx` — Create with AI (5 steps: subject, topic/focus,
   sides as a sheet mockup, size, finish = copy prompt + paste reply).
 - `src/components/Sheet.jsx` — popups/bottom sheets; frosted header; hairlines

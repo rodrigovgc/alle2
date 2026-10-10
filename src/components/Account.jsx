@@ -5,12 +5,44 @@ import { Segmented } from './Segmented.jsx';
 import * as api from '../lib/api.js';
 import { supabase } from '../lib/supabase.js';
 import { getThemePref, setThemePref } from '../lib/theme.js';
+import { announceSaved } from '../lib/saved.js';
 
 /*
- * Account settings: appearance, deck colour mode, password, sign out and a
- * clearly separated delete option. Shown in a sheet from the ··· menu.
+ * Theme: appearance (light / dark / automatic) and deck colours. Both save on
+ * their own, so each change shows "Changes saved".
  */
-export function Account({ user, onUserUpdated, colorMode, onColorMode, onSignOut, onClose }) {
+export function ThemeSettings({ colorMode, onColorMode }) {
+  const [theme, setTheme] = useState(getThemePref);
+  const changeTheme = (t) => { setThemePref(t); setTheme(t); announceSaved(); };
+  return (
+    <div className="sheet__body account">
+      <section className="account__group">
+        <h3 className="account__label" id="acc-theme">Appearance</h3>
+        <Segmented
+          labelledBy="acc-theme"
+          options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'Automatic' }]}
+          value={theme}
+          onChange={changeTheme}
+        />
+      </section>
+      <section className="account__group">
+        <h3 className="account__label" id="acc-color">Deck colours</h3>
+        <Segmented
+          labelledBy="acc-color"
+          options={[{ value: 'colorful', label: 'Colorful' }, { value: 'monochrome', label: 'Monochrome' }]}
+          value={colorMode}
+          onChange={onColorMode}
+        />
+      </section>
+    </div>
+  );
+}
+
+/*
+ * Account: name, email, password, sign out and a clearly separated delete
+ * option. Shown in a sheet from the avatar menu.
+ */
+export function Account({ user, onUserUpdated, onSignOut }) {
   const email = user.email;
   const meta = user.user_metadata || {};
   const [first, setFirst] = useState(meta.first_name || '');
@@ -25,9 +57,6 @@ export function Account({ user, onUserUpdated, colorMode, onColorMode, onSignOut
     setNameState('done');
     if (data?.user) onUserUpdated?.(data.user);
   }
-  const [theme, setTheme] = useState(getThemePref);
-  const changeTheme = (t) => { setThemePref(t); setTheme(t); };
-
   const [emailValue, setEmailValue] = useState(email);
   const [emailState, setEmailState] = useState(null);
   async function saveEmail(e) {
@@ -85,26 +114,6 @@ export function Account({ user, onUserUpdated, colorMode, onColorMode, onSignOut
           {emailState === 'saving' ? 'Saving…' : 'Update email'}
         </Button>
       </form>
-
-      <section className="account__group">
-        <h3 className="account__label" id="acc-theme">Appearance</h3>
-        <Segmented
-          labelledBy="acc-theme"
-          options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'Automatic' }]}
-          value={theme}
-          onChange={changeTheme}
-        />
-      </section>
-
-      <section className="account__group">
-        <h3 className="account__label" id="acc-color">Deck colours</h3>
-        <Segmented
-          labelledBy="acc-color"
-          options={[{ value: 'colorful', label: 'Colorful' }, { value: 'monochrome', label: 'Monochrome' }]}
-          value={colorMode}
-          onChange={onColorMode}
-        />
-      </section>
 
       <form className="account__group" onSubmit={savePassword}>
         <h3 className="account__label">Change password</h3>

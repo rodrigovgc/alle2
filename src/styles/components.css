@@ -227,7 +227,10 @@
 .sheet--popup .sheet__scroll > form,
 .sheet--popup .sheet__scroll > .sheet__body { min-height: 0; }
 .sheet--popup .sheet__actions {
-  position: sticky; bottom: 0;          /* Save stays in view when a popup scrolls */
+  /* Save stays in view when a popup scrolls. Sticky measures from inside the
+     scroll area's bottom padding, so offset by that padding to sit flush with
+     the popup's edge (otherwise content shows through underneath). */
+  position: sticky; bottom: calc(var(--space-6) * -1);
   padding-bottom: var(--space-5);
   margin-top: var(--space-2);
   margin-bottom: calc(var(--space-6) * -1); /* cancel the scroll area's bottom pad */
@@ -532,17 +535,24 @@ select.input { background-image: none; }
   background-size: 200% 200%;
   border: 0;
   animation: deckDrift 9s ease-in-out infinite;
-  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--deck-deep) 55%, transparent);
+  /* Shadows take the deck's own colour in light mode, black in dark mode */
+  --deck-shadow-rest: color-mix(in srgb, var(--deck-deep) 55%, transparent);
+  --deck-shadow-lift: color-mix(in srgb, var(--deck-deep) 70%, transparent);
+  box-shadow: 0 10px 24px -12px var(--deck-shadow-rest);
   transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out);
 }
 /* Dark mode: the highlight is the deck's own lighter hue, not white (white greys it out) */
-:root[data-theme="dark"] .deck__surface { --deck-sheen: var(--deck-deep); }
+:root[data-theme="dark"] .deck__surface {
+  --deck-sheen: var(--deck-deep);
+  --deck-shadow-rest: rgb(0 0 0 / 0.45);
+  --deck-shadow-lift: rgb(0 0 0 / 0.75);
+}
 .deck__surface .deck-shape { transition: transform 0.4s var(--ease-out), opacity 0.4s; }
 @keyframes deckDrift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 @media (hover: hover) {
   .deck__surface:hover {
     transform: translateY(-4px);
-    box-shadow: 0 22px 40px -16px color-mix(in srgb, var(--deck-deep) 70%, transparent);
+    box-shadow: 0 22px 40px -16px var(--deck-shadow-lift);
     animation-duration: 4s;
   }
   .deck__surface:hover .deck-shape { transform: translate(-6px, -10px) scale(1.12) rotate(-4deg); opacity: 0.5; }

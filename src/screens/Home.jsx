@@ -15,12 +15,14 @@ import { ReorderList } from '../components/ReorderList.jsx';
 import { SortableDecks } from '../components/SortableDecks.jsx';
 import { useMediaQuery } from '../lib/useMediaQuery.js';
 import { Segmented } from '../components/Segmented.jsx';
-import { Account } from '../components/Account.jsx';
+import { Account, ThemeSettings } from '../components/Account.jsx';
 import { READY_MADE } from '../lib/sampleDeck.js';
 import { answerMode } from '../lib/srs.js';
 import { fetchSheetName, fetchDeckFromUrl } from '../lib/csv.js';
 import { LANGUAGES, inferLang } from '../lib/speech.js';
 import { DECK_COLORS, DECK_COLOR_LABELS, DECK_SHAPES, NO_COLOR, SPRING, deckColorVars, deckShape, pickDeckLook, tokenNumber } from '../styles/tokens.js';
+
+const HELP_URL = 'https://allecards.app/help';
 
 export function Home({
   decks, loading, dueByDeck, colorMode,
@@ -140,7 +142,9 @@ export function Home({
                 { label: 'Repaint decks', icon: 'repaint', onSelect: () => { setSearching(false); setQuery(''); onRainbow(); } },
               ] : []),
               { label: 'Account', icon: 'person', onSelect: () => setSheet({ type: 'account' }) },
-              { label: 'Help', icon: 'help', onSelect: () => onHelp() },
+              { label: 'Theme', icon: 'theme', onSelect: () => setSheet({ type: 'theme' }) },
+              { label: 'Quick tutorial', icon: 'help', onSelect: () => onHelp() },
+              { label: 'Help and guides', icon: 'article', onSelect: () => window.open(HELP_URL, '_blank', 'noopener') },
             ]}
           />
         </div>
@@ -323,11 +327,12 @@ export function Home({
         <Account
           user={user}
           onUserUpdated={onUserUpdated}
-          colorMode={colorMode}
-          onColorMode={onColorMode}
           onSignOut={onSignOut}
-          onClose={close}
         />
+      </Sheet>
+
+      <Sheet open={sheet?.type === 'theme'} onClose={close} title="Theme">
+        <ThemeSettings colorMode={colorMode} onColorMode={onColorMode} />
       </Sheet>
 
       <Sheet open={sheet?.type === 'shuffle'} onClose={close} title="Shuffle decks" variant="dialog">
@@ -724,7 +729,6 @@ function CoverForm({ deck, onSave, onDone }) {
         </select>
       </Field>
       {error && <p className="form-error" role="alert">{error}</p>}
-      {status === 'saved' && <div className="toast toast--notice" role="status">✓ Changes saved</div>}
       <SheetActions>
         <Button onClick={onDone}>Done</Button>
       </SheetActions>
